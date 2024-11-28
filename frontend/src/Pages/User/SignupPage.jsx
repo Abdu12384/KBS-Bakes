@@ -1,43 +1,64 @@
-import React, { useState } from 'react'
+import React, { useState ,useEffect} from 'react'
 import { User, Mail, Phone, Lock } from 'lucide-react'
 import axios from 'axios';
-
+import Carousel from '../../Components/Carousel';
+import OTPInput from '../../Components/OTPvarify';
 
 
 function SignupPage() {
-
+  const [isOtpModalVisible, setOtpModalVisible]= useState(false)
      const [formData, setFormData] = useState({
        fullName:"",
        email:"",
        mobile:"",
        password:""
      })
-     console.log(formData);
+     const [errors, setErrors] = useState({});
+     useEffect(() => {}, []);
      
+
+
      const handleChange = (e) => {
       const { name, value } = e.target;
-      setFormData((prevData) => ({
-        ...prevData,
-        [name]: value, // Update only the field that changed
-      }));
+      setFormData({...formData,[name]:value});
+            
+           setErrors({...errors,[name]:''})
     };
-
+       
+    const validateForm = () => {
+      const newErrors = {};
+      if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+      if (!formData.email) newErrors.email = 'Email is required.';
+      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid.';
+      if (!formData.mobile) newErrors.mobile = 'Phone Number is required.';
+      else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
+      if (!formData.password) newErrors.password = 'Password is required.';
+      else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
+  
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+          
        const handleSubmit = async (e)=>{
-         
+         e.preventDefault()
+         if(!validateForm()) return
+
+          console.log("Form Data Updated:", formData);
           try {
             const response = await axios.post('http://localhost:3000/auth/signup',formData)
             console.log("Respose:",response.data);
-            
+            setOtpModalVisible(true)
           } catch (error) {
             console.error("Error:",error)
           }
        }
-      
-
-
+       const closeOtpModal = () =>{
+        setOtpModalVisible(false)
+       }
+    
   return (
     <div className="min-h-screen bg-[#e5f5e9] flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
+      <div className="w-full h-screen  bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
         <div className="hidden lg:block lg:w-1/2 bg-[#e5f5e9] p-12">
           <div className="text-center">
@@ -46,11 +67,7 @@ function SignupPage() {
             Join us today, indulge in sweet creations, and experience the magic of freshly baked delights. Let’s make memories!
             </p>
           </div>
-          <img 
-            src="/image/logo.jpeg" 
-            alt="Study Illustration" 
-            className="mt-12 w-full"
-          />
+          <Carousel/>
         </div>
 
         {/* Right Side - Form */}
@@ -74,6 +91,7 @@ function SignupPage() {
                 </div>
                 <input
                   type="text"
+                  id='fullName'
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
@@ -81,6 +99,7 @@ function SignupPage() {
                   placeholder="John Smith"
                 />
               </div>
+              {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
             </div>
 
             <div className="relative">
@@ -100,6 +119,7 @@ function SignupPage() {
                   placeholder="john@example.com"
                 />
               </div>
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
             <div className="relative">
@@ -111,7 +131,8 @@ function SignupPage() {
                   <Phone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="tel"
+                  type="number"
+                  id='mobile'
                   name="mobile"
                   onChange={handleChange}
                   value={formData.mobile}
@@ -119,6 +140,8 @@ function SignupPage() {
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
+              {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
+
             </div>
 
             <div className="relative">
@@ -131,7 +154,7 @@ function SignupPage() {
                 </div>
                 <input
                   type="password"
-                  id="password"
+                  id='password'
                   name="password"
                   onChange={handleChange}
                   value={formData.password}
@@ -139,6 +162,8 @@ function SignupPage() {
                   placeholder="••••••••"
                 />
               </div>
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+
             </div>
 
             <button
@@ -190,6 +215,19 @@ function SignupPage() {
             </p>
           </form>
         </div>
+        {isOtpModalVisible && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+           <div className="relative">
+             <button
+               onClick={closeOtpModal}
+               className="absolute bottom-40  left-40 bg-gray-300 p-3 rounded-full focus:outline-none z-10"
+             >
+               x
+             </button>
+             <OTPInput email={formData.email}/>
+           </div>
+         </div>
+        )}
       </div>
     </div>
   )
