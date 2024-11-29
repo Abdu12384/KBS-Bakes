@@ -186,7 +186,7 @@ const insertUser = async(req,res)=>{
       const otp = generateOTP()
       await OTP.updateOne(
         {email},
-        {otp, expiry:Date.now() + 30 * 1000},
+        {otp, expiry:Date.now() + 60 * 1000},
         {upsert:true}
       )
       
@@ -279,11 +279,46 @@ const insertUser = async(req,res)=>{
   }
 
 
+   const loadLogout= async(req,res)=>{
+     console.log('logout here');
+     const refreshToken = req.cookies.refreshToken;
+     if (!refreshToken) return res.status(204).end(); 
+       try {
+          const user = await User.findById(refreshToken)
+          if(user){
+            user.refreshToken=null
+            await user.save()
+          }
+
+         res.clearCookie('accessToken',{
+           httpOnly:true,
+           secure:true,
+           sameSite:'strict',
+           maxAge:0,
+         })
+
+         res.clearCookie('refreshToken',{
+           httpOnly:true,
+           secure:true,
+           sameSite:'strict',
+           maxAge:0,
+         })
+
+
+       res.status(200).json({message:"Logout Successfully"})
+      } catch (error) {
+         console.error(error)
+          res.status(500).json({message:"Error logging out"})
+        
+       }
+   }
+
 
 module.exports={
    insertUser,
    varifyOTP,
    resendOtp,
    loadLogin,
-   refreshControll
+   refreshControll,
+   loadLogout
 }

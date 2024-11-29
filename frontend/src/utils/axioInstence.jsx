@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 // Create an Axios instance
-const api = axios.create({
+const axioInstence = axios.create({
   baseURL: 'http://localhost:3000', // Base URL of your backend API
   withCredentials: true,           // Send cookies with every request
 });
 
 // Add a response interceptor to handle token refresh
-api.interceptors.response.use(
+axioInstence.interceptors.response.use(
   (response) => response, // If the response is successful, just return it
   async (error) => {
     const originalRequest = error.config;
@@ -27,11 +27,11 @@ api.interceptors.response.use(
         const newAccessToken = refreshResponse.data.accessToken;
 
         // Update headers with the new access token
-        api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        axioInstence.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
         originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
         // Retry the original request
-        return api(originalRequest);
+        return axioInstence(originalRequest);
       } catch (refreshError) {
         console.error('Failed to refresh token:', refreshError);
         return Promise.reject(refreshError);
@@ -42,4 +42,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default axioInstence;

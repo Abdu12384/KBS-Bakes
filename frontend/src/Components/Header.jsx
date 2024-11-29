@@ -1,4 +1,18 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import axioInstence from "../utils/axioInstence"
+
 function Header() {
+ const navigate =  useNavigate()
+   const handleLogout = async()=>{
+      try {
+         const response = await axioInstence.post('/auth/logout')
+          console.log('the logout rasponce from backend',response);
+          navigate('/user/login')
+      } catch (error) {
+        console.error('Logout failed',error.response?.data|| error.message)
+      }
+   }
   return (
     <header className="bg-gradient-to-b from-[#f5e6d3] to-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,9 +66,16 @@ function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </button>
+               {/* Logout Button */}
+               <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-[#8B4513] text-white rounded-lg hover:bg-[#DEB887] transition-colors duration-300 font-medium"
+            >
+              Logout
+            </button>
 
             {/* Mobile Menu Button */}
-            <button className="md:hidden p-2 rounded-full hover:bg-[#f5e6d3] transition-colors duration-300">
+            <button   className="md:hidden p-2 rounded-full hover:bg-[#f5e6d3] transition-colors duration-300">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B4513] hover:text-[#DEB887]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>

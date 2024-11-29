@@ -3,13 +3,11 @@ import { Mail, Lock, Coffee } from 'lucide-react'
 import Carousel from '../../Components/Carousel'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom' 
-import api from '../../utils/axioIntercepter'
+
 
 
 
 function LoginPage() {
-
-
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword]= useState()
@@ -23,10 +21,6 @@ function LoginPage() {
             {withCredentials:true}
            )
            console.log(response);
-           const { accessToken } = response.data;
-           console.log(accessToken);
-           
-           api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
            navigate('/user/home')
         }catch(err){
           console.log("Login error here",err);
