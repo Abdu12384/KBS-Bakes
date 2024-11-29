@@ -3,11 +3,15 @@ const bcrypt= require('bcrypt')
 const nodemailer = require('nodemailer')
 const crypto = require('crypto')
 const OTP = require('../model/OTPmodel')
-const { send } = require('process')
-const { resolve } = require('path')
+// const { send } = require('process')
+// const { resolve } = require('path')
+const jwt = require('jsonwebtoken')
 const { response } = require('express')
 
 
+
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET
 
 
  const transporter = nodemailer.createTransport({
@@ -93,6 +97,7 @@ const { response } = require('express')
 
 
 
+
 const insertUser = async(req,res)=>{
   const {fullName, email, password, mobile}=req.body
 
@@ -129,6 +134,7 @@ const insertUser = async(req,res)=>{
     res.status(500).json({error:"Server error"})
    }
 }
+
 
 
 
@@ -192,8 +198,92 @@ const insertUser = async(req,res)=>{
          }
    }
 
+
+
+   const loadLogin= async (req,res)=>{
+       const {email, password} = req.body
+       
+       try {
+         const user= await User.findOne({email})
+         if(!user)return res.status(404).json({message:"User not email found"})
+          
+          const isMatch = await bcrypt.compare(password, user.password)
+          if(!isMatch) return res.status(401).json({message:"Invalide cridentials"})
+            
+            console.log(email);
+            const accessToken = jwt.sign(
+              {id:user._id},
+              ACCESS_TOKEN_SECRET,
+              {expiresIn:"15m"}
+            )
+            
+            const refreshToken= jwt.sign(
+              {id:user._id},
+              REFRESH_TOKEN_SECRET,
+              {expiresIn:"7d"}
+            )
+            
+            user.refreshToken=refreshToken
+              await user.save()
+              
+           res.cookie("accessToken",accessToken,{
+               httpOnly:true,
+               secure:true,
+               sameSite:"strict",
+               maxAge:15 * 60 * 1000,
+           })
+          res.cookie("refreshToken", refreshToken,{
+             httpOnly:true,
+             secure:true,
+             sameSite:"strict",
+             maxAge:7 * 24 * 60 * 60 * 1000
+          })
+           
+          res.status(200).json({message:"Login successfull"})
+       } catch (error) {
+         res.status(500).json({message:"Server error"})
+       }
+   } 
+
+
+
+  const  refreshControll = async (req,res)=>{
+     const refreshToken = req.cookies.refreshToken
+      console.log(refreshToken);
+      
+  if (!refreshToken) return res.status(401).json({ message: "Refresh token required" });
+
+  try {
+    // Verify refresh token
+    const user = await User.findOne({ refreshToken });
+    if (!user) return res.status(403).json({ message: "Invalid refresh token" });
+
+    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, decoded) => {
+      if (err) return res.status(403).json({ message: "Invalid refresh token" });
+
+      const accessToken = jwt.sign({ id: decoded.id }, ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+
+
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000, 
+      });
+
+      res.status(200).json({ message: "Access token refreshed" });
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+  }
+
+
+
 module.exports={
    insertUser,
    varifyOTP,
-   resendOtp
+   resendOtp,
+   loadLogin,
+   refreshControll
 }

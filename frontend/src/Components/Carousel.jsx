@@ -21,9 +21,9 @@ const Carousel = () => {
   
   return (
     
-        <div id="default-carousel" className="relative w-full h-[500px]" data-carousel="slide">
+        <div id="default-carousel" className="relative  w-[640px]  h-[700px]" data-carousel="slide">
 
-          <div className=" bg-blue h-[500px] overflow-hidden  rounded-lg md:h-96">
+          <div className=" 	w-[100%] h-[110%] overflow-hidden  rounded-lg">
 
             {images.map((image, index) => (
               <div
@@ -33,7 +33,7 @@ const Carousel = () => {
               >
                 <img
                   src={image}
-                  className="absolute h-full block w-full object-cover  -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                  className="absolute h-[120%] block w-[120%] object-cover  -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
                   alt={`Slide ${index + 1}`}
                 />
               </div>

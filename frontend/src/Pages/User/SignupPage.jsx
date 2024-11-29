@@ -58,10 +58,10 @@ function SignupPage() {
     
   return (
     <div className="min-h-screen bg-[#e5f5e9] flex items-center justify-center p-4">
-      <div className="w-full h-screen  bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
+      <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
-        <div className="hidden lg:block lg:w-1/2 bg-[#e5f5e9] p-12">
-          <div className="text-center">
+        <div className="hidden lg:flex lg:w-1/2 bg-[#e5f5e9] p-12 flex flex-col items-center justify-center">
+          <div className="text-center ">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Welcome to KBS Bakes Where every bite feels like home!</h1>
             <p className="text-lg text-gray-600">
             Join us today, indulge in sweet creations, and experience the magic of freshly baked delights. Let’s make memories!
@@ -80,9 +80,9 @@ function SignupPage() {
             <p className="text-gray-600 mt-3">Create your account and start your journey with us!</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-5 max-w-sm mx-auto">
             <div className="relative">
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="fullName" className="block text-xs font-medium text-gray-700 mb-1">
                 Full Name
               </label>
               <div className="relative rounded-lg shadow-sm">

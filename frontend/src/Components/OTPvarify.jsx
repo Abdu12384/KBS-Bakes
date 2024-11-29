@@ -55,9 +55,7 @@ export default function OTPInput({email}) {
 
       const response = await axios.post('http://localhost:3000/auth/verifyotp', { email, otp: otpCode });
       console.log('Backend Response:', response.data);
-
-
-      if (response.data.success) {
+      if (response.data) {
         alert('OTP Verified Successfully!');
       } else {
         alert('Invalid OTP. Please try again.');
