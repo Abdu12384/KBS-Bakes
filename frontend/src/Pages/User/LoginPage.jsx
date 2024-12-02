@@ -1,7 +1,7 @@
 import React, { useState, } from 'react'
 import { Mail, Lock, Coffee } from 'lucide-react'
 import Carousel from '../../Components/Carousel'
-import axios from 'axios'
+import axioInstence from '../../utils/axioInstence'
 import { useNavigate } from 'react-router-dom' 
 
 
@@ -16,7 +16,7 @@ function LoginPage() {
      const handleSubmit = async(e)=>{
         e.preventDefault()
         try{
-           const response = await axios.post('http://localhost:3000/auth/login',
+           const response = await axioInstence.post('/auth/login',
             {email,password},
             {withCredentials:true}
            )
@@ -32,17 +32,17 @@ function LoginPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#e5f5e9] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Form */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-white/80 to-[#e5f5e9]/30">
+        <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-white/80 to-[#765341]">
           <div className="max-w-md mx-auto w-full">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
+              <h2 className="text-3xl font-bold text-[#5b3e31] flex items-center justify-center gap-2">
                 <span>KBS</span>
-                <span className="text-[#4a9d5e]">BAKES</span>
+                <span className="text-[#FFFFFF]">BAKES</span>
               </h2>
-              <p className="text-gray-600 mt-3">Welcome back! Please sign in to continue.</p>
+              <p className="text-[#5b3e31] mt-3">Welcome back! Please sign in to continue.</p>
             </div>
             
             <form  onSubmit={handleSubmit} className="space-y-6">
@@ -95,7 +95,7 @@ function LoginPage() {
                     Remember me
                   </label>
                 </div>
-                <button type="button" className="text-sm font-medium text-[#4a9d5e] hover:text-[#3d8b4f]">
+                <button type="button" className="text-sm font-medium text-[#FFFFFF] hover:text-[#3d8b4f]">
                   Forgot password?
                 </button>
               </div>
@@ -143,7 +143,7 @@ function LoginPage() {
 
               <p className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
-                <a href="/signup" className="text-[#4a9d5e] hover:text-[#3d8b4f] font-medium">
+                <a href="/signup" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
                   Sign up
                 </a>
               </p>
@@ -152,12 +152,12 @@ function LoginPage() {
         </div>
 
         {/* Right Side - Illustration */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[#e5f5e9] p-12 flex-col items-center justify-center">
+        <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex-col items-center justify-center">
           <div className="max-w-md text-center">
             <div className=" flex justify-center">
-              <Coffee className="w-16 h-16 text-[#4a9d5e]" />
+              <Coffee className="w-16 h-16 text-[#FFFFFF]" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-0">Welcome back to KBS Bakes!</h1>
+            <h1 className="text-2xl font-bold text-[#5b3e31] mb-0">Welcome back to KBS Bakes!</h1>
             <p className="text-lg text-gray-600 ">
               Sign in to explore our delicious treats and place your order. Your next sweet adventure awaits!
             </p>

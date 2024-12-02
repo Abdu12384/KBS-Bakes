@@ -1,10 +1,12 @@
 import axios from 'axios';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
 
 // Create an Axios instance
 const axioInstence = axios.create({
-  baseURL: 'http://localhost:3000', // Base URL of your backend API
-  withCredentials: true,           // Send cookies with every request
-});
+  baseURL:BACKEND_URL,
+  withCredentials: true, // Send cookies with every request
+})
 
 // Add a response interceptor to handle token refresh
 axioInstence.interceptors.response.use(

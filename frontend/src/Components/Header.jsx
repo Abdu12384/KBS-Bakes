@@ -1,106 +1,130 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import axioInstence from "../utils/axioInstence"
+import React, { useState, useEffect } from 'react';
+import { Menu, X,User, ShoppingCart } from 'lucide-react';
 
-function Header() {
- const navigate =  useNavigate()
-   const handleLogout = async()=>{
-      try {
-         const response = await axioInstence.post('/auth/logout')
-          console.log('the logout rasponce from backend',response);
-          navigate('/user/login')
-      } catch (error) {
-        console.error('Logout failed',error.response?.data|| error.message)
-      }
-   }
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+
+  const images = [
+    '/src/assets/images/banner1.jpg',
+    '/src/assets/images/banner2.jpg',
+    '/src/assets/images/banner3.jpg',
+    '/src/assets/images/banner4.jpg',
+    '/src/assets/images/banner5.jpg',
+  ]; // Array of banner images
+
+ 
+  const [currentImage, setCurrentImage] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prevImage) => (prevImage + 1) % images.length);
+    }, 4000); // Change image every 4 seconds
+
+    return () => clearInterval(interval); // Cleanup
+  }, [images.length]);
+
   return (
-    <header className="bg-gradient-to-b from-[#f5e6d3] to-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          {/* Logo Section */}
-          <div className="flex items-center space-x-2">
+    <header className="relative">
+      {/* Image Wrapper */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt={`Banner ${index + 1}`}
+            className={`absolute w-full h-full object-cover transition-opacity duration-[4s] ease-in-out ${
+              index === currentImage ? 'opacity-100 z-10' : 'opacity-0'
+            }`}
+          />
+        ))}
+      </div>
+      <div className={`relative z-10 transition-all duration-300`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-24">
             <div className="flex items-center">
-              {/* Cake Icon */}
-              <div className="relative w-12 h-12">
-                <div className="absolute w-8 h-8 bg-[#DEB887] rounded-t-full top-1 left-2"></div>
-                <div className="absolute w-10 h-3 bg-[#8B4513] bottom-1 left-1"></div>
-                <div className="absolute w-6 h-2 bg-[#DEB887] bottom-3 left-3"></div>
-              </div>
-              {/* Brand Name */}
-              <div className="ml-2">
-                <span className="text-2xl font-bold text-[#8B4513]">KBS</span>
-                <span className="text-2xl font-bold text-[#DEB887]">BAKES</span>
-                <span className="block text-sm italic text-[#8B4513]">Cakes</span>
+              <a href="/" className="text-white text-3xl font-bold drop-shadow-lg">
+                KBS BAKES
+              </a>
+            </div>
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-4">
+                <NavLink href="/">Home</NavLink>
+                <NavLink href="/about">About</NavLink>
+                <NavLink href="/products">Products</NavLink>
+                <NavLink href="/contact">Contact</NavLink>
               </div>
             </div>
-          </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {['Home', 'Our Cakes', 'Custom Orders', 'About'].map((item) => (
-              <a
-                key={item}
-                href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-[#8B4513] hover:text-[#DEB887] transition-colors duration-300 font-medium"
-              >
-                {item}
+            <div className="flex items-center space-x-6">
+              {/* User Profile Icon */}
+              <a href="/profile" className="text-white hover:text-[#d8cbc4]">
+                <User className="h-6 w-6" />
               </a>
-            ))}
-          </nav>
 
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-4">
-            {/* Cart Button */}
-            <button className="relative group">
-              <div className="p-2 rounded-full hover:bg-[#f5e6d3] transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B4513] group-hover:text-[#DEB887]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 bg-[#8B4513] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">2</span>
-              </div>
-            </button>
+              {/* Cart Icon */}
+              <a href="/cart" className="text-white hover:text-[#d8cbc4]">
+                <ShoppingCart className="h-6 w-6" />
+              </a>
 
-            {/* User Button */}
-            <button className="p-2 rounded-full hover:bg-[#f5e6d3] transition-colors duration-300">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B4513] hover:text-[#DEB887]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-               {/* Logout Button */}
-               <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-[#8B4513] text-white rounded-lg hover:bg-[#DEB887] transition-colors duration-300 font-medium"
-            >
-              Logout
-            </button>
-
-            {/* Mobile Menu Button */}
-            <button   className="md:hidden p-2 rounded-full hover:bg-[#f5e6d3] transition-colors duration-300">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#8B4513] hover:text-[#DEB887]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+           
+            
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-[#d8cbc4] hover:bg-[#5b3e31] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isMenuOpen ? (
+                  <X className="block h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </button>
+             </div>
+           </div>
           </div>
         </div>
-
-        {/* Mobile Navigation Menu - Hidden by default */}
-        <div className="md:hidden hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {['Home', 'Our Cakes', 'Custom Orders', 'About'].map((item) => (
-              <a
-                key={item}
-                href={`/${item.toLowerCase().replace(' ', '-')}`}
-                className="block px-3 py-2 rounded-md text-[#8B4513] hover:bg-[#f5e6d3] hover:text-[#DEB887] transition-colors duration-300"
-              >
-                {item}
-              </a>
-            ))}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-[#3d2516] bg-opacity-90">
+              <NavLink href="/" mobile>Home</NavLink>
+              <NavLink href="/about" mobile>About</NavLink>
+              <NavLink href="/products" mobile>Products</NavLink>
+              <NavLink href="/contact" mobile>Contact</NavLink>
+            </div>
           </div>
+        )}
+      </div>
+      <div className="relative z-10 flex items-center justify-center h-[calc(100vh-6rem)] text-center px-4">
+        <div className="max-w-3xl">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg animate-fade-in-up">
+            Indulge in Sweet Perfection
+          </h1>
+          <p className="text-xl md:text-2xl text-white mb-8 drop-shadow-lg animate-fade-in-up animation-delay-300">
+            Handcrafted cakes for every occasion
+          </p>
+          <button className="bg-[#8b6c5c] text-white py-3 px-6 rounded-full text-lg font-semibold hover:bg-[#765341] transition duration-300 shadow-lg animate-fade-in-up animation-delay-600">
+            Explore Our Cakes
+          </button>
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+const NavLink = ({ href, children, mobile = false }) => (
+  <a
+    href={href}
+    className={`${
+      mobile
+        ? 'block px-3 py-2 rounded-md text-base font-medium'
+        : 'px-3 py-2 rounded-md text-sm font-medium'
+    } text-white hover:bg-[#5b3e31] hover:text-[#d8cbc4] transition duration-300 drop-shadow-lg`}
+  >
+    {children}
+  </a>
+);
+
+export default Header;
 

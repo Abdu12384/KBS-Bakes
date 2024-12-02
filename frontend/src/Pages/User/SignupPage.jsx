@@ -1,14 +1,14 @@
 import React, { useState ,useEffect} from 'react'
 import { User, Mail, Phone, Lock } from 'lucide-react'
-import axios from 'axios';
+import axioInstence from '../../utils/axioInstence';
 import Carousel from '../../Components/Carousel';
 import OTPInput from '../../Components/OTPvarify';
-import {GoogleLogin} from 'react-google-login'
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+import {GoogleLogin} from '@react-oauth/google'
+import { useNavigate } from 'react-router-dom';
 
 function SignupPage() {
 
-
+ const navigate= useNavigate()
   const [isOtpModalVisible, setOtpModalVisible]= useState(false)
      const [formData, setFormData] = useState({
        fullName:"",
@@ -48,7 +48,7 @@ function SignupPage() {
 
           console.log("Form Data Updated:", formData);
           try {
-            const response = await axios.post('http://localhost:3000/auth/signup',formData)
+            const response = await axioInstence.post('/auth/signup',formData)
             console.log("Respose:",response.data);
             setOtpModalVisible(true)
           } catch (error) {
@@ -61,30 +61,32 @@ function SignupPage() {
 
        const handleGoogleSuccess = async (response) => {
         try {
-          const { tokenId } = response; 
-          console.log(tokenId);
-          
-          const res = await axios.post('http://localhost:3000/auth/google/singup', { tokenId });
+           console.log(response);
+           
+           const {credential} = response
+          console.log('credential here',credential);
+
+          const res = await axioInstence.post('/auth/google/signup', { tokenId:credential });
           console.log('Google SignUp Successful:', res.data);
-          
+           navigate('/user/home')
         } catch (error) {
           console.error("Google Sign-Up Error:", error);
         }
       };
 
       const handleGoogleFailure = (error) => {
-        console.error("Google Login Error:", error);
+        console.error("Google Login Error Details:", error);
       };
-       
+      
     
   return (
-    <div className="min-h-screen bg-[#e5f5e9] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[#e5f5e9] p-12 flex flex-col items-center justify-center">
+        <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex flex-col items-center justify-center">
           <div className="text-center ">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Welcome to KBS Bakes Where every bite feels like home!</h1>
-            <p className="text-lg text-gray-600">
+            <h1 className="text-2xl font-bold text-[#5b3e31] mb-4">Welcome to KBS Bakes Where every bite feels like home!</h1>
+            <p className="text-lg text-[#5b3e31]">
             Join us today, indulge in sweet creations, and experience the magic of freshly baked delights. Let’s make memories!
             </p>
           </div>
@@ -92,13 +94,13 @@ function SignupPage() {
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 p-8 md:p-12 bg-gradient-to-br from-white/80 to-[#e5f5e9]/30">
+        <div className="w-full lg:w-1/2 p-8 md:p-12 bg-gradient-to-br from-white/80 to-[#765341]">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
               <span>KBS</span>
-              <span className="text-[#4a9d5e]">BAKES</span>
+              <span className="text-[#FFFFFF]">BAKES</span>
             </h2>
-            <p className="text-gray-600 mt-3">Create your account and start your journey with us!</p>
+            <p className="text-[#5b3e31] mt-3">Create your account and start your journey with us!</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 max-w-sm mx-auto">
@@ -120,7 +122,7 @@ function SignupPage() {
                   placeholder="John Smith"
                 />
               </div>
-              {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+              {errors.fullName && <p className="text-red-500 text-sm ">{errors.fullName}</p>}
             </div>
 
             <div className="relative">
@@ -140,7 +142,7 @@ function SignupPage() {
                   placeholder="john@example.com"
                 />
               </div>
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-sm ">{errors.email}</p>}
             </div>
 
             <div className="relative">
@@ -161,7 +163,7 @@ function SignupPage() {
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
-              {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
+              {errors.mobile && <p className="text-red-500 text-sm ">{errors.mobile}</p>}
 
             </div>
 
@@ -183,13 +185,13 @@ function SignupPage() {
                   placeholder="••••••••"
                 />
               </div>
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
 
             </div>
 
             <button
               type="submit"
-              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 mt-6"
+              className="w-full bg-[#5b3e31] text-white rounded-lg px-4 py-2.5 font-medium hover:bg-[#765341] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 mt-6"
             >
               Sign up
             </button>
@@ -203,17 +205,15 @@ function SignupPage() {
               </div>
             </div>
             <GoogleLogin
-              clientId={googleClientId}
               buttonText="Sign up with Google"
               onSuccess={handleGoogleSuccess}
               onFailure={handleGoogleFailure}
-              cookiePolicy={'single_host_origin'}
               className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4a9d5e] transition-all duration-200"
             />
 
             <p className="text-center text-sm text-gray-600 mt-6">
               Already have an account?{' '}
-              <a href="/login" className="text-[#4a9d5e] hover:text-[#3d8b4f] font-medium">
+              <a href="/login" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
                 Sign in
               </a>
             </p>

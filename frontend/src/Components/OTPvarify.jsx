@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LockKeyhole, ArrowRight } from 'lucide-react';
 import axios from 'axios'; // Import Axios
+import { useNavigate } from 'react-router-dom';
 
 export default function OTPInput({email}) {
+  const navigate = useNavigate()
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer]= useState(30)
   const [isResending, setIsResending]= useState(false)
@@ -56,7 +58,7 @@ export default function OTPInput({email}) {
       const response = await axios.post('http://localhost:3000/auth/verifyotp', { email, otp: otpCode });
       console.log('Backend Response:', response.data);
       if (response.data) {
-        alert('OTP Verified Successfully!');
+         navigate('/user/home')
       } else {
         alert('Invalid OTP. Please try again.');
       }

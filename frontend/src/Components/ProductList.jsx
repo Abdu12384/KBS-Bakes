@@ -1,0 +1,45 @@
+import React from 'react'
+import { Star } from 'lucide-react';
+
+function ProductList() {
+  return (
+    <section className="py-16 bg-[#d8cbc4]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 className="text-3xl font-bold text-[#3d2516] mb-8 text-center">Our Signature Cakes</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { name: "Chocolate Delight", price: "$35", rating: 5 },
+          { name: "Strawberry Dream", price: "$40", rating: 4 },
+          { name: "Vanilla Elegance", price: "$30", rating: 5 }
+        ].map((cake, i) => (
+          <div key={i} className="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
+            <div className="relative h-64">
+              <img
+                src={`/src/assets/images/img4.png`}
+                alt={cake.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold text-[#5b3e31] mb-2">{cake.name}</h3>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[#8b6c5c] font-bold">{cake.price}</span>
+                <div className="flex">
+                  {[...Array(cake.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-current text-yellow-500" />
+                  ))}
+                </div>
+              </div>
+              <button className="w-full bg-[#8b6c5c] text-white py-2 px-4 rounded-full hover:bg-[#765341] transition duration-300">
+                Order Now
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  )
+}
+
+export default ProductList
