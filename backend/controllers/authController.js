@@ -3,16 +3,35 @@ const bcrypt= require('bcrypt')
 const nodemailer = require('nodemailer')
 const crypto = require('crypto')
 const OTP = require('../model/OTPmodel')
-// const { send } = require('process')
-// const { resolve } = require('path')
+
 const jwt = require('jsonwebtoken')
 const { response } = require('express')
 
 
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET
+const USER_ACCESS_TOKEN_SECRET = process.env.USER_ACCESS_TOKEN_SECRET
+const USER_REFRESH_TOKEN_SECRET = process.env.USER_REFRESH_TOKEN_SECRET
 
+
+
+ const generateAdminTokens = (admin) =>{
+    const adminAccessToken = jwt.sign(
+      {id:admin._id, email:admin.email, isAdmin:true, role:'admin'},
+      process.env.ADMIN_ACCESS_TOKEN_SECRET,
+      {expiresIn:'15m'}
+    )
+
+    const adminRefreshToken = jwt.sign(
+       {id: admin._id, email:admin.email, isAdmin:true, role:'admin'},
+       process.env.ADMIN_REFRESH_TOKEN_SECRET,
+       {expiresIn:'7d'}
+    )
+    return {adminAccessToken,adminRefreshToken}
+ }
+
+
+
+   
 
  const transporter = nodemailer.createTransport({
     service:'gmail',
@@ -212,14 +231,14 @@ const insertUser = async(req,res)=>{
             
             console.log(email);
             const accessToken = jwt.sign(
-              {id:user._id},
-              ACCESS_TOKEN_SECRET,
+              {id:user._id,user:'user'},
+              USER_ACCESS_TOKEN_SECRET,
               {expiresIn:"15m"}
             )
             
             const refreshToken= jwt.sign(
-              {id:user._id},
-              REFRESH_TOKEN_SECRET,
+              {id:user._id,role:'user'},
+              USER_REFRESH_TOKEN_SECRET,
               {expiresIn:"7d"}
             )
             
@@ -228,14 +247,14 @@ const insertUser = async(req,res)=>{
               
            res.cookie("accessToken",accessToken,{
                httpOnly:true,
-               secure:true,
-               sameSite:"strict",
+               secure: process.env.NODE_ENV === "production",
+               sameSite:"lax",
                maxAge:15 * 60 * 1000,
            })
           res.cookie("refreshToken", refreshToken,{
              httpOnly:true,
-             secure:true,
-             sameSite:"strict",
+             secure: process.env.NODE_ENV === "production",
+             sameSite:"lax",
              maxAge:7 * 24 * 60 * 60 * 1000
           })
            
@@ -253,30 +272,46 @@ const insertUser = async(req,res)=>{
       
   if (!refreshToken) return res.status(401).json({ message: "Refresh token required" });
 
-  try {
-    // Verify refresh token
-    const user = await User.findOne({ refreshToken });
-    if (!user) return res.status(403).json({ message: "Invalid refresh token" });
+    try {
 
-    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, decoded) => {
-      if (err) return res.status(403).json({ message: "Invalid refresh token" });
+      let decoded;
+      let newAccessToken;
+  
+      try {
 
-      const accessToken = jwt.sign({ id: decoded.id }, ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+        decoded = jwt.verify(refreshToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
+        if (decoded) {
 
+          newAccessToken = jwt.sign({ id: decoded.id, role: 'admin' }, process.env.ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+        }
+      } catch (error) {
 
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        maxAge: 15 * 60 * 1000, 
-      });
+        try {
+          decoded = jwt.verify(refreshToken, process.env.USER_REFRESH_TOKEN_SECRET);
+          if (decoded) {
 
-      res.status(200).json({ message: "Access token refreshed" });
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-  }
+            newAccessToken = jwt.sign({ id: decoded.id, role: 'user' }, process.env.USER_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+          }
+        } catch (err) {
+
+          return res.status(403).json({ message: "Invalid refresh token" });
+        }
+      }
+
+       res.cookie('accessToken',newAccessToken,{
+           httpOnly:true,
+           secure:process.env.NODE_ENV === "production",
+           sameSite:'lax',
+           maxAge:15 * 60 * 1000
+       })
+
+       res.json({message:'Token Refreshed Successfully'})
+       
+    } catch (error) {
+      console.error('Error during token verification:', error);
+      return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+  };
 
 
    const loadLogout= async(req,res)=>{
@@ -314,11 +349,59 @@ const insertUser = async(req,res)=>{
    }
 
 
+
+
+
+   const adminLogin = async(req,res)=>{
+   const {email,password} = req.body
+       console.log(email,password);
+       
+     try {
+
+       const admin = await User.findOne({email})     
+    
+        if(!admin||!admin.isAdmin){
+           return res.status(403).json({message:'Access denied: Not an admin'})
+        }
+      
+      const isMatch = await bcrypt.compare(password,admin.password)
+        if(!isMatch){
+           return res.status(401).json({message:'Invalid Credentials!'})
+        }  
+
+         
+        const {adminAccessToken, adminRefreshToken} = generateAdminTokens(admin)
+
+         res.cookie('adminRefreshTokn',adminRefreshToken,{
+             httpOnly:true,
+             secure:true,
+             sameSite:'lax'
+         })
+         res.cookie('adminAccesshTokn',adminAccessToken,{
+             httpOnly:true,
+             secure:true,
+             sameSite:'lax'
+         }),
+         res.status(200).json({
+            fullName:admin.fullName,
+            email:admin.email,
+            profileImage:admin.profileImage
+         })
+         
+     } catch (error) {
+      res.status(500).json({message:"Sever error"})
+     }
+
+
+   }
+
+
 module.exports={
    insertUser,
    varifyOTP,
    resendOtp,
    loadLogin,
    refreshControll,
-   loadLogout
+   loadLogout,
+   adminLogin
 }

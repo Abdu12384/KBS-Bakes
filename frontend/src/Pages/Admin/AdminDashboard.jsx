@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { BarChart3, Home, Image, LogOut, Package, Settings, ShoppingBag, ShoppingCart, Tag, Users, Cake, Menu, X } from 'lucide-react'
 import { Dashboard } from '../../Components/AdminComponents/Dashboard'
 import { Orders } from '../../Components/AdminComponents/Oders'
-import { Products } from '../../Components/AdminComponents/Products'
+import  Products from '../../Components/AdminComponents/Products.jsx'
 import { Customers } from '../../Components/AdminComponents/Customer'
 
 export default function AdminDashboard() {

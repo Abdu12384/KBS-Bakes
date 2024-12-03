@@ -25,7 +25,16 @@ const userSchema = new mongoose.Schema({
       },
       googleId:{
         type:String
-      }
-})
+      },
+      isAdmin:{
+        type:Boolean,
+        default:false
+      },
+ 
+},
+  {
+    timestamps: { createdAt: 'createAt', updatedAt: 'updateAt' } //
+  }
+)
 
 module.exports= mongoose.model('Users',userSchema)

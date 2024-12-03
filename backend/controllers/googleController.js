@@ -1,132 +1,111 @@
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../model/userModel');
-const passport = require('passport')
-const GoogleStrategy = require('passport-google-oauth20').Strategy
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-  passport.use(new GoogleStrategy({
-         clientID:process.env.GOOGLE_CLIENT_ID,
-         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-         callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
-       },
-       async (accessToken, refreshToken, profile, done) => {
-        const { id, displayName, emails } = profile;
-        const email = emails[0].value;
-        try {
-          let user = await User.findOne({ email });
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign(
+    { userId },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: '15m' }
+  );
   
-          if (!user) {
-            user = new User({
-              googleId: id,
-              fullName: displayName,
-              email,
-            });
-            await user.save();
-          }
-          done(null, user); // Pass user data to callback
-        } catch (error) {
-          done(error, null);
-        }
-      }
+  const refreshToken = jwt.sign(
+    { userId },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: '7d' }
+  );
   
-     )
-  )
-
-  passport.serializeUser((user, done)=> done(null, user.id))
-  passport.deserializeUser(async (id, done)=>{
-      try {
-         const user = await User.findById(id)
-         done(null,user)
-      } catch (error) {
-        done(error,null)
-      }
-  })
-
-
-
-
-
-
-const generateAccessToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  return { accessToken, refreshToken };
 };
+ 
+const googleSignup = async (req, res) => {
+    console.log('working');
+       const {tokenId} = req.body
+        console.log(tokenId);
+        
+       try {
+         const ticket = await client.verifyIdToken({
+           idToken:tokenId,
+           audience: process.env.GOOGLE_CLIENT_ID
+          });
+          console.log('dsfdsfsfdsfsdfsf',ticket);
+    
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload
+    console.log('herthe informantion ',email,name,picture);
+    
 
-const generateRefreshToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-};
-
-
-
-
-
-
-
- const googleSingupCallback = async (req,res)=>{
-   try {
-     const user = req.user
-      console.log(user);
-      
-       const accessToken = generateAccessToken(user._id)
-       const refreshToken = generateRefreshToken(user._id)
-
-       user.refreshToken = refreshToken
-       await user.save()
-
-       res.cookie('authToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60 * 1000, 
+    let user = await User.findOne({ email });
+    
+    if (!user) {
+      user = await User.create({
+        email,
+        fullName:name,
+        profileImage:picture,
+        googleId:payload.sub,
+        mobile:'9809809',
+        password:'1234',
       });
-  
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000, 
-      });
-
-     res.status(200).json({message:"Singup Successfully"})
-   } catch (error) {
-     console.error(error)
-     res.status(500).json({message:'Server error'})
-   }
- }
-
-
-
-  const googleRefreshHandle = async(req,res)=>{
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!refreshToken) return res.status(403).json({ error: 'Refresh token missing' });
-  
-    try {
-      const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-      const user = await User.findById(payload.id);
-  
-      if (!user || user.refreshToken !== refreshToken) {
-        return res.status(403).json({ error: 'Invalid refresh token' });
-      }
-  
-      const newAccessToken = generateAccessToken(user._id);
-      res.cookie('auth_token', newAccessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60 * 1000, // 15 minutes
-      });
-  
-      res.json({ success: true });
-    } catch (error) {
-      res.status(403).json({ error: 'Invalid token' });
     }
+   
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+     
+    // Set tokens in cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.fullName,
+        profileImage: user.profileImage,
+        token:refreshToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Google signup error:', error);
+    res.status(500).json({ success: false, message: 'Authentication failed' });
   }
+};
 
 
 
 
 
+// // Middleware to verify access token from cookies
+// exports.verifyToken = async (req, res, next) => {
+//   try {
+//     const token = req.cookies.accessToken;
+//     if (!token) {
+//       return res.status(401).json({ success: false, message: 'Access token not found' });
+//     }
 
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     req.userId = decoded.userId;
+//     next();
+//   } catch (error) {
+//     res.status(401).json({ success: false, message: 'Invalid token' });
+//   }
+// };
 
- module.exports={
-   googleSingupCallback,
-   googleRefreshHandle
- }
-
+module.exports={
+   googleSignup
+}

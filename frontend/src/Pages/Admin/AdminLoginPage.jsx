@@ -15,7 +15,6 @@ export default function AdminLogin() {
       console.log('Login attempted with:', { email, password })
       
        if(data){
-
          navigate('/admin/dashboard')
        }
        

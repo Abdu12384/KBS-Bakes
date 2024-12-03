@@ -24,13 +24,13 @@ app.get('/',(req,res)=>{
   res.send("MongoDb is connnected")
 })
 
-const authRoute=require('./routes/authRoute')
-
+const authRoute  = require('./routes/authRoute')
+const adminRoute = require('./routes/adminRoute')
 
 
 
 app.use('/auth',authRoute)
-
+app.use('/admin',adminRoute)
 
 
 

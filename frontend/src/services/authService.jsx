@@ -14,6 +14,19 @@ const AdminLoginReq = async (email, password) =>{
    }
 }
 
+const AddProductReq = async (productData)=>{
+    try {
+       const response = await axioInstence.post('/admin/add-product',productData)
+        return response.data
+    } catch (error) {
+      console.log('Failed to add Product',error);
+      
+    }
+}
+
+
+
 export {
-   AdminLoginReq
+   AdminLoginReq,
+   AddProductReq 
 }
