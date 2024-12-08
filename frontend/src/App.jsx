@@ -3,12 +3,13 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import UserRoute from "./Routes/UserRoute";
 import PageNotFount from "./Pages/PageNotFount/PageNotFount";
 import AdminRoute from "./Routes/AdminRoute";
+import Home from "./Pages/User/HomePage";
 function App() {
 
   return (
       <Router>
           <Routes>
-              <Route path="/" element={<h1>HOME page</h1>}/>
+              <Route path="/" element={<Home/>}/>
 
               
               {/* User routes */}

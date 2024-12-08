@@ -20,7 +20,7 @@ axioInstence.interceptors.response.use(
       try {
         // Make a request to the refresh token endpoint
         const refreshResponse = await axios.post(
-          'http://localhost:3000/auth/refresh',
+          'http://localhost:3000/auth/refreshToken',
           {}, // Pass any necessary payload
           { withCredentials: true }
         );

@@ -1,20 +1,24 @@
 const express = require('express')
 const auth_Route= express.Router()
-const authController = require('../controllers/authController')
+const {insertUser,
+       varifyOTP,
+       resendOtp,
+       loadLogin,
+       refreshControll,
+       loadLogout,
+       adminLogin} = require('../controllers/authController')
 const googleController = require('../controllers/googleController')
 
 
 
-  auth_Route.post('/signup',authController.insertUser)
-  auth_Route.post('/verifyotp',authController.varifyOTP)
-  auth_Route.post('/resendotp',authController.resendOtp)
-  auth_Route.post('/login',authController.loadLogin)
-  auth_Route.post('/refresh',authController.refreshControll)
-  auth_Route.post('/logout',authController.loadLogout)
-  
-  auth_Route.post('/google/signup',googleController.googleSignup)
-
-  auth_Route.post('/admin/login',authController.adminLogin)
+  auth_Route.post('/signup',insertUser)
+            .post('/verifyotp',varifyOTP)
+            .post('/resendotp',resendOtp)
+            .post('/login',loadLogin)
+            .post('/refreshToken',refreshControll) 
+            .post('/logout',loadLogout)
+            .post('/google/signup',googleController.googleSignup)
+            .post('/admin/login',adminLogin)
 
   
 

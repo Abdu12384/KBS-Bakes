@@ -3,7 +3,7 @@ import axioInstence from "../utils/axioInstence";
 import axios from "axios";
 
 
-  const uploadImageToCloudinary = async (files, folderName)=>{
+  const uploadImageToCloudinary = async (files)=>{
      try {
        const {data} = await axioInstence.get('/admin/generate-upload-url')
        const {signature, timestamp, uploadPreset,apiKey}=data

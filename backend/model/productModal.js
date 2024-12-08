@@ -39,9 +39,13 @@ const prodcutSchema = new mongoose.Schema({
     type:Number,
     required:true
    },
+   isDeleted:{
+     type:Boolean,
+     default:false
+   },
 },
 {
-  timestamps: { createdAt: 'createAt', updatedAt: 'updateAt' } //
+  timestamps:true
 }
 )
 

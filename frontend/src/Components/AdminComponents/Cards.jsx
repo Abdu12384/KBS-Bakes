@@ -1,6 +1,8 @@
 import React from 'react'
 
 export function MetricCard({ title, value, change, changeValue, bgColor, icon }) {
+
+  
   return (
     <div className={`${bgColor} bg-opacity-90 backdrop-blur-sm rounded-xl p-4 text-white`}>
       <div className="flex items-center justify-between mb-2">

@@ -24,9 +24,18 @@ const AddProductReq = async (productData)=>{
     }
 }
 
+const updatedProductReq = async (productId, updatedProductData)=>{
+     try {
+       const response = await axioInstence.put(`/admin/products/${productId}`,updatedProductData)
+        return response.data
+     } catch (error) {
+      console.error("Error updating product:",error)
+     }
+}
 
 
 export {
    AdminLoginReq,
-   AddProductReq 
+   AddProductReq,
+   updatedProductReq 
 }

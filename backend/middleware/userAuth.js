@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken')
 
 
 const varifyToken = (req, res, next)=>{
-    const token = req.cookies['accessToken']
+    const token = req.cookies.accessToken
 
      if(!token){
        return res.status(401).json({message:"Acce token is missing"})

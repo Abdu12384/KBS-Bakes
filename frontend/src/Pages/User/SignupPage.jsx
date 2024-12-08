@@ -10,6 +10,7 @@ function SignupPage() {
 
  const navigate= useNavigate()
   const [isOtpModalVisible, setOtpModalVisible]= useState(false)
+  const [loading, setLoading] = useState(false)
      const [formData, setFormData] = useState({
        fullName:"",
        email:"",
@@ -46,6 +47,7 @@ function SignupPage() {
          e.preventDefault()
          if(!validateForm()) return
 
+          setLoading(true)
           console.log("Form Data Updated:", formData);
           try {
             const response = await axioInstence.post('/auth/signup',formData)
@@ -71,7 +73,10 @@ function SignupPage() {
            navigate('/user/home')
         } catch (error) {
           console.error("Google Sign-Up Error:", error);
+        }finally{
+          setLoading(false)
         }
+
       };
 
       const handleGoogleFailure = (error) => {
@@ -193,7 +198,8 @@ function SignupPage() {
               type="submit"
               className="w-full bg-[#5b3e31] text-white rounded-lg px-4 py-2.5 font-medium hover:bg-[#765341] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 mt-6"
             >
-              Sign up
+               {loading ? "Loading...":"Sign Up"}
+             
             </button>
 
             <div className="relative my-6">
@@ -214,7 +220,7 @@ function SignupPage() {
             <p className="text-center text-sm text-gray-600 mt-6">
               Already have an account?{' '}
               <a href="/login" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
-                Sign in
+               Sign In
               </a>
             </p>
           </form>

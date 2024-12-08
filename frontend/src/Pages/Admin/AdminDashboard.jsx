@@ -1,102 +1,176 @@
-import React, { useState } from 'react'
-import { BarChart3, Home, Image, LogOut, Package, Settings, ShoppingBag, ShoppingCart, Tag, Users, Cake, Menu, X } from 'lucide-react'
-import { Dashboard } from '../../Components/AdminComponents/Dashboard'
-import { Orders } from '../../Components/AdminComponents/Oders'
-import  Products from '../../Components/AdminComponents/Products.jsx'
-import { Customers } from '../../Components/AdminComponents/Customer'
 
-export default function AdminDashboard() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activeComponent, setActiveComponent] = useState('Dashboard')
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+import { BarChart3, DollarSign, ShoppingBag, Users } from 'lucide-react';
 
-  const renderComponent = () => {
-    switch (activeComponent) {
-      case 'Dashboard':
-        return <Dashboard />
-      case 'Orders':
-        return <Orders />
-      case 'Products':
-        return <Products />
-      case 'Customers':
-        return <Customers />
-      default:
-        return <Dashboard />
+export function AdminDashboard() {
+  // Sample data - replace with your actual data
+  const stats = [
+    {
+      title: "Total Sales",
+      value: "₹59,467",
+      icon: DollarSign,
+      change: "+31.2%",
+      changeType: "positive"
+    },
+    {
+      title: "Total Orders",
+      value: "28,085",
+      icon: ShoppingBag,
+      change: "+3.2%",
+      changeType: "positive"
+    },
+    {
+      title: "Total Customers",
+      value: "39,645",
+      icon: Users,
+      change: "-0.21%",
+      changeType: "negative"
+    },
+    {
+      title: "Revenue",
+      value: "₹44,148",
+      icon: BarChart3,
+      change: "+1.12%",
+      changeType: "positive"
     }
-  }
+  ];
+
+  const revenueData = [
+    { month: 'Jan', online: 4000, offline: 2400 },
+    { month: 'Feb', online: 3000, offline: 1398 },
+    { month: 'Mar', online: 2000, offline: 9800 },
+    { month: 'Apr', online: 2780, offline: 3908 },
+    { month: 'May', online: 1890, offline: 4800 },
+    { month: 'Jun', online: 2390, offline: 3800 },
+  ];
 
   return (
-    <div className="min-h-screen bg-cover bg-center relative" style={{backgroundImage: "url('/placeholder.svg?height=1080&width=1920')"}}>
-      <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-      
-      {/* Main Content Area */}
-      <div className="relative min-h-screen flex">
-        {/* Sidebar */}
-        <div className={`fixed top-0 left-0 h-full w-64 bg-white bg-opacity-10 backdrop-blur-md text-white p-6 space-y-4 transition-all duration-300 z-20 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="flex items-center justify-between gap-2 mb-8">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-white rounded-lg">
-                <Cake className="w-6 h-6 text-purple-600" />
+    <div className="space-y-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <div
+            key={stat.title}
+            className="relative overflow-hidden rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6"
+          >
+            <dt>
+              <div className="absolute rounded-md bg-purple-500 bg-opacity-20 p-3">
+                <stat.icon className="h-6 w-6 text-purple-600" aria-hidden="true" />
               </div>
-              <span className="text-xl font-bold">Cake<span className="text-purple-400">Admin</span></span>
-            </div>
-            <button onClick={toggleSidebar} className="text-white focus:outline-none">
-              <X className="w-6 h-6" />
-            </button>
+              <p className="ml-16 truncate text-sm font-medium text-gray-300">
+                {stat.title}
+              </p>
+            </dt>
+            <dd className="ml-16 flex items-baseline">
+              <p className="text-2xl font-semibold text-white">{stat.value}</p>
+              <p
+                className={`ml-2 flex items-baseline text-sm font-semibold ${
+                  stat.changeType === "positive" ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {stat.change}
+              </p>
+            </dd>
           </div>
+        ))}
+      </div>
 
-          <nav className="space-y-2">
-            <NavItem icon={<Home />} label="Dashboard" active={activeComponent === 'Dashboard'} onClick={() => setActiveComponent('Dashboard')} />
-            <NavItem icon={<Tag />} label="Category" />
-            <NavItem icon={<Package />} label="Product" active={activeComponent === 'Products'} onClick={() => setActiveComponent('Products')} />
-            <NavItem icon={<ShoppingCart />} label="Orders" active={activeComponent === 'Orders'} onClick={() => setActiveComponent('Orders')} />
-            <NavItem icon={<Users />} label="Customers" active={activeComponent === 'Customers'} onClick={() => setActiveComponent('Customers')} />
-            <NavItem icon={<Image />} label="Banner" />
-            <NavItem icon={<BarChart3 />} label="Coupons" />
-            <NavItem icon={<Settings />} label="Settings" />
-          </nav>
-
-          <div className="pt-4 mt-auto">
-            <NavItem icon={<LogOut />} label="Logout" />
+      {/* Revenue Charts */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Monthly Revenue */}
+        <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
+          <h3 className="text-lg font-medium text-white mb-4">Monthly Revenue</h3>
+          <div className="h-[300px] w-full">
+            {/* Replace with your preferred chart library */}
+            <div className="flex h-full items-end space-x-2">
+              {revenueData.map((data) => (
+                <div key={data.month} className="flex-1">
+                  <div className="relative h-full">
+                    <div
+                      className="absolute bottom-0 w-full bg-purple-600 rounded-t"
+                      style={{ height: `${(data.online / 10000) * 100}%` }}
+                    ></div>
+                    <div
+                      className="absolute bottom-0 w-full bg-purple-300 rounded-t opacity-50"
+                      style={{ height: `${(data.offline / 10000) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-center mt-2 text-sm text-gray-300">
+                    {data.month}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-8 overflow-auto transition-all duration-300 w-full">
-          <div className="flex justify-between items-center mb-8">
-            <button onClick={toggleSidebar} className="text-white focus:outline-none z-30">
-              <Menu className="w-6 h-6" />
-            </button>
-            <h1 className="text-4xl font-bold text-white">{activeComponent}</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-white">02 Aug 2023</span>
+        {/* Sales Distribution */}
+        <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
+          <h3 className="text-lg font-medium text-white mb-4">Sales Distribution</h3>
+          <div className="relative h-[300px]">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-48 w-48 rounded-full border-8 border-purple-600">
+                <div className="relative h-full w-full">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">67%</div>
+                      <div className="text-sm text-gray-300">Online Sales</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          {renderComponent()}
+          <div className="mt-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-lg font-semibold text-white">12%</div>
+                <div className="text-sm text-gray-300">In-Store</div>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-white">20%</div>
+                <div className="text-sm text-gray-300">Phone Orders</div>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-white">67%</div>
+                <div className="text-sm text-gray-300">Online</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Stats */}
+      <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-white">Customer Overview</h3>
+          <select className="bg-transparent text-white border border-gray-600 rounded-md px-2 py-1">
+            <option value="weekly">This Week</option>
+            <option value="monthly">This Month</option>
+            <option value="yearly">This Year</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">92,556</div>
+            <div className="text-sm text-gray-300">Total Customers</div>
+            <div className="text-xs text-green-400">+1.35% More than last month</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">53,812</div>
+            <div className="text-sm text-gray-300">Active Customers</div>
+            <div className="text-xs text-red-400">-0.17% Less than last month</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">40,008</div>
+            <div className="text-sm text-gray-300">New Customers</div>
+            <div className="text-xs text-green-400">+0.06% More than last month</div>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function NavItem({ icon, label, active, onClick }) {
-  return (
-    <a
-      href="#"
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition duration-200 ${
-        active ? 'bg-white bg-opacity-20' : 'hover:bg-white hover:bg-opacity-10'
-      }`}
-      onClick={(e) => {
-        e.preventDefault()
-        onClick && onClick()
-      }}
-    >
-      {icon}
-      <span>{label}</span>
-    </a>
-  )
-}
+
 

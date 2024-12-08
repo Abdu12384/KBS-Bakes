@@ -30,10 +30,14 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false
       },
+      isActive:{
+         type:Boolean,
+         default:true
+      }
  
 },
   {
-    timestamps: { createdAt: 'createAt', updatedAt: 'updateAt' } //
+    timestamps: true
   }
 )
 

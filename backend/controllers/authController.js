@@ -132,6 +132,8 @@ const insertUser = async(req,res)=>{
     //  } 
 
     const otp = generateOTP()
+    console.log(otp);
+    
     const hashedPassword =await bcrypt.hash(password,10)
 
     const otpDoc = new OTP({
@@ -208,7 +210,8 @@ const insertUser = async(req,res)=>{
         {otp, expiry:Date.now() + 60 * 1000},
         {upsert:true}
       )
-      
+
+       
       await sendOtpToEmail(email,otp)
          res.json({success:true, message:'OTP resent successfully'})
          } catch (error) {
@@ -267,10 +270,11 @@ const insertUser = async(req,res)=>{
 
 
   const  refreshControll = async (req,res)=>{
-     const refreshToken = req.cookies.refreshToken
-      console.log(refreshToken);
+    const adminRefreshToken = req.cookies.adminRefreshToken
+    const userRefreshToken = req.cookies.refreshToken
+      console.log('working refersh Tokne',adminRefreshToken);
       
-  if (!refreshToken) return res.status(401).json({ message: "Refresh token required" });
+  if (!adminRefreshToken) return res.status(401).json({ message: "Refresh token required" });
 
     try {
 
@@ -279,7 +283,7 @@ const insertUser = async(req,res)=>{
   
       try {
 
-        decoded = jwt.verify(refreshToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
+        decoded = jwt.verify(adminRefreshToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
         if (decoded) {
 
           newAccessToken = jwt.sign({ id: decoded.id, role: 'admin' }, process.env.ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
@@ -287,7 +291,7 @@ const insertUser = async(req,res)=>{
       } catch (error) {
 
         try {
-          decoded = jwt.verify(refreshToken, process.env.USER_REFRESH_TOKEN_SECRET);
+          decoded = jwt.verify(userRefreshToken, process.env.USER_REFRESH_TOKEN_SECRET);
           if (decoded) {
 
             newAccessToken = jwt.sign({ id: decoded.id, role: 'user' }, process.env.USER_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
@@ -372,12 +376,12 @@ const insertUser = async(req,res)=>{
          
         const {adminAccessToken, adminRefreshToken} = generateAdminTokens(admin)
 
-         res.cookie('adminRefreshTokn',adminRefreshToken,{
+         res.cookie('adminRefreshToken',adminRefreshToken,{
              httpOnly:true,
              secure:true,
              sameSite:'lax'
          })
-         res.cookie('adminAccesshTokn',adminAccessToken,{
+         res.cookie('adminAccessToken',adminAccessToken,{
              httpOnly:true,
              secure:true,
              sameSite:'lax'
