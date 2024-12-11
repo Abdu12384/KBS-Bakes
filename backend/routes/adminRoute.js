@@ -7,10 +7,16 @@ const {showProduct,
         addProdcut}= require('../controllers/adminController/productController')
 
 const {getUsers,
-      toggleUserStatus} = require('../controllers/adminController/userMangement')
+      toggleUserStatus,
+      loadLogout
+} = require('../controllers/adminController/userMangement')
 
 const {verifyAdminToken }= require('../middleware/adminAuth')
- const {refreshControll} = require('../controllers/authController')
+
+const {addCategory,
+       fetchCategory,
+       softDeleteCategory        
+      }= require('../controllers/adminController/categoryControll')
 
 
 
@@ -22,13 +28,16 @@ const {verifyAdminToken }= require('../middleware/adminAuth')
 
 
 admin_Route
-        .get('/generate-upload-url',verifyAdminToken,cloudinaryImgUpload)
+        .get('/generate-upload-url',cloudinaryImgUpload)
         .post('/add-product',verifyAdminToken,addProdcut)
         .get('/products',verifyAdminToken,showProduct)
-        .put('/products/:id',EditProduct)
-        .put('/products/:id',softDelete)
-        .get('/users',getUsers)
-        .put('/users/status/:id',toggleUserStatus)
-
+        .put('/products/:id',verifyAdminToken,EditProduct)
+        .put('/products/:id',verifyAdminToken,softDelete)
+        .get('/users',verifyAdminToken,getUsers)
+        .put('/users/status/:id',verifyAdminToken,toggleUserStatus)
+        .post('/categories',verifyAdminToken,addCategory)
+        .get('/categories',verifyAdminToken,fetchCategory)
+        .patch('/categories/block/:id',verifyAdminToken,softDeleteCategory)
+        .post('/logout',verifyAdminToken,loadLogout)
 
 module.exports=admin_Route

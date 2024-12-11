@@ -1,5 +1,5 @@
 const Product = require('../../model/productModal')
-
+const Category = require('../../model/category');  
 
 
 
@@ -18,6 +18,11 @@ const addProdcut = async (req,res)=>{{
          console.log('this is product data',req.body);
          
         try {
+
+          const existingProduct = await Product.findOne({ productName });
+          if (existingProduct) {
+            return res.status(400).json({ message: 'Product already exists. Duplicate entries are not allowed.' });
+          }
           
                 const newProduct = new Product({
                       productName,
@@ -31,6 +36,13 @@ const addProdcut = async (req,res)=>{{
                     })
 
               await newProduct.save() 
+ 
+              const updatedCategory = await Category.findByIdAndUpdate(
+                category,
+                {$inc:{stock:stock}},
+                {new:true}
+              )
+
           res.status(200).json({message:'Poduct Added successfully'})
 
         } catch (error) {
@@ -100,7 +112,7 @@ const addProdcut = async (req,res)=>{{
         if(!updatedProudct){
           return res.status(404).json({error:'Poduct not found'})
         }
-        res.status(200).json({message:'Product updated successfully'})
+        res.status(200).json(updatedProudct)
       } catch (error) {
         console.error('Error updating product:',error)
         res.status(500).json({error:'Failed to update product'})

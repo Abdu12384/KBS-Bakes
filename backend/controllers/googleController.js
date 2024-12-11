@@ -7,13 +7,13 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { userId },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '15m' }
+    process.env.USER_ACCESS_TOKEN_SECRET,
+    { expiresIn: '45m' }
   );
   
   const refreshToken = jwt.sign(
     { userId },
-    process.env.REFRESH_TOKEN_SECRET,
+    process.env.USER_REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' }
   );
   
@@ -70,14 +70,13 @@ const googleSignup = async (req, res) => {
     });
 
     res.status(200).json({
-      success: true,
       user: {
         id: user._id,
         email: user.email,
         name: user.fullName,
         profileImage: user.profileImage,
-        token:refreshToken
-      }
+      },
+      role:'user'
     });
 
   } catch (error) {

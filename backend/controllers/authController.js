@@ -3,6 +3,8 @@ const bcrypt= require('bcrypt')
 const nodemailer = require('nodemailer')
 const crypto = require('crypto')
 const OTP = require('../model/OTPmodel')
+const chalk = require('chalk');
+
 
 const jwt = require('jsonwebtoken')
 const { response } = require('express')
@@ -18,7 +20,7 @@ const USER_REFRESH_TOKEN_SECRET = process.env.USER_REFRESH_TOKEN_SECRET
     const adminAccessToken = jwt.sign(
       {id:admin._id, email:admin.email, isAdmin:true, role:'admin'},
       process.env.ADMIN_ACCESS_TOKEN_SECRET,
-      {expiresIn:'15m'}
+      {expiresIn:'45m'}
     )
 
     const adminRefreshToken = jwt.sign(
@@ -142,7 +144,7 @@ const insertUser = async(req,res)=>{
       email,
       password:hashedPassword,
       mobile,
-      expiry: Date.now() + 30 * 1000,
+      expiry: Date.now() + 60 * 1000,
     })
 
       await otpDoc.save()
@@ -228,6 +230,10 @@ const insertUser = async(req,res)=>{
        try {
          const user= await User.findOne({email})
          if(!user)return res.status(404).json({message:"User not email found"})
+
+          if(!user.isActive){
+             return res.status(404).json({message:"Access denined. User account is blocked"})
+          }
           
           const isMatch = await bcrypt.compare(password, user.password)
           if(!isMatch) return res.status(401).json({message:"Invalide cridentials"})
@@ -236,7 +242,7 @@ const insertUser = async(req,res)=>{
             const accessToken = jwt.sign(
               {id:user._id,user:'user'},
               USER_ACCESS_TOKEN_SECRET,
-              {expiresIn:"15m"}
+              {expiresIn:"45m"}
             )
             
             const refreshToken= jwt.sign(
@@ -261,7 +267,15 @@ const insertUser = async(req,res)=>{
              maxAge:7 * 24 * 60 * 60 * 1000
           })
            
-          res.status(200).json({message:"Login successfull"})
+          res.status(200).json({
+            user:{
+              fullName:user.fullName,
+              email:user.email,
+              profileImage:user.profileImage,
+              mobile:user.mobile,
+            },
+            role:'user'
+          })
        } catch (error) {
          res.status(500).json({message:"Server error"})
        }
@@ -270,11 +284,13 @@ const insertUser = async(req,res)=>{
 
 
   const  refreshControll = async (req,res)=>{
-    const adminRefreshToken = req.cookies.adminRefreshToken
+    const adminToken = req.cookies.adminRefreshToken
     const userRefreshToken = req.cookies.refreshToken
-      console.log('working refersh Tokne',adminRefreshToken);
+    console.log(chalk.bgGreen('admin refreshtoken',adminToken));
+
+
       
-  if (!adminRefreshToken) return res.status(401).json({ message: "Refresh token required" });
+  if (!adminToken) return res.status(401).json({ message: "Refresh token required" });
 
     try {
 
@@ -283,11 +299,13 @@ const insertUser = async(req,res)=>{
   
       try {
 
-        decoded = jwt.verify(adminRefreshToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
+        decoded = jwt.verify(adminToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
         if (decoded) {
 
           newAccessToken = jwt.sign({ id: decoded.id, role: 'admin' }, process.env.ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
         }
+        console.log(chalk.blue('admin new AccessToken',newAccessToken));
+        
       } catch (error) {
 
         try {
@@ -302,7 +320,7 @@ const insertUser = async(req,res)=>{
         }
       }
 
-       res.cookie('accessToken',newAccessToken,{
+       res.cookie('adminAccessToken',newAccessToken,{
            httpOnly:true,
            secure:process.env.NODE_ENV === "production",
            sameSite:'lax',
@@ -365,7 +383,7 @@ const insertUser = async(req,res)=>{
        const admin = await User.findOne({email})     
     
         if(!admin||!admin.isAdmin){
-           return res.status(403).json({message:'Access denied: Not an admin'})
+           return res.status(401).json({message:'Access denied: Not an admin'})
         }
       
       const isMatch = await bcrypt.compare(password,admin.password)
@@ -386,11 +404,15 @@ const insertUser = async(req,res)=>{
              secure:true,
              sameSite:'lax'
          }),
+
          res.status(200).json({
+          user:{
             fullName:admin.fullName,
             email:admin.email,
             profileImage:admin.profileImage
-         })
+          },
+          role:'admin'
+        })
          
      } catch (error) {
       res.status(500).json({message:"Sever error"})

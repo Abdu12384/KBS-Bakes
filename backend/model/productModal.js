@@ -43,6 +43,11 @@ const prodcutSchema = new mongoose.Schema({
      type:Boolean,
      default:false
    },
+   category:{
+    type: mongoose.Schema.Types.ObjectId, 
+    ref:"Category",
+    required:true
+   }
 },
 {
   timestamps:true

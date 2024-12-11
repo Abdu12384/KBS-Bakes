@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const verifyAdminToken = (req, res, next) => {
   const token = req.cookies.adminAccessToken; 
-  console.log(token);
+  console.log('access token here',token);
   
 
   if (!token) {
