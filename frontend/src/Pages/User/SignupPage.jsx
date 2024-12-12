@@ -1,21 +1,26 @@
 import React, { useState ,useEffect} from 'react'
-import { User, Mail, Phone, Lock } from 'lucide-react'
-import axioInstence from '../../utils/axioInstence';
+import { User, Mail, Phone, Lock, EyeIcon, EyeClosed } from 'lucide-react'
+import axios from 'axios';
 import Carousel from '../../Components/Carousel';
 import OTPInput from '../../Components/OTPvarify';
 import {GoogleLogin} from '@react-oauth/google'
-import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from "react-hot-toast";
+import { useDispatch } from 'react-redux';
+// import { loginSuccess } from '../../redux/slices/authSlice';
 
 function SignupPage() {
 
- const navigate= useNavigate()
+const dispatch = useDispatch()
   const [isOtpModalVisible, setOtpModalVisible]= useState(false)
   const [loading, setLoading] = useState(false)
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
      const [formData, setFormData] = useState({
        fullName:"",
        email:"",
        mobile:"",
-       password:""
+       password:"",
+       confirmPassword:""
      })
      const [errors, setErrors] = useState({});
      useEffect(() => {}, []);
@@ -38,7 +43,9 @@ function SignupPage() {
       else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
       if (!formData.password) newErrors.password = 'Password is required.';
       else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
-  
+      if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm Password is required.';
+      else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
+
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
     };
@@ -50,13 +57,17 @@ function SignupPage() {
           setLoading(true)
           console.log("Form Data Updated:", formData);
           try {
-            const response = await axioInstence.post('/auth/signup',formData)
+            const response = await axios.post('http://localhost:3000/auth/signup',formData)
             console.log("Respose:",response.data);
             setOtpModalVisible(true)
           } catch (error) {
-            console.error("Error:",error)
+            console.error("Error:",error.response)
+            toast.error(error.response.data.message)
+          }finally{
+            setLoading(false)
           }
        }
+
        const closeOtpModal = () =>{
         setOtpModalVisible(false)
        }
@@ -66,26 +77,42 @@ function SignupPage() {
            console.log(response);
            
            const {credential} = response
-          console.log('credential here',credential);
 
-          const res = await axioInstence.post('/auth/google/signup', { tokenId:credential });
+          const res = await axios.post('http://localhost:3000/auth/google/signup', { tokenId:credential });
           console.log('Google SignUp Successful:', res.data);
-           navigate('/user/home')
+           if(res.data){
+             toast.success("Signup successful! Welcome KBSBakes.")
+             const{user, role} = res.data
+             if(role === 'user'){
+               setTimeout(() => {
+                dispatch(loginSuccess({user, role}))
+               },2000);
+             }else{
+              toast.error("SignUp failed!.")
+             }
+           }
         } catch (error) {
-          console.error("Google Sign-Up Error:", error);
+          console.error("Google Sign-Up Error:",error.response);
+          toast.error(error.response.data.message)
+
         }finally{
           setLoading(false)
         }
 
       };
 
+      const togglePasswordVisibility = () => {
+        setPasswordVisible(!passwordVisible);
+      };
+
       const handleGoogleFailure = (error) => {
         console.error("Google Login Error Details:", error);
       };
       
-    
+      
   return (
     <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
+            <Toaster position="top-right" reverseOrder={false}/>
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
         <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex flex-col items-center justify-center">
@@ -181,7 +208,7 @@ function SignupPage() {
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  type={passwordVisible ? 'text' : 'password'}
                   id='password'
                   name="password"
                   onChange={handleChange}
@@ -189,9 +216,48 @@ function SignupPage() {
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg bg-white/70 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a9d5e] focus:border-transparent transition-all duration-200"
                   placeholder="••••••••"
                 />
+                   <div
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    onClick={togglePasswordVisibility}
+                    >
+                    {passwordVisible ? (
+                      <EyeClosed className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                    )}
+                 </div>
               </div>
               {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-
+            </div>
+            <div className="relative">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative rounded-lg shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={passwordVisible ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg bg-white/70 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a9d5e] focus:border-transparent transition-all duration-200"
+                  placeholder="••••••••"
+                />
+                   <div
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {passwordVisible ? (
+                      <EyeClosed className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                    )}
+                   </div>
+              </div>
+              {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
             </div>
 
             <button
@@ -219,7 +285,7 @@ function SignupPage() {
 
             <p className="text-center text-sm text-gray-600 mt-6">
               Already have an account?{' '}
-              <a href="/login" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
+              <a href="/user/login" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
                Sign In
               </a>
             </p>

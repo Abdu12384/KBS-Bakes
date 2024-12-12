@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X,User, ShoppingCart } from 'lucide-react';
+import { Menu, X,User, ShoppingCart,CakeSlice, FileText, Heart, LogOut  } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+// import { logout } from '../redux/slices/authSlice';
+import { userLogout } from '../redux/slices/authSlice';
+import { useNavigate } from 'react-router-dom';
+import axioInstence from '../utils/axioInstence';
+import { useSelector } from 'react-redux';
+import toast, { Toaster } from "react-hot-toast";
 
 const Header = () => {
+
+  const {isAuthenticated, user} = useSelector((state)=>state.user)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const navigate = useNavigate()
+ const dispatch = useDispatch()
   const images = [
     '/src/assets/images/banner1.jpg',
     '/src/assets/images/banner2.jpg',
     '/src/assets/images/banner3.jpg',
     '/src/assets/images/banner4.jpg',
     '/src/assets/images/banner5.jpg',
-  ]; // Array of banner images
+  ]; 
 
  
   const [currentImage, setCurrentImage] = useState(0);
@@ -19,14 +29,38 @@ const Header = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
-    }, 4000); // Change image every 4 seconds
+    }, 4000); ``
 
-    return () => clearInterval(interval); // Cleanup
+    return () => clearInterval(interval); 
   }, [images.length]);
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+  
+  
+  
+  const handleLogout = async()=>{
+    try {
+      toast.success("Logout Successfully")
+
+      await axioInstence.post('/user/logout')
+      setTimeout(() => {
+        dispatch(userLogout())
+      }, 2000);
+
+    } catch (error) {
+      console.log("Logout failed",error);
+      
+    }
+  }
+
+
+
 
   return (
     <header className="relative">
-      {/* Image Wrapper */}
+      <Toaster position="top-right" reverseOrder={false}/>
       <div className="absolute inset-0 z-0 overflow-hidden">
         {images.map((image, index) => (
           <img
@@ -57,17 +91,69 @@ const Header = () => {
             </div>
 
             <div className="flex items-center space-x-6">
-              {/* User Profile Icon */}
-              <a href="/profile" className="text-white hover:text-[#d8cbc4]">
-                <User className="h-6 w-6" />
-              </a>
+            <div className="relative">
+              <button
+                  onClick={toggleUserMenu}
+                  className=" relative text-white hover:text-[#d8cbc4] focus:outline-none transition-colors duration-200"
+                >
+                  <User className="h-6 w-6" />
+                </button>
 
-              {/* Cart Icon */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 w-56 bg-white  rounded-lg shadow-xl py-2 z-50 transform  scale-95 transition-all duration-200 ease-out origin-top-right animate-fade-in-up">
+                      {isAuthenticated ? (     
+                        <div className="px-4 py-2 border-b border-gray-200">
+                        <p className="text-sm font-medium text-gray-900">Welcome,{user.fullName}!</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                      ):(
+                        <div className="px-4 py-2 border-b ">
+                        <button 
+                        className="text-lg font-medium text-gray-900"
+                        onClick={()=>navigate('/user/login')}>
+                          Login
+                        </button>
+                      </div>
+
+                      )}
+                    <a
+                      href=""
+                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
+                    >
+                      <CakeSlice className="mr-3 h-5 w-5 text-[#8b6c5c]" />
+                      My Orders
+                    </a>
+                    <a
+                      href=""
+                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
+                    >
+                      <FileText className="mr-3 h-5 w-5 text-[#8b6c5c]" />
+                      Custom Cake Request
+                    </a>
+                    <a
+                      href=""
+                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
+                    >
+                      <Heart className="mr-3 h-5 w-5 text-[#8b6c5c]" />
+                      My Wishlist
+                    </a>
+                    <div className="border-t border-gray-200 mt-2">
+                      <button
+                        onClick={handleLogout} 
+                        className="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center w-full text-left"
+                      >
+                        <LogOut className="mr-3 h-5 w-5" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <a href="/cart" className="text-white hover:text-[#d8cbc4]">
                 <ShoppingCart className="h-6 w-6" />
               </a>
 
-           
+            
             
             <div className="md:hidden">
               <button
@@ -96,7 +182,7 @@ const Header = () => {
           </div>
         )}
       </div>
-      <div className="relative z-10 flex items-center justify-center h-[calc(100vh-6rem)] text-center px-4">
+      <div className="relative  flex items-center justify-center h-[calc(100vh-6rem)] text-center px-4">
         <div className="max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg animate-fade-in-up">
             Indulge in Sweet Perfection

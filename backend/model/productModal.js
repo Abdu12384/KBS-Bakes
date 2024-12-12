@@ -1,33 +1,11 @@
 const mongoose = require('mongoose')
 
-
-const prodcutSchema = new mongoose.Schema({
-   productName:{
-     type:String,
-     required:true
-   },
-   qty:{
-    type:Number,
-    required:false,
-    default:0
-   },
-   category:{
+const variantSchema = new mongoose.Schema({
+  weight:{
     type:String,
     required:true
    },
-   weight:{
-    type:String,
-    required:true
-   },
-   images:{
-    type:[String],
-    required:true
-   },
-   description:{
-     type:String,
-     required:true
-   },
-   stock:{
+   regularPrice:{
     type:Number,
     required:true
    },
@@ -35,19 +13,52 @@ const prodcutSchema = new mongoose.Schema({
     type:Number,
     required:true
    },
-   regularPrice:{
+   stock:{
     type:Number,
     required:true
    },
+  //  customization:{
+  //   type:Boolean,
+  //   default:false
+  //  }
+  
+})
+
+
+
+const prodcutSchema = new mongoose.Schema({
+   productName:{
+     type:String,
+     required:true
+   },
+   category:{
+    type:String,
+    required:true
+   },
+   qty:{
+     type:Number,
+     required:false,
+     default:0
+    },
+    images:{
+      type:[String],
+      required:true
+    },
+    description:{
+      type:String,
+      required:true
+    },
+    category:{
+     type: mongoose.Schema.Types.ObjectId, 
+     ref:"Category",
+     required:true
+    },
+ 
    isDeleted:{
      type:Boolean,
      default:false
    },
-   category:{
-    type: mongoose.Schema.Types.ObjectId, 
-    ref:"Category",
-    required:true
-   }
+   variants:[variantSchema],
 },
 {
   timestamps:true

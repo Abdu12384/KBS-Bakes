@@ -38,6 +38,11 @@ const googleSignup = async (req, res) => {
     
 
     let user = await User.findOne({ email });
+ 
+     if(user){
+      return res.status(401).json({message: 'user already signup with the same Email' });
+     }
+
     
     if (!user) {
       user = await User.create({
@@ -78,6 +83,7 @@ const googleSignup = async (req, res) => {
       },
       role:'user'
     });
+    res.status(201).json({ message: "Signup successful" });
 
   } catch (error) {
     console.error('Google signup error:', error);

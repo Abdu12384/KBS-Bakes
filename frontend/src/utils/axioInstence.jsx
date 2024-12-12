@@ -2,37 +2,41 @@ import axios from 'axios';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 
-// Create an Axios instance
+
 const axioInstence = axios.create({
   baseURL:BACKEND_URL,
-  withCredentials: true, // Send cookies with every request
+  withCredentials: true, 
 })
 
-// Add a response interceptor to handle token refresh
+
 axioInstence.interceptors.response.use(
-  (response) => response, // If the response is successful, just return it
+  (response) => response, 
   async (error) => {
     const originalRequest = error.config;
+    console.log('error form refrehsrequst',error);
+    
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true; // Prevent infinite retries
+    if (error.response?.status === 403 && !originalRequest._retry) {
+      originalRequest._retry = true; 
 
       try {
-        // Make a request to the refresh token endpoint
+
         const refreshResponse = await axios.post(
-          'http://localhost:3000/auth/refreshToken',
+          'http://localhost:3000/auth/refresh-token',
           {}, // Pass any necessary payload
           { withCredentials: true }
         );
 
-        // Get the new access token
-        const newAccessToken = refreshResponse.data.accessToken;
 
-        // Update headers with the new access token
+        const newAccessToken = refreshResponse.data.accessToken;
+        console.log('newAccesstoken',newAccessToken);
+        
+
+
         axioInstence.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
         originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
-        // Retry the original request
+
         return axioInstence(originalRequest);
       } catch (refreshError) {
         console.error('Failed to refresh token:', refreshError);
@@ -40,7 +44,7 @@ axioInstence.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error); // If not 401 or another issue, reject the error
+    return Promise.reject(error); 
   }
 );
 

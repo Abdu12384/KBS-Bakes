@@ -1,32 +1,73 @@
 import React, { useState } from 'react'
 import { ShieldCheck, Mail, Lock } from 'lucide-react'
-import { AdminLoginReq } from '../../services/authService'
+
 import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { adminLoginSuccess } from '../../redux/slices/adminSlice'
+import toast, { Toaster } from "react-hot-toast";
+import axioInstence from '../../utils/axioInstence'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const [password, setPassword] = useState('')
- const navigate = useNavigate()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+
   const handleSubmit =  async(e) => {
     e.preventDefault()
-    // Handle login logic here
-    try {
-      const data = await AdminLoginReq(email,password)
-      console.log('Login attempted with:', { email, password })
-      
-       if(data){
-         navigate('/admin/dashboard')
-       }
-       
-    } catch (error) {
-      console.error('Login failed:',error)
+
+
+    setEmailError('')
+    setPasswordError('')
+
+    if (!email || !password) {
+      if (!email) setEmailError('Email is required')
+      if (!password) setPasswordError('Password is required')
+      return
     }
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address')
+      return
+    }
+
+
+
+    try {
+      const response = await axioInstence.post('/auth/admin/login',{
+        email,
+        password
+      })
+      console.log(response.data);
+      const {admin} = response.data
+      toast.success("SignUp Successfully!.")
+
+           setTimeout(() => {
+             dispatch(adminLoginSuccess({admin}))
+             navigate('/admin/dashboard')
+            }, 2000);
+         
+      } catch (error) {
+        if (error.response && error.response.data) {
+           console.log('abcded',error.response);
+           
+          toast.error(error.response.data.message);
+        } else {
+          toast.error("An unexpected error occurred. Please try again.");
+        }
+        console.error('Error during login:', error);
+      }
     
   }
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Left half - Image */}
+
+      <Toaster position="top-right" reverseOrder={false}/>
       <div className="hidden lg:block lg:w-1/2">
         <img
           src="/src/assets/images/adminimg.png"
@@ -35,7 +76,7 @@ export default function AdminLogin() {
         />
       </div>
 
-      {/* Right half - Login Form */}
+
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
@@ -59,14 +100,15 @@ export default function AdminLogin() {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    required
                     className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+              {emailError && <div className="text-red-500 text-sm mt-2">{emailError}</div>}
               </div>
+
               <div className="mb-6">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -80,13 +122,13 @@ export default function AdminLogin() {
                     name="password"
                     type="password"
                     autoComplete="current-password"
-                    required
                     className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
+              {passwordError && <div className="text-red-500 text-sm mt-2">{passwordError}</div>}
               </div>
               <div>
                 <button

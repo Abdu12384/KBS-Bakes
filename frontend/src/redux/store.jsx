@@ -1,27 +1,60 @@
-import { configureStore } from "@reduxjs/toolkit";
+// // store.js
+// import { configureStore } from '@reduxjs/toolkit';
+// import { persistStore, persistReducer } from 'redux-persist';
+// import storage from 'redux-persist/lib/storage'; 
+// import authReducer from './slices/authSlice'; 
+
+
+// const persistConfig = {
+//   key: 'root',
+//   storage, 
+// };
+
+
+// const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+
+// const store = configureStore({
+//   reducer:{
+//    auth:persistedAuthReducer
+//    }
+// });
+
+// const persistor = persistStore(store);
+
+// export { store, persistor };
+
+
+// store.js
+import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; 
-import { combineReducers } from 'redux';
-import  userReducer from './slices/userSlice'
-import adminReducer from './slices/adminSlice'; 
+import adminReducer from './slices/adminSlice';
+import userReducer from './slices/authSlice'
 
+// Admin persist configuration
+const adminPersistConfig = {
+  key: 'admin',
+  storage,
+};
 
-const persistConfig = {
-   key:'root',
-   storage
-}
+// User persist configuration
+const userPersistConfig = {
+  key: 'user',
+  storage,
+};
 
-const rootReducer= combineReducers({
-  user:userReducer,
-  admin:adminReducer
-})
+// Create persisted reducers
+const persistedAdminReducer = persistReducer(adminPersistConfig, adminReducer);
+const persistedUserReducer = persistReducer(userPersistConfig, userReducer);
 
-const persistedReducer= persistReducer(persistConfig,rootReducer)
-
+// Combine reducers in the store
 const store = configureStore({
-   reducer:persistedReducer
-})
+  reducer: {
+    admin: persistedAdminReducer,
+    user: persistedUserReducer,
+  },
+});
 
-const persistor= persistStore(store)
+const persistor = persistStore(store);
 
-export {store, persistor}
+export { store, persistor };

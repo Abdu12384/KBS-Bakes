@@ -15,6 +15,7 @@ const {verifyAdminToken }= require('../middleware/adminAuth')
 
 const {addCategory,
        fetchCategory,
+       editCategory,
        softDeleteCategory        
       }= require('../controllers/adminController/categoryControll')
 
@@ -28,7 +29,7 @@ const {addCategory,
 
 
 admin_Route
-        .get('/generate-upload-url',cloudinaryImgUpload)
+        .get('/generate-upload-url',cloudinaryImgUpload)        
         .post('/add-product',verifyAdminToken,addProdcut)
         .get('/products',verifyAdminToken,showProduct)
         .put('/products/:id',verifyAdminToken,EditProduct)
@@ -37,7 +38,8 @@ admin_Route
         .put('/users/status/:id',verifyAdminToken,toggleUserStatus)
         .post('/categories',verifyAdminToken,addCategory)
         .get('/categories',verifyAdminToken,fetchCategory)
+        .put('/categories/:id',editCategory)
         .patch('/categories/block/:id',verifyAdminToken,softDeleteCategory)
-        .post('/logout',verifyAdminToken,loadLogout)
+        .post('/logout',loadLogout)
 
 module.exports=admin_Route

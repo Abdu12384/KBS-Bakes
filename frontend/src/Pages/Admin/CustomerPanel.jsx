@@ -46,7 +46,7 @@ function CustomerPanel() {
    const toggleCustomersStatus = async (customerId) =>{
      try {
        const response = await axioInstence.put(`/admin/users/status/${customerId}`,
-        {isActive: !Users.isActive}
+        {isActive: !Users.find(user => user._id === customerId).isActive}
        )
         
         const updatedUser = Users.map(user=>
@@ -162,7 +162,7 @@ const filteredCustomers = Users.filter(user =>{
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="relative">
+                    <div className="">
                       <button
                         onClick={() => setActiveMenu(activeMenu === user._id ? null : user._id)}
                         className="text-gray-400 hover:text-white focus:outline-none"
@@ -170,7 +170,7 @@ const filteredCustomers = Users.filter(user =>{
                         <MoreVertical className="h-5 w-5" />
                       </button>
                       {activeMenu === user._id && (
-                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg z-50 bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div className="absolute right-10 mt-2 w-48 rounded-md shadow-lg z-50 bg-white ring-1 ring-black ring-opacity-5 ">
                           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                             <button
                               onClick={() => {

@@ -6,21 +6,30 @@ import { AdminDashboard } from '../Pages/Admin/AdminDashboard'
 import AdminProductsPage from '../Pages/Admin/AdminProductPage'
 import { OrdersPage } from '../Pages/Admin/AdminOrdersPage'
 import CustomerPanel from '../Pages/Admin/CustomerPanel'
+import AdminCategory from '../Pages/Admin/AdminCategory'
+import PageNotFound from '../Pages/PageNotFount/PageNotFount'
+import {AdminProtectRouteLogin,AdminProtectRoute} from '../ProtectRoute/ProtectedRoute'
+
 function AdminRoute() {
   return (
    <Routes>
-         <Route path='login' element={<AdminLogin/>}/>
+         <Route element={<AdminProtectRouteLogin/>}>
+           <Route path='login' element={<AdminLogin/>}/>
+         </Route>
 
-
-         <Route path="/" element={<AdminLayout />} >
+         <Route element={<AdminProtectRoute/>}>
+          <Route path="/" element={<AdminLayout />} >
                 <Route index element={<AdminDashboard />} />
                 <Route path='dashboard' element={<AdminDashboard />} /> 
                 <Route path="orders" element={<OrdersPage />} />
                 <Route path="products" element={<AdminProductsPage />} />
                 <Route path="customers" element={<CustomerPanel />} />
+                <Route path="category" element={<AdminCategory />} />
           </Route>
-        {/* <Route path="logout" element={<Logout />} /> */}
+         </Route>
 
+
+         <Route path="*" element={<PageNotFound />} />
 
 
    </Routes>

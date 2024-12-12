@@ -1,18 +1,20 @@
 import axioInstence from "../utils/axioInstence";
+import toast from "react-hot-toast";
 
 
-const AdminLoginReq = async (email, password) =>{
-   try {
-     const response = await axioInstence.post('/auth/admin/login',{
-        email,
-        password
-     })
-     return response.data
-   } catch (error) {
-    console.log('Error from adminLogin',error);
+
+// const AdminLoginReq = async (email, password) =>{
+//    try {
+//      const response = await axioInstence.post('/auth/admin/login',{
+//         email,
+//         password
+//      })
+//      return response.data
+//    } catch (error) {
+//     console.log('Error from adminLogin',error);
     
-   }
-}
+//    }
+// }
 
 const AddProductReq = async (productData)=>{
     try {
@@ -20,7 +22,6 @@ const AddProductReq = async (productData)=>{
         return response.data
     } catch (error) {
       console.log('Failed to add Product',error);
-      
     }
 }
 
@@ -35,7 +36,6 @@ const updatedProductReq = async (productId, updatedProductData)=>{
 
 
 export {
-   AdminLoginReq,
    AddProductReq,
    updatedProductReq 
 }

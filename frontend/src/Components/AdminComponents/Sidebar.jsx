@@ -1,8 +1,12 @@
 
 import { Link } from 'react-router-dom';
 import { Cake, LayoutDashboard, ShoppingCart, Package, List, Tag, Image, Users, Settings,LogOut} from 'lucide-react';
-
+import { useDispatch } from 'react-redux';
+// import { logout } from '../../redux/slices/authSlice';
+import { adminLogout } from '../../redux/slices/adminSlice';
+import axioInstence from '../../utils/axioInstence';
 function Sidebar({ isOpen }) {
+  const dispatch = useDispatch()
   const menuItems = [
     { icon: LayoutDashboard, name: 'Dashboard', path: '/admin/dashboard' },
     { icon: List, name: 'Category', path: '/admin/category'},
@@ -14,9 +18,25 @@ function Sidebar({ isOpen }) {
     { icon: Settings, name: 'Settings', path: '/admin/settings' },
   ];
 
+  const handleLogout= async()=>{
+
+    try {
+ 
+       await axioInstence.post('/admin/logout')
+
+       setTimeout(() => {
+         dispatch(adminLogout());
+       }, 1000);
+      
+      
+    } catch (error) {
+      console.log('Logout error',error);
+      
+    }
+      
+  }
+
   return (
-    <>
-      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full z-40 w-64 bg-white bg-opacity-10 backdrop-blur-md text-white p-6 space-y-4 transition-all duration-300 ease-in-out transform
            ${isOpen ? 'translate-x-0' : '-translate-x-full' } transition-sidebar`}
@@ -44,19 +64,16 @@ function Sidebar({ isOpen }) {
             </Link>
           ))}
         </nav>
-        <div className="absolute bottom-4 w-full px-6">
+
           <button
-            
+            onClick={handleLogout}
             className="flex items-center gap-2 p-2 w-full text-red-600 rounded-lg transition duration-150 ease-in-out hover:bg-white hover:bg-opacity-10 "
           >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </button>
-        </div>
-
 
       </div>
-    </>
   );
 }
 

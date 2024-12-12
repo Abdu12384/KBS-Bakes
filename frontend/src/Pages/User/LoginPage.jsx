@@ -3,37 +3,70 @@ import { Mail, Lock, Coffee } from 'lucide-react'
 import Carousel from '../../Components/Carousel'
 import axioInstence from '../../utils/axioInstence'
 import { useNavigate } from 'react-router-dom' 
-
+import { useDispatch } from 'react-redux'
+// import { loginSuccess } from '../../redux/slices/authSlice'
+import { userLoginSuccess } from '../../redux/slices/authSlice'
+import toast, { Toaster } from "react-hot-toast";
 
 
 
 function LoginPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [email, setEmail] = useState('')
   const [password, setPassword]= useState()
-  const [error,setError]= useState('')        
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
      
      const handleSubmit = async(e)=>{
         e.preventDefault()
+
+        setEmailError('')
+        setPasswordError('')
+    
+        if (!email || !password) {
+          if (!email) setEmailError('Email is required')
+          if (!password) setPasswordError('Password is required')
+          return
+        }
+    
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        if (!emailRegex.test(email)) {
+          setEmailError('Please enter a valid email address')
+          return
+        }
+
         try{
            const response = await axioInstence.post('/auth/login',
             {email,password},
             {withCredentials:true}
            )
-           console.log(response);
-           navigate('/user/home')
-        }catch(err){
-          console.log("Login error here",err);
+           console.log('resposne',response);
+ 
+            const {user, role} = response.data
+            if(role === 'user'){
+              toast.success("SignIn successful!.")
+              setTimeout(() => {
+                dispatch(userLoginSuccess({ user })); // Dispatch the user login success action
+                navigate('/user/home')
+              },2000);
+            } else{
+              console.log('login user role not same');
+              
+            }
+            
+          }catch(error){
+             console.log('herthe error',error.response.data);
+            toast.error(error.response.data.message || 'An error occurred. Please try again.');
           
         }
      }
 
 
-
-
   return (
     <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
+      <Toaster position="top-right" reverseOrder={false}/>
         {/* Left Side - Form */}
         <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-white/80 to-[#765341]">
           <div className="max-w-md mx-auto w-full">
@@ -64,7 +97,7 @@ function LoginPage() {
                   />
                 </div>
               </div>
-
+              {emailError && <div className="text-red-500 text-sm mt-2">{emailError}</div>}
               <div className="space-y-2">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
@@ -83,6 +116,7 @@ function LoginPage() {
                   />
                 </div>
               </div>
+              {passwordError && <div className="text-red-500 text-sm mt-2">{passwordError}</div>}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -143,7 +177,7 @@ function LoginPage() {
 
               <p className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
-                <a href="/signup" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
+                <a href="/user/signup" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
                   Sign up
                 </a>
               </p>

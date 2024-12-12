@@ -150,7 +150,7 @@ const insertUser = async(req,res)=>{
       await otpDoc.save()
       await sendOtpToEmail(email,otp)
 
-       res.status(201).json({message:"Sent otp sucess fully"})
+       res.status(201).json({message:"Sent otp Sucessfully"})
         
    } catch (error) {
      console.error(error)
@@ -234,6 +234,9 @@ const insertUser = async(req,res)=>{
           if(!user.isActive){
              return res.status(404).json({message:"Access denined. User account is blocked"})
           }
+          if(user.isAdmin){
+            return res.status(404).json({message:"Access denined. Admin not a user"})
+          }
           
           const isMatch = await bcrypt.compare(password, user.password)
           if(!isMatch) return res.status(401).json({message:"Invalide cridentials"})
@@ -288,9 +291,8 @@ const insertUser = async(req,res)=>{
     const userRefreshToken = req.cookies.refreshToken
     console.log(chalk.bgGreen('admin refreshtoken',adminToken));
 
-
       
-  if (!adminToken) return res.status(401).json({ message: "Refresh token required" });
+  if (!adminToken && !userRefreshToken) return res.status(401).json({ message: "Refresh token required" });
 
     try {
 
@@ -406,12 +408,12 @@ const insertUser = async(req,res)=>{
          }),
 
          res.status(200).json({
-          user:{
+          admin:{
             fullName:admin.fullName,
             email:admin.email,
             profileImage:admin.profileImage
           },
-          role:'admin'
+          // role:'admin'
         })
          
      } catch (error) {

@@ -7,10 +7,12 @@ const addCategory = async (req, res) => {
     console.log('category');
     
     const { name, description } = req.body;
+   
+     const existsCategory = await Category.findOne({name})
 
-    if (!name || !description) {
-      return res.status(400).json({ message: 'Name and description are required' });
-    }
+     if(existsCategory){
+       return res.status(400).json({message:"Categroy already exists"})
+     }
 
     const category = new Category({ name, description });
     console.log(category);
@@ -46,6 +48,34 @@ const  fetchCategory = async(req, res)=>{
 }
 
 
+
+ const editCategory = async(req, res)=>{
+
+  try {
+  
+   const {id} = req.params
+    const {name, description} = req.body
+    const category = await Category.findByIdAndUpdate(
+       id,
+       {name,description},
+       {new: true}
+    )
+   if(!category){
+    return res.status(404).json({ message: 'Category not found' });
+  }
+  res.status(200).json({ message: 'Category updated successfully!',category });
+ 
+} catch (error) {
+  res.status(500).json({ message: 'Error updating category' });
+
+}
+
+ }
+
+
+
+
+
 const softDeleteCategory = async(req,res)=>{
      console.log('categroy delete');
      const id = req.params.id
@@ -73,6 +103,7 @@ const softDeleteCategory = async(req,res)=>{
 module.exports = { 
   addCategory ,
   fetchCategory,
+  editCategory,
   softDeleteCategory,
 
 };

@@ -13,8 +13,10 @@ const addProdcut = async (req,res)=>{{
          weight,
          description,
          images,
+         variants
          }=req.body
-
+  console.log(variants);
+  
          console.log('this is product data',req.body);
          
         try {
@@ -33,6 +35,7 @@ const addProdcut = async (req,res)=>{{
                       weight,
                       description,
                       images,
+                      variants
                     })
 
               await newProduct.save() 
@@ -57,6 +60,8 @@ const addProdcut = async (req,res)=>{{
      
        try {
          const products = await Product.find()
+          .populate('category','name')
+          .exec()
           res.status(200).json(products)
 
        } catch (error) {

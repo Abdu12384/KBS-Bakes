@@ -3,7 +3,7 @@ import {  Clock, Award, Gift } from 'lucide-react';
 import Header from '../../Components/Header'
 import Footer from '../../Components/Footer'
 import ProductList from '../../Components/ProductList';
-import ProductDetails from '../../Components/ProductDetails';
+
 const Home = () => {
   return (
     <>
@@ -69,7 +69,6 @@ const Home = () => {
         </div>
       </section>
       <Footer/>
-      <ProductDetails/>
     </>
   );
 };

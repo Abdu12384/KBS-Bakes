@@ -22,7 +22,7 @@ function AdminLayout() {
           >
             <div className="rounded-full overflow-hidden  border-purple-600 w-20 h-20">
               <img
-                src="https://via.placeholder.com/150" // Replace with actual admin photo URL
+                src="/src/assets/images/adminimage.jpg" // Replace with actual admin photo URL
                 alt="Admin Profile"
                 className="w-full h-full object-cover"
               />
