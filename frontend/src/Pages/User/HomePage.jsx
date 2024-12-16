@@ -12,7 +12,7 @@ const Home = () => {
       <section className="py-16 bg-[#bca89f]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-[#3d2516] mb-8 text-center">Why Choose KBS BAKES?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Clock className="w-12 h-12 text-[#5b3e31]" />}
               title="Fresh Daily"

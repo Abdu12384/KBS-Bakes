@@ -4,14 +4,18 @@ const jwt = require('jsonwebtoken')
 
 const varifyToken = (req, res, next)=>{
     const token = req.cookies.accessToken
- console.log('working');
+ console.log('working',token);
  
      if(!token){
        return res.status(401).json({message:"Acce token is missing"})
      }
+
        try {
-         const decoded = jwt.verify(token,process.env.JWT_SECRET)
+         const decoded = jwt.verify(token,process.env.USER_ACCESS_TOKEN_SECRET)
          req.user= decoded
+         req.userId = decoded.id;
+         console.log('id here',req.userId);
+        
           next()
        } catch (error) {
           console.error('Token verification failed',error.message)

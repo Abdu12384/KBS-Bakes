@@ -22,7 +22,7 @@ axioInstence.interceptors.response.use(
       try {
 
         const refreshResponse = await axios.post(
-          'http://localhost:3000/auth/refresh-token',
+          `${BACKEND_URL}/auth/refresh-token`,
           {}, // Pass any necessary payload
           { withCredentials: true }
         );
@@ -40,6 +40,7 @@ axioInstence.interceptors.response.use(
         return axioInstence(originalRequest);
       } catch (refreshError) {
         console.error('Failed to refresh token:', refreshError);
+        console.log('Error response:', error.response?.data || error.message);
         return Promise.reject(refreshError);
       }
     }

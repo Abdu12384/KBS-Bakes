@@ -5,6 +5,8 @@ import 'react-medium-image-zoom/dist/styles.css';
 import { useParams } from 'react-router-dom';
 import axiosInstence from '../utils/axioInstence';
 import Breadcrumbs from './BrudCrums';
+import toast, { Toaster } from "react-hot-toast";
+
 
 
 const ProductDetails = () => {
@@ -15,19 +17,32 @@ const ProductDetails = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [selectedVariant, setSelectedVariant] = useState(product?.variants[0]||null); // Default to the first variant
 
 
   // If it's not out of stock or sold out, it's available
 
   const imageRef = useRef(null);
 
+  
+  const handleVariantChange = (variant) => {
+    setSelectedVariant(variant);
+  };
+
+
 
 
   const fetchProductDetails = async () => {
     try {
       const response = await axiosInstence.get(`/user/productshow/${id}`);
-      setProduct(response.data);
-      console.log(response.data);
+      const productData = response.data;
+      
+      const defaultVariant = productData.variants.find(
+        (variant) => variant.weight === "1 kg"
+      );
+      setProduct(productData);
+      setSelectedVariant(defaultVariant || productData.variants[0]); 
+
     } catch (error) {
       console.error("Error fetching product details:", error);
     }
@@ -60,6 +75,28 @@ const ProductDetails = () => {
   };
 
 
+
+  //Cart Handling 
+
+  const handleCart = async()=>{
+       
+    try {
+      const response = await axiosInstence.post('/user/cart-add',{
+        productId: product._id,
+        variantId: selectedVariant._id,
+        quantity
+      })
+        toast.success(response.data.message)
+      
+    } catch (error) {
+      console.error(error.response.data);
+      toast.error(error.response.data.message);
+    }
+     
+  }
+
+
+
   const handleMouseMove = (e) => {
     if (!imageRef.current || !isZoomed) return;
 
@@ -78,6 +115,7 @@ const ProductDetails = () => {
 
   return (
     <div className="bg-gradient-to-br from-[#f3e7e0] to-[#d8cbc4] min-h-screen font-sans">
+            <Toaster position="top-right" reverseOrder={false}/>
     <div className="container mx-auto px-4 py-8">
       <Breadcrumbs/>
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -174,8 +212,8 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex items-center space-x-4 mt-2">
-               <p className="text-2xl font-bold text-[#8b6c5c]">${product.salePrice}</p>
-               <p className="text-2xl font-bold text-[#d8d8d8] line-through">${product.regularPrice}</p>
+               <p className="text-2xl font-bold text-[#8b6c5c]">₹{selectedVariant?.salePrice}</p>
+               <p className="text-2xl font-bold text-[#d8d8d8] line-through">₹{selectedVariant?.regularPrice}</p>
               </div>
               <p className="text-lg text-[#5b3e31] leading-relaxed">{product.description}</p>
               <div>
@@ -213,15 +251,15 @@ const ProductDetails = () => {
                   Available Sizes
                 </h3>
                 <div className="flex flex-wrap gap-3">
-                  {/* {product.weight.map((weight, index) => (
+                  {product.variants.map((variant, index) => (
                     <button 
                       key={index} 
                       className="px-4 py-2 border-2 border-[#8b6c5c] rounded-md text-[#5b3e31] font-bold hover:bg-[#8b6c5c] hover:text-white transition duration-300 transform hover:scale-105 shadow-md"
+                      onClick={()=> handleVariantChange(variant)}
                     >
-                      {weight}
+                      {variant.weight}
                     </button>
-                  ))} */}
-                  {product.weight && product.weight}
+                  ))}
                 </div>
               </div>
               
@@ -244,7 +282,7 @@ const ProductDetails = () => {
               </div>
 
                     <div className="availability mt-4">
-                    {product?.stock <= 0 ? (
+                    {selectedVariant?.stock <= 0 ? (
                         <p className="text-red-500 font-bold text-xl">Out of Stock</p>
                       ) : (
                         <p className="text-green-500 font-bold text-xl">Available Now</p>
@@ -259,18 +297,19 @@ const ProductDetails = () => {
                               ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                               : 'bg-[#8b6c5c] text-white hover:bg-[#765341]'
                           }`}
-                          disabled={product.stock <=0}
+                          disabled={selectedVariant?.stock <=0}
                        >
                        
                       Buy Now
                     </button>    
                      <button 
+                     onClick={handleCart}
                     className={`sm:w-auto px-1 py-3 rounded-md transition duration-300 flex items-center justify-center text-lg font-bold uppercase tracking-wide transform shadow-md ${
-                      product?.stock <= 0
+                      selectedVariant?.stock <= 0
                         ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
                         : 'bg-[#8b6c5c] text-white hover:bg-[#765341]'
                     }`}                     
-                     disabled={product.stock <=0}
+                     disabled={selectedVariant?.stock <=0}
                      >
                     <ShoppingCart className="mr-2" size={20} />
                     Add to Cart

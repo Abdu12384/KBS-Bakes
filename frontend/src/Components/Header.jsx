@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X,User, ShoppingCart,CakeSlice, FileText, Heart, LogOut  } from 'lucide-react';
+import { Menu, X,User, ShoppingCart,CakeSlice, User2, LogOut, LogIn } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 // import { logout } from '../redux/slices/authSlice';
 import { userLogout } from '../redux/slices/authSlice';
@@ -85,7 +85,7 @@ const Header = () => {
               <div className="ml-10 flex items-baseline space-x-4">
                 <NavLink href="/">Home</NavLink>
                 <NavLink href="/about">About</NavLink>
-                <NavLink href="/products">Products</NavLink>
+                <NavLink href="/user/cakes">Cakes</NavLink>
                 <NavLink href="/contact">Contact</NavLink>
               </div>
             </div>
@@ -108,48 +108,41 @@ const Header = () => {
                       </div>
                       ):(
                         <div className="px-4 py-2 border-b ">
-                        <button 
-                        className="text-lg font-medium text-gray-900"
-                        onClick={()=>navigate('/user/login')}>
-                          Login
-                        </button>
+                      <p className="text-sm font-medium text-gray-900">Welcome to KBS Bakes! Please log in to place your order.</p>
                       </div>
 
                       )}
-                    <a
-                      href=""
+                   {isAuthenticated && <a
+                      href="/user/dashboard"
                       className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
                     >
-                      <CakeSlice className="mr-3 h-5 w-5 text-[#8b6c5c]" />
-                      My Orders
+                      <User2 className="mr-3 h-5 w-5 text-[#8b6c5c]" />
+                      your Account 
                     </a>
-                    <a
-                      href=""
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
-                    >
-                      <FileText className="mr-3 h-5 w-5 text-[#8b6c5c]" />
-                      Custom Cake Request
-                    </a>
-                    <a
-                      href=""
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
-                    >
-                      <Heart className="mr-3 h-5 w-5 text-[#8b6c5c]" />
-                      My Wishlist
-                    </a>
+                      }                  
                     <div className="border-t border-gray-200 mt-2">
-                      <button
+                      {isAuthenticated ?(
+                        <button
                         onClick={handleLogout} 
                         className="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center w-full text-left"
                       >
                         <LogOut className="mr-3 h-5 w-5" />
                         Logout
                       </button>
+                      ):(
+                        <button
+                        onClick={() => navigate('/user/login')}
+                        className="block px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 transition-colors duration-200 flex items-center w-full text-left"
+                      >
+                        <LogIn className="mr-3 h-5 w-5" /> 
+                        Login
+                      </button>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-              <a href="/cart" className="text-white hover:text-[#d8cbc4]">
+              <a href="/user/cart" className="text-white hover:text-[#d8cbc4]">
                 <ShoppingCart className="h-6 w-6" />
               </a>
 

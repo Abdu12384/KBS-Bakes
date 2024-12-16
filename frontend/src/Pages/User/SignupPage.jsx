@@ -7,6 +7,7 @@ import {GoogleLogin} from '@react-oauth/google'
 import toast, { Toaster } from "react-hot-toast";
 import { useDispatch } from 'react-redux';
 // import { loginSuccess } from '../../redux/slices/authSlice';
+<Toaster position="top-right" reverseOrder={false}/>
 
 function SignupPage() {
 
@@ -112,7 +113,6 @@ const dispatch = useDispatch()
       
   return (
     <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
-            <Toaster position="top-right" reverseOrder={false}/>
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
         <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex flex-col items-center justify-center">

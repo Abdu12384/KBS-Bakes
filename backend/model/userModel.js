@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
         type:Boolean,
         default:false
       },
+      addressId:{
+       type: mongoose.Schema.Types.ObjectId,
+       ref:'Address'
+      },
       isActive:{
          type:Boolean,
          default:true
@@ -41,4 +45,4 @@ const userSchema = new mongoose.Schema({
   }
 )
 
-module.exports= mongoose.model('Users',userSchema)
+module.exports= mongoose.model('User',userSchema)
