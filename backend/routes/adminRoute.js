@@ -20,6 +20,11 @@ const {addCategory,
       }= require('../controllers/adminController/categoryControll')
 
 
+ const {
+  loadOrderDetails,
+  updateOrderStatus,
+  cancellOrder
+ } = require('../controllers/adminController/orderManagement')    
 
 
 
@@ -40,6 +45,9 @@ admin_Route
         .get('/categories',verifyAdminToken,fetchCategory)
         .put('/categories/:id',editCategory)
         .patch('/categories/block/:id',verifyAdminToken,softDeleteCategory)
+        .get('/orders-manage',verifyAdminToken,loadOrderDetails)
+        .patch('/orders/status/:id',verifyAdminToken,updateOrderStatus)
+        .patch('/orders/cancel/:id',verifyAdminToken,cancellOrder)
         .post('/logout',loadLogout)
 
 module.exports=admin_Route

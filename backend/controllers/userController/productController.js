@@ -1,3 +1,4 @@
+const { pipeline } = require('nodemailer/lib/xoauth2')
 const Product = require('../../model/productModal') 
 
 
@@ -74,8 +75,58 @@ const productDetails= async(req, res)=>{
  }
 
 
+ const cakePage = async(req, res)=>{
+   try {
+    console.log(req.query);
+     
+    const {sort} = req.query
+    
+     let query = {isDeleted: false}
+
+     let sortConfig ={}
+
+     switch (sort){
+       case 'price_asc':
+        sortConfig = {'variants.0.salePrice':1} 
+        break
+
+        case 'price_desc':
+        sortConfig ={'variants.0.salePrice':-1}
+        break
+
+        case 'name_asc':
+        sortConfig ={'productName':1}
+         break
+
+        case 'name_desc':
+        sortConfig ={'productName':-1}
+        break
+
+        case 'newest':
+        sortConfig ={'createAt':-1}
+        break
+
+         default:
+        sortConfig = {createAt:-1}
+     }
+     const products = await Product.find(query)
+     .sort(sortConfig)
+     .select('productName images variants.salePrice category')
+     .lean()
+
+     res.status(200).json(products)
+   } catch (error) {
+    console.error("Error fetching cakes:", error);
+    res.status(500).json({ error: "Failed to fetch cakes" });
+
+   }
+ }
+
+
+
 module.exports={
    homeListProduct,
    productDetails,
+   cakePage,
    handlLogoutUser
 }

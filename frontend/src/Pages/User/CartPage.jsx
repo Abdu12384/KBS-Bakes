@@ -2,10 +2,11 @@ import React, { useState,useEffect } from 'react';
 import { Truck, Phone, MessageCircle, GiftIcon, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
-
+import { useNavigate } from 'react-router-dom';
 const CartPage = () => {
   const [cartsummury, setCartSummury]= useState()
   const [items, setItems] = useState([]);
+  const navigate = useNavigate()
 
   const fetchCartItem = async()=>{
 
@@ -144,7 +145,7 @@ const CartPage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-gray-800 font-medium">${item.variantDetails.salePrice.toFixed(2)}</div>
+                    <div className="text-gray-800 font-medium">₹{item.variantDetails.salePrice.toFixed(2)}</div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item._id, -1)}
@@ -188,7 +189,7 @@ const CartPage = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-white">
                   <span>Cart Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-white">
                   <span>Design by Fluttertop</span>
@@ -196,14 +197,15 @@ const CartPage = () => {
                 </div>
                 <div className="flex justify-between text-[#d8cbc4]">
                   <span>Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>-₹{discount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xl pt-4 border-t border-[#8b6c5c] text-white">
                   <span>Cart Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </div>
               <button 
+               onClick={()=>navigate('/user/checkout')}
                 className="w-full py-3 rounded-md font-medium transition-all hover:bg-[#2a1a15] bg-[#3d251e] text-white text-lg shadow-md"
               >
                 Proceed to Checkout
@@ -219,7 +221,7 @@ const CartPage = () => {
               <Truck className="w-8 h-8 text-[#3d251e]" />
             </div>
             <h3 className="font-semibold text-gray-800 text-lg mb-2">Free Shipping</h3>
-            <p className="text-gray-600">When you spend $50+</p>
+            <p className="text-gray-600">When you spend ₹500+</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-md border border-[#d8cbc4] animate-fadeIn" style={{animationDelay: '0.4s'}}>
             <div className="bg-[#d8cbc4] p-3 rounded-full inline-block mb-4">

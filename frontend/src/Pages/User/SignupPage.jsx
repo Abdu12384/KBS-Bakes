@@ -7,7 +7,6 @@ import {GoogleLogin} from '@react-oauth/google'
 import toast, { Toaster } from "react-hot-toast";
 import { useDispatch } from 'react-redux';
 // import { loginSuccess } from '../../redux/slices/authSlice';
-<Toaster position="top-right" reverseOrder={false}/>
 
 function SignupPage() {
 
@@ -22,97 +21,98 @@ const dispatch = useDispatch()
        mobile:"",
        password:"",
        confirmPassword:""
-     })
-     const [errors, setErrors] = useState({});
-     useEffect(() => {}, []);
-     
-
-
-     const handleChange = (e) => {
-      const { name, value } = e.target;
-      setFormData({...formData,[name]:value});
-            
-           setErrors({...errors,[name]:''})
-    };
-       
-    const validateForm = () => {
-      const newErrors = {};
-      if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
-      if (!formData.email) newErrors.email = 'Email is required.';
-      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid.';
-      if (!formData.mobile) newErrors.mobile = 'Phone Number is required.';
-      else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
-      if (!formData.password) newErrors.password = 'Password is required.';
-      else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
-      if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm Password is required.';
-      else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-
-       const handleSubmit = async (e)=>{
-         e.preventDefault()
-         if(!validateForm()) return
-
-          setLoading(true)
-          console.log("Form Data Updated:", formData);
-          try {
-            const response = await axios.post('http://localhost:3000/auth/signup',formData)
-            console.log("Respose:",response.data);
-            setOtpModalVisible(true)
-          } catch (error) {
-            console.error("Error:",error.response)
-            toast.error(error.response.data.message)
-          }finally{
-            setLoading(false)
-          }
-       }
-
-       const closeOtpModal = () =>{
-        setOtpModalVisible(false)
-       }
-
-       const handleGoogleSuccess = async (response) => {
+      })
+      const [errors, setErrors] = useState({});
+      useEffect(() => {}, []);
+      
+      
+      
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({...formData,[name]:value});
+        
+        setErrors({...errors,[name]:''})
+      };
+      
+      const validateForm = () => {
+        const newErrors = {};
+        if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+        if (!formData.email) newErrors.email = 'Email is required.';
+        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid.';
+        if (!formData.mobile) newErrors.mobile = 'Phone Number is required.';
+        else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
+        if (!formData.password) newErrors.password = 'Password is required.';
+        else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
+        if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm Password is required.';
+        else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+      };
+      
+      const handleSubmit = async (e)=>{
+        e.preventDefault()
+        if(!validateForm()) return
+        
+        setLoading(true)
+        console.log("Form Data Updated:", formData);
         try {
-           console.log(response);
-           
-           const {credential} = response
-
-          const res = await axios.post('http://localhost:3000/auth/google/signup', { tokenId:credential });
-          console.log('Google SignUp Successful:', res.data);
-           if(res.data){
-             toast.success("Signup successful! Welcome KBSBakes.")
-             const{user, role} = res.data
-             if(role === 'user'){
-               setTimeout(() => {
-                dispatch(loginSuccess({user, role}))
-               },2000);
-             }else{
-              toast.error("SignUp failed!.")
-             }
-           }
+          const response = await axios.post('http://localhost:3000/auth/signup',formData)
+          console.log("Respose:",response.data);
+          setOtpModalVisible(true)
         } catch (error) {
-          console.error("Google Sign-Up Error:",error.response);
+          console.error("Error:",error.response)
           toast.error(error.response.data.message)
-
         }finally{
           setLoading(false)
         }
-
+      }
+      
+      const closeOtpModal = () =>{
+        setOtpModalVisible(false)
+      }
+      
+      const handleGoogleSuccess = async (response) => {
+        try {
+          console.log(response);
+          
+          const {credential} = response
+          
+          const res = await axios.post('http://localhost:3000/auth/google/signup', { tokenId:credential });
+          console.log('Google SignUp Successful:', res.data);
+          if(res.data){
+            toast.success("Signup successful! Welcome KBSBakes.")
+            const{user, role} = res.data
+            if(role === 'user'){
+              setTimeout(() => {
+                dispatch(loginSuccess({user, role}))
+              },2000);
+            }else{
+              toast.error("SignUp failed!.")
+            }
+          }
+        } catch (error) {
+          console.error("Google Sign-Up Error:",error.response);
+          toast.error(error.response.data.message)
+          
+        }finally{
+          setLoading(false)
+        }
+        
       };
-
+      
       const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
       };
-
+      
       const handleGoogleFailure = (error) => {
         console.error("Google Login Error Details:", error);
       };
       
       
-  return (
-    <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
+      return (
+        <div className="min-h-screen bg-[#d8cbc4] flex items-center justify-center p-4">
+      <Toaster position="top-right" reverseOrder={false}/>
       <div className="w-full max-w-7xl h-[750px] bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl flex overflow-hidden">
         {/* Left Side - Illustration */}
         <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex flex-col items-center justify-center">

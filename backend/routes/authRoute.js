@@ -6,7 +6,9 @@ const {insertUser,
        loadLogin,
        refreshControll,
        loadLogout,
-       adminLogin} = require('../controllers/authController')
+       adminLogin,
+       forgotPassword,
+       resetPassword} = require('../controllers/authController')
 const googleController = require('../controllers/googleController')
 
 
@@ -19,6 +21,8 @@ const googleController = require('../controllers/googleController')
             .post('/admin/login',adminLogin)
             .post('/logout',loadLogout)
             .post('/refresh-token',refreshControll) 
+            .post('/forgot-password',forgotPassword)
+            .post('/reset-password',resetPassword)
 
   
 

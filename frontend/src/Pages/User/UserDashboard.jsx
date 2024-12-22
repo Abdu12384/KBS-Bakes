@@ -17,7 +17,7 @@ const UserDashboard = () => {
       title: 'Order History',
       icon: Clock,
       image: '/src/assets/images/order-history.webp',
-      link: '/order-history',
+      link: '/user/orderdetails',
       size: 'medium',
       color: 'blue',
       delay: '0.1s'

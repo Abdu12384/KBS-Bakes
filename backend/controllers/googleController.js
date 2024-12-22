@@ -1,3 +1,4 @@
+
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../model/userModel');
@@ -19,77 +20,114 @@ const generateTokens = (userId) => {
   
   return { accessToken, refreshToken };
 };
- 
+
 const googleSignup = async (req, res) => {
     console.log('working');
-       const {tokenId} = req.body
-        console.log(tokenId);
+    const { tokenId } = req.body;
+    console.log(tokenId);
+    
+    try {
+
+        const ticket = await client.verifyIdToken({
+            idToken: tokenId,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        // console.log('Ticket:', ticket);
+
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+        console.log('User Info:', email, name, picture);
+
+
+        let user = await User.findOne({ email });
         
-       try {
-         const ticket = await client.verifyIdToken({
-           idToken:tokenId,
-           audience: process.env.GOOGLE_CLIENT_ID
-          });
-          console.log('dsfdsfsfdsfsdfsf',ticket);
-    
-    const payload = ticket.getPayload();
-    const { email, name, picture } = payload
-    console.log('herthe informantion ',email,name,picture);
-    
+        console.log(user);
+  
+        if (user) {
+        
+            const { accessToken, refreshToken } = generateTokens(user._id);
+            user.refreshToken = refreshToken;
+            await user.save();
 
-    let user = await User.findOne({ email });
- 
-     if(user){
-      return res.status(401).json({message: 'user already signup with the same Email' });
-     }
+            // Set tokens in cookies
+            console.log('Tokens for Existing User:', { accessToken, refreshToken });
 
-    
-    if (!user) {
-      user = await User.create({
-        email,
-        fullName:name,
-        profileImage:picture,
-        googleId:payload.sub,
-        mobile:'9809809',
-        password:'1234',
-      });
+            res.cookie('accessToken', accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 15 * 60 * 1000 // 15 minutes
+            });
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+
+            return res.status(200).json({
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    name: user.fullName,
+                    profileImage: user.profileImage,
+                },
+                role: 'user'
+            });
+        }
+
+        // If the user does not exist, create a new user
+        user = await User.create({
+            email,
+            fullName: name,
+            profileImage: picture,
+            googleId: payload.sub,
+            mobile: '9809809', // Default mobile; you can adjust this
+            password: '1234', // Password is default here; consider using hashed passwords
+        });
+
+        // Generate tokens for the new user
+        const { accessToken, refreshToken } = generateTokens(user._id);
+        user.refreshToken = refreshToken;
+        await user.save();
+         
+        // Set tokens in cookies
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        // Send the response for successful signup
+        return res.status(200).json({
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.fullName,
+                profileImage: user.profileImage,
+            },
+            role: 'user'
+        });
+
+    } catch (error) {
+        console.error('Google signup/signin error:', error);
+        return res.status(500).json({ success: false, message: 'Authentication failed' });
     }
-   
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    user.refreshToken = refreshToken;
-    await user.save();
-     
-    // Set tokens in cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000 // 15 minutes
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    res.status(200).json({
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.fullName,
-        profileImage: user.profileImage,
-      },
-      role:'user'
-    });
-    res.status(201).json({ message: "Signup successful" });
-
-  } catch (error) {
-    console.error('Google signup error:', error);
-    res.status(500).json({ success: false, message: 'Authentication failed' });
-  }
 };
+
+module.exports = {
+  googleSignup
+};
+
 
 
 
@@ -111,6 +149,6 @@ const googleSignup = async (req, res) => {
 //   }
 // };
 
-module.exports={
-   googleSignup
-}
+// module.exports={
+//    googleSignup
+// }

@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema({
        type: mongoose.Schema.Types.ObjectId,
        ref:'Address'
       },
+      resetPasswordToken:{
+        type:String
+      },
+      resetPasswordExpire:{
+        type:Date
+      },
       isActive:{
          type:Boolean,
          default:true

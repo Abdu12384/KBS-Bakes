@@ -5,7 +5,8 @@ const user_Route= express.Router()
 const {
   homeListProduct,
   productDetails,
-  handlLogoutUser
+  handlLogoutUser,
+  cakePage
 } = require('../controllers/userController/productController')
 
 
@@ -34,6 +35,14 @@ const {
 }= require('../controllers/userController/cartCantroller')
 
 
+// Order
+
+const{
+ placeOrder,
+ getOrderDetails,
+ getAllOrders,
+ cancelOrder
+} = require('../controllers/userController/orderController')
 
 
 
@@ -41,8 +50,9 @@ const {
 
 user_Route.get('/home-list-Product',homeListProduct)
           .get('/productshow/:id',productDetails)
+          .get('/products-list',varifyToken,cakePage)
           .post('/profile-update',varifyToken,profileUpdate)
-          .get('/address-details',showAddress)
+          .get('/address-details',varifyToken,showAddress)
           .post('/add-address',varifyToken,addAddress)
           .put('/set-default-address/:id',varifyToken,defaultAddress)
           .delete('/delete-address/:id',varifyToken,deleteAddress)
@@ -50,6 +60,10 @@ user_Route.get('/home-list-Product',homeListProduct)
           .put('/cart/update',varifyToken,updateCartQuantity)
           .delete('/cart/remove',varifyToken,removeItemCart)
           .post('/cart-add',varifyToken,addToCart)
+          .get('/orders',varifyToken,getAllOrders)
+          .post('/place-order',varifyToken,placeOrder)
+          .get('/order-details/:orderId',varifyToken,getOrderDetails)
+          .post('/cancel-order/:orderId',varifyToken,cancelOrder)
           .post('/logout',handlLogoutUser)
           
 

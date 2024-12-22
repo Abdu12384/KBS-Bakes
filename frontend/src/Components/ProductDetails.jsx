@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstence from '../utils/axioInstence';
 import Breadcrumbs from './BrudCrums';
 import toast, { Toaster } from "react-hot-toast";
+import ProductList from './ProductList';
 
 
 
@@ -18,6 +19,7 @@ const ProductDetails = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedVariant, setSelectedVariant] = useState(product?.variants[0]||null); // Default to the first variant
+  const [selectedWeight, setSelectedWeight] = useState(null);
 
 
   // If it's not out of stock or sold out, it's available
@@ -27,6 +29,7 @@ const ProductDetails = () => {
   
   const handleVariantChange = (variant) => {
     setSelectedVariant(variant);
+    setSelectedWeight(variant.weight);
   };
 
 
@@ -111,6 +114,9 @@ const ProductDetails = () => {
     setIsZoomed(!isZoomed);
   };
   
+
+
+
 
 
   return (
@@ -253,9 +259,13 @@ const ProductDetails = () => {
                 <div className="flex flex-wrap gap-3">
                   {product.variants.map((variant, index) => (
                     <button 
-                      key={index} 
-                      className="px-4 py-2 border-2 border-[#8b6c5c] rounded-md text-[#5b3e31] font-bold hover:bg-[#8b6c5c] hover:text-white transition duration-300 transform hover:scale-105 shadow-md"
+                      key={index}  
                       onClick={()=> handleVariantChange(variant)}
+                      className={`px-4 py-2 border-2 border-[#8b6c5c] rounded-md text-[#5b3e31] font-bold transition duration-300 transform shadow-md ${
+                        selectedWeight === variant.weight
+                          ? "bg-[#8b6c5c] text-white" // Selected weight style
+                          : "hover:bg-[#8b6c5c] hover:text-white hover:scale-105" // Default hover style
+                      }`}
                     >
                       {variant.weight}
                     </button>
@@ -285,8 +295,12 @@ const ProductDetails = () => {
                     {selectedVariant?.stock <= 0 ? (
                         <p className="text-red-500 font-bold text-xl">Out of Stock</p>
                       ) : (
+                        <>
                         <p className="text-green-500 font-bold text-xl">Available Now</p>
-                      )}
+                        <p className="text-[#3d2516] text-lg font-medium">
+                          Stock left: {selectedVariant?.stock}
+                        </p>
+                      </>                      )}
 
                   </div>
 
@@ -319,6 +333,7 @@ const ProductDetails = () => {
           </div>
         </div>
       </div>
+      <ProductList/>
     </div>
   )
 };

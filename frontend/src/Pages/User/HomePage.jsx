@@ -4,6 +4,7 @@ import Header from '../../Components/Header'
 import Footer from '../../Components/Footer'
 import ProductList from '../../Components/ProductList';
 
+
 const Home = () => {
   return (
     <>

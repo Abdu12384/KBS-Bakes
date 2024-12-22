@@ -5,11 +5,23 @@ import AddCategory from '../../Components/AdminComponents/AddCategory'
 import {format} from 'date-fns'
 import StatusBadge from '../../Components/AdminComponents/StatusBadge'
 import axioInstence from '../../utils/axioInstence'
+import Pagination from '../../Components/Pagination'
+
+
 function AdminCategory() {
   const [showForm, setShowForm]=useState(false)
   const[categories, setCategories]= useState([])
   const [menuOpen, setMenuOpen] = useState(null) 
-  const [editCategory, setEditCategory] = useState(null); // Track the category being edited
+  const [editCategory, setEditCategory] = useState(null); 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
+  
+
+  const indexOfLastCategory = currentPage * ordersPerPage;
+  const indexOfFirstCategory = indexOfLastCategory - ordersPerPage;
+  const currentCategories = categories.slice(indexOfFirstCategory, indexOfLastCategory);
+  const totalPages = Math.ceil(categories.length / ordersPerPage);
+
 
 
    const handleAddCategory =()=>{
@@ -41,6 +53,12 @@ function AdminCategory() {
     setMenuOpen((prev) => (prev === id ? null : id))
   }
 
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    setMenuOpen(null); 
+  };
+
+  
    
 
    useEffect(()=>{
@@ -109,7 +127,7 @@ function AdminCategory() {
               </tr>
             </thead>
             <tbody>
-              {categories.map((category) => (
+              {currentCategories.map((category) => (
                 <tr key={category._id} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -167,6 +185,15 @@ function AdminCategory() {
 
         </div>
       </div>
+      {totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
       {showForm && (
         <AddCategory 
         onClose={handleCloseForm} 

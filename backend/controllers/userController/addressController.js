@@ -3,9 +3,19 @@ const Address = require('../../model/addressModel')
 
 
 const showAddress = async(req, res)=>{
-  
+   
     try {
-      const address = await Address.find({})
+      const userId = req.user?.id;
+
+  console.log('addrrssss',userId);
+  
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+      const address = await Address.find({userId})
+      console.log(address);
+      
 
       if(!address || address.length===0){
          return res.status(404).json({message:"Address Not fount"})
@@ -161,10 +171,10 @@ const deleteAddress = async(req, res)=>{
     res.status(500).json({ message: 'Internal server error.', error: error.message });
 
    }
-
-   
    
 }
+
+
 
 
 

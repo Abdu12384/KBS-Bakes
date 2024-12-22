@@ -8,6 +8,7 @@ const chalk = require('chalk');
 
 const jwt = require('jsonwebtoken')
 const { response } = require('express')
+const { text } = require('stream/consumers')
 
 
 
@@ -20,7 +21,7 @@ const USER_REFRESH_TOKEN_SECRET = process.env.USER_REFRESH_TOKEN_SECRET
     const adminAccessToken = jwt.sign(
       {id:admin._id, email:admin.email, isAdmin:true, role:'admin'},
       process.env.ADMIN_ACCESS_TOKEN_SECRET,
-      {expiresIn:'45m'}
+      {expiresIn:'15m'}
     )
 
     const adminRefreshToken = jwt.sign(
@@ -144,7 +145,7 @@ const insertUser = async(req,res)=>{
       email,
       password:hashedPassword,
       mobile,
-      expiry: Date.now() + 60 * 1000,
+      expiry: Date.now() + 2 * 60 * 1000,
     })
 
       await otpDoc.save()
@@ -157,6 +158,7 @@ const insertUser = async(req,res)=>{
     res.status(500).json({error:"Server error"})
    }
 }
+
 
 
 
@@ -198,6 +200,7 @@ const insertUser = async(req,res)=>{
 
 
 
+
    const resendOtp= async(req,res)=>{
       const {email} = req.body
       console.log('resend otp',email);
@@ -209,7 +212,7 @@ const insertUser = async(req,res)=>{
       const otp = generateOTP()
       await OTP.updateOne(
         {email},
-        {otp, expiry:Date.now() + 60 * 1000},
+        {otp, expiry:Date.now() + 2 * 60 * 1000},
         {upsert:true}
       )
 
@@ -221,6 +224,7 @@ const insertUser = async(req,res)=>{
           res.status(500).json({message:'Failed to resend OTP'})
          }
    }
+
 
 
 
@@ -245,7 +249,7 @@ const insertUser = async(req,res)=>{
             const accessToken = jwt.sign(
               {id:user._id,user:'user'},
               USER_ACCESS_TOKEN_SECRET,
-              {expiresIn:"45m"}
+              {expiresIn:"15m"}
             )
             
             const refreshToken= jwt.sign(
@@ -286,57 +290,83 @@ const insertUser = async(req,res)=>{
 
 
 
-  const  refreshControll = async (req,res)=>{
-    const adminToken = req.cookies.adminRefreshToken
-    const userRefreshToken = req.cookies.refreshToken
-    console.log(chalk.bgGreen('admin refreshtoken',adminToken));
+   const refreshControll = async (req, res) => {
+    const adminToken = req.cookies.adminRefreshToken;
+    const userRefreshToken = req.cookies.refreshToken;
+  
+    console.log(chalk.bgGreen('Admin Refresh Token:', adminToken));
+    console.log(chalk.bgGreen('User Refresh Token:', userRefreshToken));
+  
 
-      
-  if (!adminToken && !userRefreshToken) return res.status(401).json({ message: "Refresh token required" });
-
+    if (!adminToken && !userRefreshToken) {
+      return res.status(401).json({ message: "Refresh token required" });
+    }
+  
     try {
-
-      let decoded;
       let newAccessToken;
   
-      try {
 
-        decoded = jwt.verify(adminToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
-        if (decoded) {
-
-          newAccessToken = jwt.sign({ id: decoded.id, role: 'admin' }, process.env.ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-        }
-        console.log(chalk.blue('admin new AccessToken',newAccessToken));
-        
-      } catch (error) {
-
+      if (adminToken) {
         try {
-          decoded = jwt.verify(userRefreshToken, process.env.USER_REFRESH_TOKEN_SECRET);
-          if (decoded) {
-
-            newAccessToken = jwt.sign({ id: decoded.id, role: 'user' }, process.env.USER_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-          }
-        } catch (err) {
-
-          return res.status(403).json({ message: "Invalid refresh token" });
+          const decoded = jwt.verify(adminToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
+          console.log(chalk.blue('Admin Token Decoded:', decoded));
+  
+          newAccessToken = jwt.sign(
+            { id: decoded.id, role: 'admin', isAdmin: true },
+            process.env.ADMIN_ACCESS_TOKEN_SECRET,
+            { expiresIn: '15m' }
+          );
+  
+          console.log(chalk.blue('Admin New Access Token:', newAccessToken));
+  
+          res.cookie('adminAccessToken', newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60 * 1000,  
+          });
+  
+          return res.json({ message: 'Admin Token Refreshed Successfully' });
+        } catch (error) {
+          console.error(chalk.red('Error verifying admin token:', error));
+          return res.status(403).json({ message: "Invalid admin refresh token" });
         }
       }
+  
 
-       res.cookie('adminAccessToken',newAccessToken,{
-           httpOnly:true,
-           secure:process.env.NODE_ENV === "production",
-           sameSite:'lax',
-           maxAge:15 * 60 * 1000
-       })
-
-       res.json({message:'Token Refreshed Successfully'})
-       
+      if (userRefreshToken) {
+        try {
+          const decoded = jwt.verify(userRefreshToken, process.env.USER_REFRESH_TOKEN_SECRET);
+          console.log(chalk.blue('User Token Decoded:', decoded));
+  
+          newAccessToken = jwt.sign(
+            { id: decoded.id, role: 'user' },
+            process.env.USER_ACCESS_TOKEN_SECRET,
+            { expiresIn: '15m' }
+          );
+  
+          console.log(chalk.blue('User New Access Token:', newAccessToken));
+  
+          res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 15 * 60 * 1000, 
+          });
+  
+          return res.json({ message: 'User Token Refreshed Successfully' });
+        } catch (error) {
+          console.error(chalk.red('Error verifying user token:', error));
+          return res.status(403).json({ message: "Invalid user refresh token" });
+        }
+      }
     } catch (error) {
-      console.error('Error during token verification:', error);
-      return res.status(403).json({ message: 'Invalid refresh token' });
+      console.error(chalk.red('Unexpected error:', error));
+      return res.status(500).json({ message: 'Internal Server Error' });
     }
   };
 
+  
 
    const loadLogout= async(req,res)=>{
      console.log('logout here');
@@ -424,6 +454,186 @@ const insertUser = async(req,res)=>{
    }
 
 
+   const forgotPassword = async(req, res)=>{
+    const {email} = req.body
+    console.log('forgot pass',req.body);
+    
+      try {
+        const user = await User.findOne({email})
+
+        if(!user){
+          return res.status(404).json({ message: 'User not found'});
+        }
+        console.log(user);
+        
+
+        const resetToken = crypto.randomBytes(32).toString('hex')
+
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpire = Date.now() + 3600000;
+
+        console.log('User with new reset token:', {
+          email: user.email,
+          resetPasswordToken: user.resetPasswordToken,
+          resetPasswordExpire: user.resetPasswordExpire
+        });
+    
+        
+         await user.save();
+
+
+         const savedUser = await User.findOne({email});
+         console.log('Saved user verification:', {
+           email: savedUser.email,
+           resetPasswordToken: savedUser.resetPasswordToken,
+           resetPasswordExpire: savedUser.resetPasswordExpire
+         });
+     
+
+
+        const resetUrl  = `http://localhost:5173/user/reset-password/${resetToken}`
+        const mailOptions = {
+           to:user.email,
+           subject:'Password Reset Request',
+           html:`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Password</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f7fa; font-family: 'Poppins', Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width: 100%; background-color: #f4f7fa;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 0; background-color: #5046e5; border-radius: 8px 8px 0 0;">
+                            <img src="https://placeholder.svg?height=80&width=80&text=🔒" alt="Security Icon" style="display: block; width: 80px; height: 80px; margin: 0 auto;">
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="padding-bottom: 20px; text-align: center;">
+                                        <h1 style="margin: 0; color: #333333; font-size: 28px; font-weight: 600;">Reset Your Password</h1>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; color: #666666; font-size: 16px; line-height: 1.6;">
+                                        <p style="margin: 0 0 15px;">Hello there,</p>
+                                        <p style="margin: 0 0 15px;">We received a request to reset the password for your account. Don't worry, we've got you covered! Just click the button below to set a new password:</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 30px 0;">
+                                        <table border="0" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td align="center" style="border-radius: 50px; background: linear-gradient(45deg, #5046e5, #7e74ff);">
+                                                    <a href="${resetUrl}" target="_blank" style="display: inline-block; padding: 16px 36px; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Reset Password</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; color: #666666; font-size: 16px; line-height: 1.6;">
+                                        <p style="margin: 0 0 15px;">For your security, this link will expire in 1 hour. After that, you'll need to request a new password reset.</p>
+                                        <p style="margin: 0 0 15px;">If you didn't request this change, please ignore this email or contact our support team if you have any concerns.</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px; background-color: #f8fafc; border-radius: 8px;">
+                                        <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">Button not working? Copy and paste this link into your browser:</p>
+                                        <p style="margin: 0; color: #5046e5; word-break: break-all; font-size: 14px;">${resetUrl}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #5046e5; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="color: #ffffff; font-size: 14px; text-align: center;">
+                                        <p style="margin: 0 0 10px;">This is an automated message. Please do not reply to this email.</p>
+                                        <p style="margin: 0;">© 2024 Your Company. All rights reserved.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`
+        }
+
+        await transporter.sendMail(mailOptions)
+        res.status(200).json({ success: true, message: 'Reset link sent!' });
+
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+
+      }
+   }
+
+
+
+
+
+
+   const resetPassword = async(req, res) =>{
+    const {token, newPassword} = req.body
+  console.log('reset work ',token,newPassword);
+  
+    try {
+    const user = await User.findOne({
+      resetPasswordToken:token,
+
+    })
+
+    console.log(user);
+    
+
+    if(!user){
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+    
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+    
+        user.password = hashedPassword
+        user.resetPasswordToken = undefined
+        user.resetPasswordExpire = undefined
+
+        await user.save()
+
+        res.status(200).json({ message: 'Password reset successful' });
+
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+   }
+
+
 module.exports={
    insertUser,
    varifyOTP,
@@ -431,5 +641,7 @@ module.exports={
    loadLogin,
    refreshControll,
    loadLogout,
+   forgotPassword,
+   resetPassword,
    adminLogin
 }

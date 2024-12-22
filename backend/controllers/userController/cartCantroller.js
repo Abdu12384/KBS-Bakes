@@ -39,7 +39,7 @@ const getCartItem = async(req, res)=>{
          const itemPrice = item.variantDetails.salePrice || item.variantDetails.regularPrice
           return{
             totalItems: summary.totalItems + item.quantity,
-            totalPrice: summary.totalPrice + (itemPrice* item.quantity)
+            totalPrice: summary.totalPrice + (itemPrice * item.quantity)
           }
       },{totalItems:0, totalPrice:0})
     
@@ -106,6 +106,7 @@ const addToCart = async(req, res)=>{
         user:userId,
         product:productId,
         variant:variantId,
+        quantity:quantity,
         price:variant.salePrice||variant.regularPrice
       })
     }

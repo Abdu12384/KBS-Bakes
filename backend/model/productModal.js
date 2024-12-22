@@ -26,6 +26,25 @@ const variantSchema = new mongoose.Schema({
 
 
 
+const reviewSchema = new mongoose.Schema({
+  user: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',  // Link to User model
+    required: true
+  },
+  rating: { 
+    type: Number, 
+    min: 1, 
+    max: 5, 
+    required: true 
+  },
+  comment: { 
+    type: String, 
+    required: true 
+  },
+
+});
+
 const prodcutSchema = new mongoose.Schema({
    productName:{
      type:String,
@@ -59,6 +78,8 @@ const prodcutSchema = new mongoose.Schema({
      default:false
    },
    variants:[variantSchema],
+   reviews: [reviewSchema], 
+
 },
 {
   timestamps:true

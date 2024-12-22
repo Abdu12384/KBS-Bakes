@@ -10,4 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'), // Adjust this if your components folder is elsewhere
     },
   },
+  optimizeDeps: {
+    include: ['lottie-react'],  
+  },
 });
