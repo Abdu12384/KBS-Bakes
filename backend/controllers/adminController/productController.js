@@ -7,13 +7,12 @@ const addProdcut = async (req,res)=>{{
      
   const {productName,
          category,
-         regularPrice,
-         salePrice,
          stock,
          weight,
          description,
          images,
-         variants
+         variants,
+         type
          }=req.body
   console.log(variants);
   
@@ -25,17 +24,22 @@ const addProdcut = async (req,res)=>{{
           if (existingProduct) {
             return res.status(400).json({ message: 'Product already exists. Duplicate entries are not allowed.' });
           }
+
+            const updatedVariants = variants.map((variant)=>{
+              const {regularPrice, discount} = variant
+              const salePrice = discount ? regularPrice - (regularPrice * discount)/100 : regularPrice
+              return {...variant, salePrice}
+            })
           
                 const newProduct = new Product({
                       productName,
                       category,
-                      salePrice,
-                      regularPrice,
                       stock,
                       weight,
                       description,
                       images,
-                      variants
+                      variants:updatedVariants,
+                      type
                     })
 
               await newProduct.save() 
@@ -75,16 +79,28 @@ const addProdcut = async (req,res)=>{{
        try {
    console.log('edit prodect');
    
-        const prodcutId = req.params.id
+        const productId = req.params.id
         const updatedData =req.body
-        console.log(prodcutId);
+        console.log(productId);
         
-        const productData = req.body
-        console.log(productData);
-        
+        // const productData = req.body
+        console.log('mmmm',updatedData);
+      
+       
+       if (updatedData.variants) {
+        updatedData.variant = updatedData.variants.map(variant => {
+          if (variant.regularPrice && variant.discount) {
+            const salePrice = variant.regularPrice - (variant.regularPrice * variant.discount) / 100;
+            return { ...variant, salePrice };
+          }
+          return variant;
+        });
+        delete updatedData.variants;
+      }
 
+        
         const updatedProduct = await Product.findByIdAndUpdate(
-          prodcutId,
+          productId,
           {$set:updatedData },
           {new:true, runValidators:true}
         )

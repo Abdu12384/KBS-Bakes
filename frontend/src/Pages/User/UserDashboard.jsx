@@ -44,7 +44,7 @@ const UserDashboard = () => {
       title: 'Wishlist',
       icon: Heart,
       image: '/src/assets/images/wish-list.jpg',
-      link: '/wishlist',
+      link: '/user/wishlist',
       size: 'tall',
       color: 'red',
       delay: '0.4s'
@@ -62,7 +62,7 @@ const UserDashboard = () => {
       title: 'Wallet',
       icon: Wallet,
       image: '/src/assets/images/wallet.jpeg',
-      link: '/wallet',
+      link: '/user/wallet',
       size: 'medium',
       color: 'yellow',
       delay: '0.6s'

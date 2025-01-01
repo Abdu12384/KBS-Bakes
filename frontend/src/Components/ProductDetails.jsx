@@ -7,6 +7,7 @@ import axiosInstence from '../utils/axioInstence';
 import Breadcrumbs from './BrudCrums';
 import toast, { Toaster } from "react-hot-toast";
 import ProductList from './ProductList';
+import UserBreadcrumb from './UserBrudCrums';
 
 
 
@@ -73,8 +74,20 @@ const ProductDetails = () => {
     setCurrentImage((currentImage - 1 + product.images.length) % product.images.length);
   };
 
-  const toggleWishlist = () => {
+  const addToWishlist = async(productId) => {
     setIsWishlisted(!isWishlisted);
+    console.log('insideid',productId);
+    
+    try {
+      const response = await axiosInstence.post('/user/wishlist/add',{productId})
+      console.log(response);
+      toast.success(response.data.message)
+      
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message)
+    }
+
   };
 
 
@@ -121,9 +134,9 @@ const ProductDetails = () => {
 
   return (
     <div className="bg-gradient-to-br from-[#f3e7e0] to-[#d8cbc4] min-h-screen font-sans">
-            <Toaster position="top-right" reverseOrder={false}/>
+     <Toaster position="top-right" reverseOrder={false}/>
     <div className="container mx-auto px-4 py-8">
-      <Breadcrumbs/>
+    <UserBreadcrumb productName={product?.productName || "Product"} />
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex flex-col lg:flex-row">
           <div className="lg:w-2/3 p-6">
@@ -170,7 +183,7 @@ const ProductDetails = () => {
           
               <button
                 className="absolute top-4 right-4 p-2 bg-white bg-opacity-75 rounded-full text-[#8b6c5c] hover:text-[#3d2516] transition duration-300 shadow-md"
-                onClick={toggleWishlist}
+                onClick={()=>addToWishlist(product?._id)}
               >
                 <Heart className={`h-6 w-6 ${isWishlisted ? 'fill-current text-red-500' : ''}`} />
               </button>

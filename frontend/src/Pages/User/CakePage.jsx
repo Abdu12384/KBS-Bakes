@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight, SortAsc, SortDesc, Star, DollarSign, Clock, Zap, TrendingUp, ChevronDown, Filter, IndianRupee } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, SortAsc, SortDesc, Star, DollarSign, Clock, Zap, TrendingUp, ChevronDown, Filter, IndianRupee, Octagon } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
+import NavBar from '../../Components/Navbar';
+import Footer from '../../Components/Footer'
 
 const CakePage = () => {
   const [products, setProducts] = useState([]);
@@ -13,6 +15,7 @@ const CakePage = () => {
   const [sortOption, setSortOption] = useState('newest');
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showSortButton, setShowSortButton] = useState(false);
+  const [selectedOccasion, setSelectedOccasion] = useState('All');
 
 
   const sortOptions = [
@@ -31,6 +34,7 @@ const CakePage = () => {
       try {
         const params = new URLSearchParams()
          if(sortOption) params.append('sort',sortOption)
+          if (selectedOccasion !== 'All') params.append('type', selectedOccasion);
         const response = await axioInstence.get(`/user/products-list?${params.toString()}`);
         console.log('ooooo',response.data);
         setProducts(response.data);
@@ -42,25 +46,24 @@ const CakePage = () => {
     };
 
     fetchProducts();
-  },[sortOption]);
+  },[sortOption,selectedOccasion]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSortButton(true);
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const categories = ['All', 'Birthday', 'Wedding', 'Anniversary', 'Special Occasion'];
+  const occasions = ['All', 'Birthday', 'Wedding', 'Anniversary', 'Custom'];
 
  
 
   const filteredProducts = products.filter((product) =>
     product.productName.toLowerCase().startsWith(searchTerm.toLowerCase()) &&
-    (selectedCategory === 'All' || product.category === selectedCategory)
-  );
-
+    (selectedOccasion === 'All' || (product.type && product.type?.includes(selectedOccasion)))
+)
 
 
   const indexOfLastProduct = currentPage * productsPerPage;
@@ -70,7 +73,8 @@ const CakePage = () => {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <section className="py-16 bg-gradient-to-br from-[#f3e8e3] to-[#d8cbc4] min-h-screen">
+    <section className="bg-gradient-to-br from-[#f3e8e3] to-[#d8cbc4] min-h-screen">
+      <NavBar/>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-5xl font-bold text-[#3d2516] mb-8 text-center font-serif">Our Delicious Cakes</h1>
         
@@ -86,17 +90,20 @@ const CakePage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8b6c5c]" size={20} />
           </div>
           <div className="flex flex-wrap justify-center gap-2">
-            {categories.map((category) => (
+          {occasions.map((occasion) => (
               <button
-                key={category}
+                key={occasion}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition duration-300 ${
-                  selectedCategory === category
+                  selectedOccasion === occasion
                     ? 'bg-[#8b6c5c] text-white shadow-lg'
                     : 'bg-white/80 text-[#8b6c5c] hover:bg-[#8b6c5c] hover:text-white backdrop-blur-sm'
                 }`}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => {
+                  setSelectedOccasion(occasion);
+                  setCurrentPage(1); // Reset to first page when changing occasion
+                }}
               >
-                {category}
+                {occasion}
               </button>
             ))}
           </div>
@@ -218,6 +225,7 @@ const CakePage = () => {
           </>
         )}
       </div>
+      <Footer/>
     </section>
   );
 };

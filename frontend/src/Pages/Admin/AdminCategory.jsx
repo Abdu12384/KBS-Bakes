@@ -6,12 +6,13 @@ import {format} from 'date-fns'
 import StatusBadge from '../../Components/AdminComponents/StatusBadge'
 import axioInstence from '../../utils/axioInstence'
 import Pagination from '../../Components/Pagination'
-
+import OfferCategoryForm from '../../Components/AdminComponents/AddOffer'
 
 function AdminCategory() {
   const [showForm, setShowForm]=useState(false)
   const[categories, setCategories]= useState([])
   const [menuOpen, setMenuOpen] = useState(null) 
+  const [showOffer, setShowOffer] = useState(false)
   const [editCategory, setEditCategory] = useState(null); 
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 5;
@@ -33,6 +34,14 @@ function AdminCategory() {
    const handleCategoryAdded =()=>{
      setShowForm(false)
    }
+
+   const handleAddOffer = (category) =>{
+     setShowOffer(true)
+     setMenuOpen(null); // Close the dropdown menu
+
+   }
+
+  
 
    const handleEditCatgroy = (category) =>{
       setShowForm(true)
@@ -174,6 +183,12 @@ function AdminCategory() {
                             <UserX className="w-4 h-4" />
                             Block
                           </button>
+                          <button
+                          onClick={() => handleAddOffer(category._id)} 
+                          className="w-full px-4 py-2 text-left text-white text-sm hover:bg-gray-700 flex gap-2 items-center">
+                          <Plus className="w-4 h-4" />
+                          Add Offer
+                        </button>
                         </div>
                       )}
                     </div>
@@ -200,6 +215,13 @@ function AdminCategory() {
         onSuccess={editCategory ? handleCategoryUpdated: handleCategoryAdded}
         category={editCategory}
         />
+      )}
+      {showOffer &&(
+       <OfferCategoryForm
+       onClose={() => setShowOffer(false)} // Ensure modal can be closed
+       
+       />
+
       )}
     </div>
   )

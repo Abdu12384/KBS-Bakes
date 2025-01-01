@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Home, MapPin, Truck, ChevronRight, CreditCard, Wallet, Building, ShieldCheck, Lock, DollarSign } from 'lucide-react';
+import { Home, MapPin, Truck, ChevronRight, CreditCard, Wallet, Building, Tag, ShieldCheck, Lock, DollarSign, Calendar,Percent,Copy,X  } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import { OrderAnimation } from '../../Components/cakeAnimation';
+import CouponCard from '../../Components/Coupon';
+
+
 
 const paymentMethods = [
   { id: 'credit', name: 'Credit Card', icon: CreditCard },
-  { id: 'paypal', name: 'PayPal', icon: Wallet },
+  { id: 'razorpay', name: 'Pay Online (Card/UPI/Wallet)', icon: CreditCard },
   { id: 'cash', name: 'Cash on Delivery', icon: DollarSign },
 ];
 
 const CheckoutPage = () => {
+
 
   const [savedAddress, setSavedAddress] = useState([])
   const [selectedAddress, setSelectedAddress] = useState(savedAddress[0]);
@@ -19,9 +23,27 @@ const CheckoutPage = () => {
    const [cartItems , setCartItems] = useState([])
    const [cartSummary, setCartSummary] = useState({
     subtotal: 0,
-    total: 0,
-    discount: 0
+    shippingCharge: 0,
+    discount: 0, 
+    total: 0
   });
+
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+
+  console.log('summ',cartSummary);
+  
+  const loadRazorpayScript = () => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => reject(false);
+      document.body.appendChild(script);
+    });
+  };
 
    const fetchCartItem = async() =>{
        try {
@@ -32,26 +54,23 @@ const CheckoutPage = () => {
             console.log('ghghghgh',response.data.cartItems);
             
             setCartItems(response.data.cartItems)
-          } 
-
-          if(response.data.summary){
-            setCartSummary(response.data.summary)
-          } else{
-             
-             const subtotal = response.data.cartItems.reduce(
-              (sum, item) => sum + (item.variantDetails.salePrice * item.quantity),
-              0
-             )
-             setCartSummary({
+          }  
+          if (response.data.summary) {
+            const subtotal = response.data.summary.totalPrice;
+            const shippingCharge = subtotal < 1000 ? 50 : 0; 
+            const total = subtotal + shippingCharge
+      
+            setCartSummary({
               subtotal,
-              total:subtotal,
-              discount:0
-             })
-            }
+              shippingCharge,
+              total,
+            });
+          }
+      
        } catch (error) {
-       toast.error(error.response?.data?.message || 'Failed to fetch cart items');
+       toast.error(error.response?.data?.message);
       console.error('Cart fetch error:', error);
-       }
+      }
    }
    console.log(cartItems);
 
@@ -72,11 +91,107 @@ const CheckoutPage = () => {
    console.log('addree',savedAddress);
    
 
+
+
+   
+
    useEffect(()=>{
      fetchCartItem()
      fechAddresses()
    },[])
 
+   
+
+
+
+
+   const handleRazorpayPayment = async () =>{
+    
+     if(!selectedAddress){
+       toast.error('Please select a shipping address')
+       return
+      }
+      
+      
+      try {
+
+        const totalPrice = cartSummary.total;
+        const response = await axioInstence.post('/user/order/payment',{amount: totalPrice})
+        const {id, amount, currency, key_id } =response.data
+        
+        console.log('Backend Response:', response.data);
+
+        const scriptLoaded = await loadRazorpayScript();
+
+        if (!scriptLoaded) {
+          toast.error('Payment Initialization Error: Razorpay library not loaded');
+          return;
+        }       
+
+        console.log('Key ID:', key_id,id);
+        const options = {
+           key:key_id,
+           amount:amount,
+           currency:currency,
+           name:'KBS Bakes',
+           decription:'Order Payment',
+           order_id: id,
+           handler: async function(response){
+
+            // if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
+            //   toast.error('Invalid payment response received');
+            //   return;
+            // }`
+             const paymentData = {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+               orderDetails : {
+                address: selectedAddress,
+                paymentMethods: selectedPayment,
+                cartItems,
+                cartSummary
+              }
+             }
+             
+             try {
+                const verifyResponse = await axioInstence.post('/user/verify-payment',paymentData)
+                 if(verifyResponse.data){
+                  toast.success('Payment Successful!');
+                 } else{
+                  toast.error('Payment Verification Failed');
+                 }
+             } catch (error) {
+              toast.error('Payment Verification Error');
+             }
+           },
+  
+           prefill: {
+            name: selectedAddress.fullName,
+            email:selectedAddress.email ||'',
+            contact: selectedAddress.phone 
+           },
+           theme:{
+            color:'#6C63FF'
+           }
+        }
+
+       
+      const rzp = new window.Razorpay(options); 
+        rzp.open()
+      
+
+     } catch (error) {
+      toast.error(error.response?.data?.message || 'Payment Initialization Error');
+      console.log('keyerror',error);
+      
+     }
+   }
+   
+
+   
+
+   
 
 
    const handlePlaceOrder = async () => {
@@ -122,15 +237,50 @@ const CheckoutPage = () => {
      }
    }
 
+   const handleApplyCoupon = async () => {
+    try {
+      const response = await axioInstence.post('/user/apply-coupon', { 
+        code: couponCode,
+        cartSummary:{totalPrice: cartSummary.total}
+      });
+      if (response.data) {
+        setAppliedCoupon(couponCode);
+        setCartSummary(prevSummary => ({
+          ...prevSummary,
+          discount: response.data.discount,
+          total: prevSummary.subtotal + prevSummary.shippingCharge - response.data.discount
+        }));
+        toast.success('Coupon applied successfully!');
+     
+  
+      } else {
+        toast.error(response.data.message || 'Failed to apply coupon');
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.error(error.response.data.message);
 
-
-  const calculateTotal = () => {
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.variantDetails.salePrice * item.quantity), 0);
-    const shippingCharge = subtotal < 1000 ? 50 : 0;
-    return subtotal + shippingCharge;
-
+    }
+    setCouponCode('');
   };
 
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCartSummary(prevSummary => ({
+      ...prevSummary,
+      discount: 0,
+      total: prevSummary.subtotal + prevSummary.shippingCharge
+    }));
+    toast.success('Coupon removed');
+  };
+
+
+  
+  
+  
+  
+  
+  
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {loading && <OrderAnimation/>}
@@ -206,6 +356,53 @@ const CheckoutPage = () => {
                 </div>
               </div>
             </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-purple-600" />
+                Coupons
+              </h2>
+              
+              {appliedCoupon ? (
+                <div className="bg-purple-100 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-medium text-purple-700">{appliedCoupon}</span>
+                      <span className="ml-2 text-sm text-purple-600">applied</span>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-purple-700 hover:text-purple-900"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-purple-600 mt-2">
+                    Discount of ₹{cartSummary.discount.toFixed(2)} applied to your order
+                  </p>
+                </div>
+              ) : (
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter coupon code"
+                    className="flex-grow p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    onClick={() => handleApplyCoupon(couponCode)}
+                    className="bg-purple-600 text-white rounded-md px-4 py-2 font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    Apply
+                  </button>
+                </div>
+              )}
+
+             <CouponCard/>
+            </div>
+
+
 
             {/* Payment Options */}
             <div className="bg-white rounded-xl shadow-sm p-6">
@@ -294,6 +491,7 @@ const CheckoutPage = () => {
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <h3 className="font-medium">{item.productName}</h3>
+                        <p className="text-sm text-gray-600">{`x${item.quantity}`}</p>
                         <p className="font-medium">₹{item.variantDetails.salePrice.toFixed(2)}</p>
                       </div>
                       <div className="text-sm text-gray-500">
@@ -309,30 +507,40 @@ const CheckoutPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">
-                    ₹{cartItems.reduce((sum, item) => sum + (item.variantDetails.salePrice * item.quantity), 0).toFixed(2)}
+                    ₹{cartSummary.subtotal}
                   </span>
                 </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium text-purple-600">Discount</p>
+                    <p className="font-medium text-purple-600">{`-₹${cartSummary.discount.toFixed(
+                      2
+                    )}`}</p>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className={`font-medium ${calculateTotal() - (cartItems.reduce((sum, item) => sum + (item.variantDetails.salePrice * item.quantity), 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {calculateTotal() - (cartItems.reduce((sum, item) => sum + (item.variantDetails.salePrice * item.quantity), 0)) > 0 
+                  <span className={`font-medium ${cartSummary.subtotal > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {cartSummary.subtotal > 0 
                       ? '₹50.00' 
                       : 'FREE'}
                   </span>               
                    </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Order total</span>
-                  <span>₹{calculateTotal().toFixed(2)}</span>
+                  <span>₹{cartSummary.total}</span>
                 </div>
               </div>
 
-              <button 
-              className="w-full bg-purple-600 text-white rounded-lg py-4 mt-6 font-medium hover:bg-purple-700 transition-colors flex items-center justify-center"
-              onClick={handlePlaceOrder}
-              >
+              
+              <button
+                onClick={selectedPayment === 'razorpay' ? handleRazorpayPayment : handlePlaceOrder}
+                className="w-full bg-purple-600 text-white rounded-lg py-4 mt-6 font-medium hover:bg-purple-700 transition-colors flex items-center justify-center"
+                >
                 <ShieldCheck className="w-5 h-5 mr-2" />
-                Place Order
+                {selectedPayment === 'razorpay' ? 'Pay with Razorpay' : 'Place Order'}
               </button>
+            
 
               <p className="text-xs text-gray-500 text-center mt-4">
                 By placing your order, you agree to our Terms of Service and Privacy Policy

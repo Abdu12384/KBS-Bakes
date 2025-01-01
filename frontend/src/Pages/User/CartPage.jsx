@@ -12,7 +12,7 @@ const CartPage = () => {
 
      try {
       const response = await axioInstence.get('/user/cart/item')
-       console.log(response.data);
+       console.log('hjg',response.data);
        const data = response.data;
 
      setItems(Array.isArray(data.cartItems) ? data.cartItems : []);
@@ -46,7 +46,7 @@ const CartPage = () => {
         setItems((prevItems)=> 
           prevItems.filter((item) => 
             !(item.product._id === productId && item.variantDetails._id === variantId)));
-
+        await fetchCartItem();
         console.log(`Item with ID ${id} removed successfully`);
       }else {
         console.error(`Failed to remove item: ${response.data.message}`);
@@ -78,6 +78,7 @@ const CartPage = () => {
             item._id === id ? {...item, quantity: newQuantity}:item
           )
         );
+        await fetchCartItem();
       }else{
         console.error('Failed to update quantity:', response.data.message);
       }
@@ -88,13 +89,7 @@ const CartPage = () => {
   };
 
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  };
 
-  const subtotal = calculateSubtotal();
-  const discount = 4.00;
-  const total = subtotal - discount;
 
   return (
     <div className="min-h-screen bg-white">
@@ -189,19 +184,19 @@ const CartPage = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-white">
                   <span>Cart Subtotal</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
+                  <span>₹{cartsummury?.totalPrice}</span>
                 </div>
-                <div className="flex justify-between text-white">
+                {/* <div className="flex justify-between text-white">
                   <span>Design by Fluttertop</span>
                   <span>Free</span>
-                </div>
-                <div className="flex justify-between text-[#d8cbc4]">
+                </div> */}
+                {/* <div className="flex justify-between text-[#d8cbc4]">
                   <span>Discount</span>
                   <span>-₹{discount.toFixed(2)}</span>
-                </div>
+                </div> */}
                 <div className="flex justify-between font-bold text-xl pt-4 border-t border-[#8b6c5c] text-white">
                   <span>Cart Total</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span>₹{cartsummury?.totalPrice}</span>
                 </div>
               </div>
               <button 

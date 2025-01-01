@@ -82,8 +82,7 @@ const OrdersListPage = () => {
 
   const handleCancelOrder = async (event,orderId) => {
     event.preventDefault();
-    // const confirmCancel = window.confirm("Are you sure you want to cancel this order?");
-    // if (!confirmCancel) return;
+    
     try {
       const response = await axioInstance.post(`/user/cancel-order/${orderId}`);
       toast.success(response.data.message)
@@ -101,6 +100,29 @@ const OrdersListPage = () => {
       setError('Failed to cancel order');
     }
   };
+
+  const handleCancelProduct = async (productId) => {
+
+    try {
+      const response = await axioInstance.post('/user/cancel-product', {
+        orderId: selectedOrder._id,
+        productId: productId,
+      });
+
+      if (response.data.success) {
+        toast.success('Product canceled successfully');
+        fetchOrderDetails(selectedOrder._id); // Refresh order details
+      } else {
+        toast.error(response.data.message || 'Failed to cancel product');
+      }
+    } catch (error) {
+      toast.error('Error canceling product');
+      console.error(error);
+    } finally {
+
+    }
+  };
+
 
 
 
@@ -187,6 +209,12 @@ const OrdersListPage = () => {
                       <div className="text-right">
                         {/* <p className="font-semibold">${(product.price * product.quantity).toFixed(2)}</p> */}
                       </div>
+                      <button 
+                            className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+                            onClick={() => handleCancelProduct(product.productId._id)} 
+                          >
+                            Cancel 
+                          </button>
                     </div>
                   ))}
                 </div>
@@ -213,6 +241,10 @@ const OrdersListPage = () => {
                       <div className="flex justify-between">
                         <p>Subtotal</p>
                         <p>₹{selectedOrder?.subtotal?.toFixed(2)}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p>discount</p>
+                        <p>₹{selectedOrder?.discount?.toFixed(2)}</p>
                       </div>
                       <div className="flex justify-between">
                         <p>Shipping</p>

@@ -12,10 +12,8 @@ const LoginProtectedRoute = () => {
  
   if (isAuthenticated) {
 
-      
     return <Navigate to="/user/home" replace />;
   }
-
 
   return <Outlet />;
 };
@@ -23,10 +21,10 @@ const LoginProtectedRoute = () => {
 
 
 const ProtectedRoute = () => {
-  const {isAuthenticated} = useSelector((state) => state.user);
+  const {isAuthenticated,user} = useSelector((state) => state.user);
 
  
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user.isActive) {
     return <Navigate to="/" replace />;
   }
 

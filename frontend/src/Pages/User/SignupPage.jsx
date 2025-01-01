@@ -117,7 +117,7 @@ const dispatch = useDispatch()
         {/* Left Side - Illustration */}
         <div className="hidden lg:flex lg:w-1/2 bg-[#d8cbc4] p-12 flex flex-col items-center justify-center">
           <div className="text-center ">
-            <h1 className="text-2xl font-bold text-[#5b3e31] mb-4">Welcome to KBS Bakes Where every bite feels like home!</h1>
+            <h1 className="text-2xl font-bold text-[#5b3e31] ">Welcome to KBS Bakes Where every bite feels like home!</h1>
             <p className="text-lg text-[#5b3e31]">
             Join us today, indulge in sweet creations, and experience the magic of freshly baked delights. Let’s make memories!
             </p>
@@ -132,12 +132,12 @@ const dispatch = useDispatch()
               <span>KBS</span>
               <span className="text-[#FFFFFF]">BAKES</span>
             </h2>
-            <p className="text-[#5b3e31] mt-3">Create your account and start your journey with us!</p>
+            <p className="text-[#5b3e31] ">Create your account and start your journey with us!</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 max-w-sm mx-auto">
             <div className="relative">
-              <label htmlFor="fullName" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="fullName" className="block text-xs font-medium text-gray-700">
                 Full Name
               </label>
               <div className="relative rounded-lg shadow-sm">
@@ -158,7 +158,7 @@ const dispatch = useDispatch()
             </div>
 
             <div className="relative">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 ">
                 Email Address
               </label>
               <div className="relative rounded-lg shadow-sm">
@@ -178,7 +178,7 @@ const dispatch = useDispatch()
             </div>
 
             <div className="relative">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 ">
                 Phone Number
               </label>
               <div className="relative rounded-lg shadow-sm">
@@ -200,7 +200,7 @@ const dispatch = useDispatch()
             </div>
 
             <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative rounded-lg shadow-sm">
@@ -283,7 +283,7 @@ const dispatch = useDispatch()
               className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4a9d5e] transition-all duration-200"
             />
 
-            <p className="text-center text-sm text-gray-600 mt-6">
+            <p className="text-center text-sm text-gray-600 ">
               Already have an account?{' '}
               <a href="/user/login" className="text-[#FFFFFF] hover:text-[#3d8b4f] font-medium">
                Sign In

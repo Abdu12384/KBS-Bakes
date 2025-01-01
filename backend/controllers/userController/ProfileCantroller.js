@@ -2,6 +2,7 @@ const User = require('../../model/userModel')
 const Address = require('../../model/addressModel')
 const { use } = require('../../routes/userRoute')
 const bcrypt = require('bcrypt');
+const { json } = require('express');
 
 
 const profileUpdate = async(req, res) =>{
@@ -11,10 +12,6 @@ const profileUpdate = async(req, res) =>{
       email,
       mobile,
       profileImage,
-      address,
-      country,
-      state,
-      pincode,
       currentPassword,
       newPassword
     }= req.body
@@ -22,6 +19,8 @@ const profileUpdate = async(req, res) =>{
     console.log('here user',req.body);
     try {
       const user = await User.findById(req.userId)
+
+      
        
       if(!user) return res.status(404).json({error:"User not found"})
 
@@ -45,32 +44,10 @@ const profileUpdate = async(req, res) =>{
         user.email = email || user.email
         user.mobile = mobile || user.mobile
         user.profileImage = profileImage || user.profileImage
-
-        let addressDoc = await Address.findOne({userId: user._id})
-         
-        if(addressDoc){
-          addressDoc.address = address || addressDoc.address
-          addressDoc.country = country || addressDoc.country
-          addressDoc.state = state || addressDoc.state
-          addressDoc.pincode = pincode || addressDoc.pincode
-          await addressDoc.save()
-        } else{
-            addressDoc = new Address({
-               userId: user._id,
-               address,
-               country,
-               state,
-               pincode
-            })
-            await addressDoc.save()
-        }
-
-        user.addressId = addressDoc._id
-        console.log(user);
         
         await user.save()
          
-   res.json({ message: "Profile updated successfully", user, address: addressDoc });
+   res.json({ message: "Profile updated successfully", user});
 
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -79,8 +56,26 @@ const profileUpdate = async(req, res) =>{
     }
 }
 
+const getProfile = async (req, res)=>{
+   try {
+   const userId = req.user.id
+    const user= await User.findById(userId)
+
+    if(!user){
+      return res.status(404).json({message:'User Not fond'})
+    }
+
+    res.status(200).json(user)
+    
+   } catch (error) {
+    console.log(error);
+    console.log("Error From fetching User");
+    
+   }
+}
 
 
 module.exports={
-   profileUpdate
+   profileUpdate,
+   getProfile
 }

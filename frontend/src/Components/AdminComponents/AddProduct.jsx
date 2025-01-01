@@ -17,17 +17,19 @@ const AddProduct = ({onCancel,onProductAdded}) => {
     stock: 0, 
     description: "",
     images: [],
+    type:[],
     variants:[
       {
         weight: "1 kg",
         flavor:'',
         regularPrice: 0,
-        salePrice: 0,
+        discount: 0,
         stock:0,
       }
-    ]
+    ],
   });
 
+  const productTypes = ['Birthday','Wedding','Anniversary','Custom']
 
   useEffect(()=>{
 
@@ -69,7 +71,7 @@ const AddProduct = ({onCancel,onProductAdded}) => {
             weight:'1 kg',
             flavor:'',
             regularPrice:0,
-            salePrice:0,
+            discount:0,
             stock:0,
           }
         ]
@@ -94,16 +96,13 @@ const AddProduct = ({onCancel,onProductAdded}) => {
     if (productData.regularPrice < 0) {
       newErrors.regularPrice = "Price cannot be negative";
     }
-    if (productData.salePrice > productData.regularPrice) {
-      newErrors.salePrice = "Sale price cannot be higher than regular price";
-    }
     productData.variants.forEach((variant, index) => {
       if (variant.regularPrice <= 0) {
         newErrors[`variant${index}RegularPrice`] = 'Regular price must be greater than 0';
       }
-      if (variant.salePrice > variant.regularPrice) {
-        newErrors[`variant${index}SalePrice`] = 'Sale price cannot be higher than regular price';
-      }
+      // if (variant.salePrice > variant.regularPrice) {
+      //   newErrors[`variant${index}SalePrice`] = 'Sale price cannot be higher than regular price';
+      // }
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -123,6 +122,19 @@ const AddProduct = ({onCancel,onProductAdded}) => {
       }));
     }
   };
+  
+  const handleTypeChange = (type) => {
+    setProductData((prev) => {
+      const newTypes = prev.type.includes(type)
+        ? prev.type.filter(t => t !== type)
+        : [...prev.type, type];
+      return {
+        ...prev,
+        type: newTypes
+      };
+    });
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -187,6 +199,31 @@ const AddProduct = ({onCancel,onProductAdded}) => {
             </select>
             {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Product Types
+          </label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {productTypes.map((type) => (
+              <label
+                key={type}
+                className="flex items-center space-x-2 p-2 border rounded-md cursor-pointer hover:bg-gray-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={productData.type.includes(type)}
+                  onChange={() => handleTypeChange(type)}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-300">{type}</span>
+              </label>
+            ))}
+          </div>
+          {errors.type && (
+            <p className="text-red-500 text-xs mt-1">{errors.type}</p>
+          )}
         </div>
 
         <div>
@@ -274,16 +311,16 @@ const AddProduct = ({onCancel,onProductAdded}) => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sale Price</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Discount</label>
                   <input
                     type="number"
-                    value={variant.salePrice}
-                    onChange={(e) => handleVariantChange(index, 'salePrice', parseFloat(e.target.value))}
+                    value={variant.discount}
+                    onChange={(e) => handleVariantChange(index, 'discount', parseFloat(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 text-gray-300 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"
                   />
-                  {errors[`variant${index}SalePrice`] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[`variant${index}SalePrice`]}</p>
+                  {errors[`variant${index}discount`] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[`variant${index}discount`]}</p>
                   )}
                 </div>
                 <div>

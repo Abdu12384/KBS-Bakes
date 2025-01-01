@@ -104,9 +104,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 >
                   <option value="">Select country</option>
-                  <option value="us">United States</option>
-                  <option value="uk">United Kingdom</option>
-                  <option value="ca">Canada</option>
+                  <option value="united States">United States</option>
+                  <option value="united Kingdom">United Kingdom</option>
+                  <option value="india">India</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -120,9 +120,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 >
                   <option value="">Select state</option>
-                  <option value="ny">New York</option>
-                  <option value="ca">California</option>
-                  <option value="tx">Texas</option>
+                  <option value="kerla">Kerla</option>
+                  <option value="delhi">Delhi</option>
+                  <option value="mumbai">Mumbai</option>
                 </select>
               </div>
             </div>
@@ -169,144 +169,4 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
 
 export default AddressForm;
 
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-
-// function AddressForm({ onSubmit, initialAddress }) {
-//   const [address, setAddress] = useState({
-//     name: '',
-//     phone: '',
-//     street: '',
-//     houseNumber: '',
-//     city: '',
-//     postCode: '',
-//     floor: ''
-//   });
-
-//   useEffect(() => {
-//     if (initialAddress) {
-//       setAddress(initialAddress);
-//     }
-//   }, [initialAddress]);
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setAddress(prevAddress => ({ ...prevAddress, [name]: value }));
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     onSubmit(address);
-//   };
-
-//   const inputStyle = {
-//     backgroundColor: '#bca89f',
-//     borderColor: '#8b6c5c',
-//     color: '#3d251e',
-//     '::placeholder': {
-//       color: '#6a4a3a'
-//     }
-//   };
-
-//   return (
-//     <form onSubmit={handleSubmit} className="space-y-4">
-//       <div>
-//         <input
-//           type="text"
-//           name="name"
-//           value={address.name}
-//           onChange={handleChange}
-//           placeholder="Name"
-//           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//       </div>
-//       <div>
-//         <input
-//           type="tel"
-//           name="phone"
-//           value={address.phone}
-//           onChange={handleChange}
-//           placeholder="Phone"
-//           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//       </div>
-//       <div>
-//         <input
-//           type="text"
-//           name="street"
-//           value={address.street}
-//           onChange={handleChange}
-//           placeholder="Street"
-//           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//       </div>
-//       <div className="flex space-x-2">
-//         <input
-//           type="text"
-//           name="houseNumber"
-//           value={address.houseNumber}
-//           onChange={handleChange}
-//           placeholder="House Number"
-//           className="w-1/2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//         <input
-//           type="text"
-//           name="floor"
-//           value={address.floor}
-//           onChange={handleChange}
-//           placeholder="Floor"
-//           className="w-1/2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//         />
-//       </div>
-//       <div>
-//         <input
-//           type="text"
-//           name="city"
-//           value={address.city}
-//           onChange={handleChange}
-//           placeholder="City"
-//           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//       </div>
-//       <div>
-//         <input
-//           type="text"
-//           name="postCode"
-//           value={address.postCode}
-//           onChange={handleChange}
-//           placeholder="Post Code"
-//           className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#6a4a3a]"
-//           style={inputStyle}
-//           required
-//         />
-//       </div>
-//       <button
-//         type="submit"
-//         className="w-full font-bold py-2 px-4 rounded-md transition-colors"
-//         style={{ 
-//           backgroundColor: '#3d251e',
-//           color: '#d8cbc4'
-//         }}
-//       >
-//         {initialAddress ? 'Update Address' : 'Add Address'}
-//       </button>
-//     </form>
-//   );
-// }
-
-// export default AddressForm;
 

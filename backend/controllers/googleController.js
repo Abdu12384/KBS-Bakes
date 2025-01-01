@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../model/userModel');
+const bcrypt = require('bcrypt');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -20,6 +21,8 @@ const generateTokens = (userId) => {
   
   return { accessToken, refreshToken };
 };
+
+
 
 const googleSignup = async (req, res) => {
     console.log('working');
@@ -77,27 +80,27 @@ const googleSignup = async (req, res) => {
             });
         }
 
-        // If the user does not exist, create a new user
+
         user = await User.create({
             email,
             fullName: name,
             profileImage: picture,
             googleId: payload.sub,
-            mobile: '9809809', // Default mobile; you can adjust this
-            password: '1234', // Password is default here; consider using hashed passwords
+            mobile: '9809809', 
+            password: await bcrypt.hash('123456',10), 
         });
 
-        // Generate tokens for the new user
+
         const { accessToken, refreshToken } = generateTokens(user._id);
         user.refreshToken = refreshToken;
         await user.save();
          
-        // Set tokens in cookies
+ // Set tokens in cookies
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: 15 * 60 * 1000 
         });
 
         res.cookie('refreshToken', refreshToken, {
@@ -107,7 +110,7 @@ const googleSignup = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-        // Send the response for successful signup
+// Send the response for successful signup
         return res.status(200).json({
             user: {
                 id: user._id,

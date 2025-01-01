@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { EyeIcon, EyeOffIcon, KeyIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import axioInstence from '../utils/axioInstence';
+import toast, { Toaster } from "react-hot-toast";
+
 const ResetPassword = () => {
   const {token} = useParams()
   const [newPassword, setNewPassword] = useState('');
@@ -25,10 +27,10 @@ const ResetPassword = () => {
         token,
         newPassword
       })
-       console.log(response);
-       
+      toast.success(response.data.message)
     } catch (error) {
-      console.error(error.response ? error.response.data.message : error.message);      
+      console.error(error.response ? error.response.data.message : error.message);  
+      toast.error(error.response.data.message);    
     }
   };
 
@@ -57,6 +59,7 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                  <Toaster position="top-right" reverseOrder={false}/>
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <div className="text-center mb-8">
           <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto">

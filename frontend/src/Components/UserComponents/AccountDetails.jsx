@@ -10,7 +10,7 @@ import toast, { Toaster } from "react-hot-toast";
 
 function UserDetailsForm() {
 
-  const {user} = useSelector((state)=>state.user)
+
   const [showPassword, setShowPassword] = useState({
     current: false,
     new: false,
@@ -21,10 +21,6 @@ function UserDetailsForm() {
     fullName: "",
     email: "",
     mobile: "",
-    address: "",
-    country: "",
-    state: "",
-    pincode: "",
     profileImage:"",
     currentPassword: "",
     newPassword: "",
@@ -33,16 +29,8 @@ function UserDetailsForm() {
   const [errors, setErrors] = useState({});
   const [imageFile, setImageFile] = useState(null)
 
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        fullName: user.fullName || "",
-        email: user.email || "",
-        mobile: user.mobile || "",
-        profileImage: user.profileImage || ""
-      });
-    }
-  }, [user]);
+
+
 
   const togglePasswordVisibility = (field) => {
     setShowPassword(prevState => ({
@@ -51,38 +39,22 @@ function UserDetailsForm() {
     }));
   };
 
+console.log(formData);
 
   useEffect(() => {
     const fetchAddress = async () => {
       try {
-        const response = await axioInstence.get("/user/address-details");
-        const addressData = response.data;
-        if (Array.isArray(addressData) && addressData.length > 0) {
-
-          const { address, country, state, pincode } = addressData[0];
-    
-          console.log("Address:", address);
-          console.log("Full Response Data:", response.data);
-         
-        setFormData((prevData) => ({
-          ...prevData,
-          address: address || "",
-          country: country || "",
-          state: state || "",
-          pincode: pincode || "",
-        }));
-      } else {
-        console.warn("No address data found.");
-        toast.error("No address details available.");
-      }
+        const response = await axioInstence.get("/user/profile-update");
+        console.log(response);
+        setFormData(response.data)
       } catch (error) {
         console.error("Error fetching address details:", error);
-        toast.error("Failed to fetch address details.");
       }
     };
 
     fetchAddress();
   }, []);
+
 
 
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Mail, ArrowRight, AlertCircle, Key, Lock, Unlock } from 'lucide-react'
 import axioInstence from '../utils/axioInstence'
+import toast, { Toaster } from "react-hot-toast";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
@@ -15,7 +16,8 @@ const ForgotPassword = () => {
       const response = await axioInstence.post('/auth/forgot-password',{email})
 
      console.log(response);
- 
+     toast.success(response.data.message)
+
     } catch (error) {
        console.log(error.response.data.message);
             
@@ -24,6 +26,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 to-blue-200 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <Toaster position="top-right" reverseOrder={false}/>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <div className="relative">

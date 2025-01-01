@@ -5,6 +5,8 @@ const Address = require('../../model/addressModel')
 const showAddress = async(req, res)=>{
    
     try {
+      console.log('address',req.body);
+      
       const userId = req.user?.id;
 
   console.log('addrrssss',userId);

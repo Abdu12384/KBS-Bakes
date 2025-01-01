@@ -25,6 +25,7 @@ const {addCategory,
   updateOrderStatus,
   cancellOrder
  } = require('../controllers/adminController/orderManagement')    
+const { addCoupon, deleteCoupon, getAllCoupons } = require('../controllers/adminController/couponController')
 
 
 
@@ -48,6 +49,9 @@ admin_Route
         .get('/orders-manage',verifyAdminToken,loadOrderDetails)
         .patch('/orders/status/:id',verifyAdminToken,updateOrderStatus)
         .patch('/orders/cancel/:id',verifyAdminToken,cancellOrder)
+        .post('/add-coupon',verifyAdminToken,addCoupon)
+        .get('/coupons',verifyAdminToken,getAllCoupons)
+        .delete('/delete-coupon/:couponId',verifyAdminToken,deleteCoupon)
         .post('/logout',loadLogout)
 
 module.exports=admin_Route

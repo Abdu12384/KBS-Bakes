@@ -12,8 +12,10 @@ const varifyToken = (req, res, next)=>{
 
        try {
          const decoded = jwt.verify(token,process.env.USER_ACCESS_TOKEN_SECRET)
-         req.user= decoded
-         req.userId = decoded.id;
+         req.user = decoded
+         console.log(decoded);
+         
+         req.userId = decoded.id || decoded.userId;
          console.log('id here',req.userId);
         
           next()

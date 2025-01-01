@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Cake, LayoutDashboard, ShoppingCart, Package, List, Tag, Image, Users, Settings,LogOut} from 'lucide-react';
+import { Cake, LayoutDashboard, ShoppingCart, Package, List, Tag, Image, Users, BarChart2,LogOut} from 'lucide-react';
 import { useDispatch } from 'react-redux';
 // import { logout } from '../../redux/slices/authSlice';
 import { adminLogout } from '../../redux/slices/adminSlice';
@@ -15,7 +15,7 @@ function Sidebar({ isOpen }) {
     { icon: Tag, name: 'Coupon', path: '/admin/coupon' },
     { icon: Image, name: 'Banner', path: '/admin/banner' },
     { icon: Users, name: 'Customer', path: '/admin/customers' },
-    { icon: Settings, name: 'Settings', path: '/admin/settings' },
+    { icon: BarChart2, name: 'Sales Report', path: '/admin/sales-report' }, 
   ];
 
   const handleLogout= async()=>{

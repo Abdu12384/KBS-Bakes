@@ -8,6 +8,8 @@ import { OrdersPage } from '../Components/AdminComponents/Orders'
 import CustomerPanel from '../Pages/Admin/CustomerPanel'
 import AdminCategory from '../Pages/Admin/AdminCategory'
 import PageNotFound from '../Pages/PageNotFount/PageNotFount'
+import CouponManagement from '../Pages/Admin/AdminCoupenPage'
+import SaleReportPage from '../Pages/Admin/AdminSalesReport'
 import {AdminProtectRouteLogin,AdminProtectRoute} from '../ProtectRoute/ProtectedRoute'
 
 function AdminRoute() {
@@ -25,6 +27,8 @@ function AdminRoute() {
                 <Route path="products" element={<AdminProductsPage />} />
                 <Route path="customers" element={<CustomerPanel />} />
                 <Route path="category" element={<AdminCategory />} />
+                <Route path="coupon" element={<CouponManagement />} />
+                <Route path="sales-report" element={<SaleReportPage />} />
           </Route>
          </Route>
 

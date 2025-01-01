@@ -169,7 +169,7 @@ const Header = () => {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-[#3d2516] bg-opacity-90">
               <NavLink href="/" mobile>Home</NavLink>
               <NavLink href="/about" mobile>About</NavLink>
-              <NavLink href="/products" mobile>Products</NavLink>
+              <NavLink href="/user/cakes" mobile>Cakes</NavLink>
               <NavLink href="/contact" mobile>Contact</NavLink>
             </div>
           </div>

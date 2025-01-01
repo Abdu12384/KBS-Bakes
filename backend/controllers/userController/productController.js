@@ -79,7 +79,7 @@ const productDetails= async(req, res)=>{
    try {
     console.log(req.query);
      
-    const {sort} = req.query
+    const {sort,type} = req.query
     
      let query = {isDeleted: false}
 
@@ -111,7 +111,7 @@ const productDetails= async(req, res)=>{
      }
      const products = await Product.find(query)
      .sort(sortConfig)
-     .select('productName images variants.salePrice category')
+     .select('productName images variants.salePrice category type')
      .lean()
 
      res.status(200).json(products)

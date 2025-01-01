@@ -11,16 +11,16 @@ const variantSchema = new mongoose.Schema({
    },
    salePrice:{
     type:Number,
-    required:true
+    // required:true
    },
    stock:{
     type:Number,
     required:true
    },
-  //  customization:{
-  //   type:Boolean,
-  //   default:false
-  //  }
+   discount:{
+    type:Number,
+    default:0
+  },
   
 })
 
@@ -67,6 +67,7 @@ const prodcutSchema = new mongoose.Schema({
       type:String,
       required:true
     },
+   
     category:{
      type: mongoose.Schema.Types.ObjectId, 
      ref:"Category",
@@ -79,7 +80,10 @@ const prodcutSchema = new mongoose.Schema({
    },
    variants:[variantSchema],
    reviews: [reviewSchema], 
-
+   type:{
+    type:[String],
+    enum:['Birthday','Wedding','Anniversary','Custom']
+   }
 },
 {
   timestamps:true
