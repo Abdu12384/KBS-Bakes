@@ -5,12 +5,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pageNumbers = [];
   const maxVisiblePages = 5;
 
-  // Generate page numbers
+
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
 
-  // Calculate range of visible page numbers
+
   let startPage = Math.max(currentPage - Math.floor(maxVisiblePages / 2), 1);
   let endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
 
