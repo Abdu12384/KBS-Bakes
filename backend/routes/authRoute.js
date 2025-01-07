@@ -27,6 +27,4 @@ const googleController = require('../controllers/googleController')
   
 
 
-
-
   module.exports = auth_Route

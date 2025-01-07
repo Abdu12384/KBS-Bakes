@@ -2,6 +2,7 @@ import { Heart, Trash2, ShoppingCart, Package, Calendar, DollarSign } from 'luci
 import axioInstence from '../../utils/axioInstence'
 import React,{useEffect, useState} from 'react'
 import toast, { Toaster } from "react-hot-toast";
+import NavBar from '../../Components/Navbar';
 
 
 
@@ -43,6 +44,8 @@ console.log(wishlistItems);
 
 
   return (
+    <>
+      <NavBar/>
     <div className="max-w-6xl mx-auto px-4 py-8 bg-gray-50">
       {/* Breadcrumb */}
             <Toaster position="top-right" reverseOrder={false}/>
@@ -99,9 +102,9 @@ console.log(wishlistItems);
             {/* Price */}
             <div className="col-span-3">
               
-                <span className="text-gray-400 line-through mr-2">${item?.productId.variants?.[0]?.regularPrice}</span>
+                <span className="text-gray-400 line-through mr-2">₹{item?.productId.variants?.[0]?.regularPrice}</span>
             
-              <span className="text-gray-900 font-semibold">${item?.productId.variants?.[0]?.salePrice}</span>
+              <span className="text-gray-900 font-semibold">₹{item?.productId.variants?.[0]?.salePrice}</span>
             </div>
 
             {/* Stock Status */}
@@ -132,6 +135,7 @@ console.log(wishlistItems);
         ))}
       </div>
     </div>
+    </>
   )
 }
 

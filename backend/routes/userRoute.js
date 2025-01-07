@@ -46,28 +46,43 @@ const{
  rezorpayLoad,
  varifyPayment,
  couponApply,
- cancelProduct
+ cancelProduct,
+ returnController
 } = require('../controllers/userController/orderController')
 const { addWishlist, getWishlist, deleteWishlishProduct,  } = require('../controllers/userController/wishlistController')
 const { getAllCoupons } = require('../controllers/adminController/couponController')
+const { getWalletInfo, addMoneyToWallet, placeWalletOrder } = require('../controllers/userController/walletController')
 
 
 
 
-
+// Product Routes
 user_Route.get('/home-list-Product',homeListProduct)
           .get('/productshow/:id',productDetails)
           .get('/products-list',varifyToken,cakePage)
+
+// Profile Routes          
+user_Route         
           .get('/profile-update',varifyToken,getProfile)
           .post('/profile-update',varifyToken,profileUpdate)
+  
+ 
+// Address Routes          
+user_Route      
           .get('/address-details',varifyToken,showAddress)
           .post('/add-address',varifyToken,addAddress)
           .put('/set-default-address/:id',varifyToken,defaultAddress)
           .delete('/delete-address/:id',varifyToken,deleteAddress)
+
+// Cart Routes        
+user_Route          
           .get('/cart/item',varifyToken,getCartItem)
           .put('/cart/update',varifyToken,updateCartQuantity)
           .delete('/cart/remove',varifyToken,removeItemCart)
           .post('/cart-add',varifyToken,addToCart)
+      
+// Order Routes
+user_Route          
           .get('/orders',varifyToken,getAllOrders)
           .post('/order/payment',varifyToken,rezorpayLoad)
           .post('/verify-payment',varifyToken,varifyPayment)
@@ -75,11 +90,31 @@ user_Route.get('/home-list-Product',homeListProduct)
           .get('/order-details/:orderId',varifyToken,getOrderDetails)
           .post('/cancel-order/:orderId',varifyToken,cancelOrder)
           .post('/cancel-product',varifyToken,cancelProduct)
+
+
+ // Wishlist Routes         
+user_Route          
           .get('/mywishlist',varifyToken,getWishlist)
           .delete('/mywishlist/:productId',varifyToken,deleteWishlishProduct)
           .post('/wishlist/add',varifyToken,addWishlist)
+  
+ // Coupon Routes         
+user_Route        
           .get('/coupons',varifyToken,getAllCoupons)
           .post('/apply-coupon',varifyToken,couponApply)
+
+// Wallet Routes
+user_Route          
+          .get('/wallet/balance',varifyToken,getWalletInfo)
+          .post('/wallet/add-money',varifyToken,addMoneyToWallet)
+          .post('/wallet/deduct',varifyToken,placeWalletOrder)
+
+  // Return Routes        
+user_Route          
+          .post('/return-request',varifyToken,returnController)
+ 
+          
+user_Route        
           .post('/logout',handlLogoutUser)
           
 

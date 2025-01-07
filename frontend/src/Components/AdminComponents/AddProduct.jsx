@@ -23,7 +23,6 @@ const AddProduct = ({onCancel,onProductAdded}) => {
         weight: "1 kg",
         flavor:'',
         regularPrice: 0,
-        discount: 0,
         stock:0,
       }
     ],
@@ -87,23 +86,39 @@ const AddProduct = ({onCancel,onProductAdded}) => {
 
    console.log(productData);
    
-
-  const validateForm = () => {
+   const validateForm = () => {
     const newErrors = {};
+  
+    // Validate product name
     if (!productData.productName.trim()) {
       newErrors.productName = "Product name is required";
     }
-    if (productData.regularPrice < 0) {
-      newErrors.regularPrice = "Price cannot be negative";
+  
+    // Validate category
+    if (!productData.category) {
+      newErrors.category = "Category is required";
     }
+  
+    // Validate description
+    if (!productData.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+  
+    // Validate images
+    if (productData.images.length === 0) {
+      newErrors.images = "At least one image is required";
+    }
+  
+    // Validate variants
     productData.variants.forEach((variant, index) => {
       if (variant.regularPrice <= 0) {
         newErrors[`variant${index}RegularPrice`] = 'Regular price must be greater than 0';
       }
-      // if (variant.salePrice > variant.regularPrice) {
-      //   newErrors[`variant${index}SalePrice`] = 'Sale price cannot be higher than regular price';
-      // }
+      if (variant.stock < 0) {
+        newErrors[`variant${index}Stock`] = 'Stock cannot be negative';
+      }
     });
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,6 +151,7 @@ const AddProduct = ({onCancel,onProductAdded}) => {
   };
 
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if(!validateForm()) return
@@ -152,12 +168,12 @@ const AddProduct = ({onCancel,onProductAdded}) => {
         images: imageUrls,
       };
       const result = await AddProductReq(productPayload);
-       console.log(result);
+       console.log('result addproduct here',result);
        
-      toast.success("Product Added successfully")
+      toast.success(result.data.message)
     } catch (error) {
-      console.error("Add Product Error:", error);
-      toast.error("Could not Add product")
+      console.error("Add Product Error:", error.response.data.message);
+      toast.error(error.response.data.message)
 
     }finally{
       setLoading(false)
@@ -237,6 +253,7 @@ const AddProduct = ({onCancel,onProductAdded}) => {
             placeholder="Enter product description"
           />
         </div>
+        {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
@@ -268,6 +285,7 @@ const AddProduct = ({onCancel,onProductAdded}) => {
               </div>
             ))}
           </div>
+          {errors.images && <p className="text-red-500 text-xs mt-1">{errors.images}</p>}
         </div>
 
         <div>
@@ -306,23 +324,11 @@ const AddProduct = ({onCancel,onProductAdded}) => {
                     className="w-full px-3 py-2 border border-gray-300 text-gray-300 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"
                   />
-                  {errors[`variant${index}RegularPrice`] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[`variant${index}RegularPrice`]}</p>
-                  )}
+                   {errors[`variant${index}RegularPrice`] && (
+                      <p className="text-red-500 text-xs mt-1">{errors[`variant${index}RegularPrice`]}</p>
+                    )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Discount</label>
-                  <input
-                    type="number"
-                    value={variant.discount}
-                    onChange={(e) => handleVariantChange(index, 'discount', parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 text-gray-300 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                  {errors[`variant${index}discount`] && (
-                    <p className="text-red-500 text-xs mt-1">{errors[`variant${index}discount`]}</p>
-                  )}
-                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                   <input

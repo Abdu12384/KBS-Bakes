@@ -4,7 +4,7 @@ import axioInstence from "../../utils/axioInstence";
 import uploadImageToCloudinary from "../../services/uploadServise";
 import {  EyeIcon, EyeOffIcon, UserCircle, Mail, Phone, Lock, Save, X, Camera  } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-
+import NavBar from "../Navbar";
 
 
 
@@ -72,16 +72,42 @@ console.log(formData);
 
     const validate = () => {
       const newErrors = {};
-      if (!formData.fullName.trim()) newErrors.fullName = "Full name is required.";
-      if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email))
+    
+
+      if (!formData.fullName.trim()) {
+        newErrors.fullName = "Full name is required.";
+      }
+    
+
+      if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
         newErrors.email = "A valid email is required.";
-      if (!formData.mobile.trim() || !/^\d{10}$/.test(formData.mobile))
+      }
+    
+
+      if (!formData.mobile.trim() || !/^\d{10}$/.test(formData.mobile)) {
         newErrors.mobile = "Mobile number must be 10 digits.";
-      if (formData.newPassword && formData.newPassword.length < 6)
-        newErrors.newPassword = "Password must be at least 6 characters.";
-      if (formData.newPassword !== formData.confirmPassword)
+      }
+    
+
+      if (formData.newPassword) {
+        if (formData.newPassword.length < 8) {
+          newErrors.newPassword = "Password must be at least 8 characters.";
+        } else if (!/[A-Z]/.test(formData.newPassword)) {
+          newErrors.newPassword = "Password must contain at least one uppercase letter.";
+        } else if (!/[a-z]/.test(formData.newPassword)) {
+          newErrors.newPassword = "Password must contain at least one lowercase letter.";
+        } else if (!/[0-9]/.test(formData.newPassword)) {
+          newErrors.newPassword = "Password must contain at least one number.";
+        } else if (!/[!@#$%^&*]/.test(formData.newPassword)) {
+          newErrors.newPassword = "Password must contain at least one special character.";
+        }
+      }
+    
+
+      if (formData.newPassword !== formData.confirmPassword) {
         newErrors.confirmPassword = "Passwords do not match.";
-  
+      }
+    
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
     };
@@ -113,6 +139,8 @@ console.log(formData);
 
 
   return (
+    <>
+      <NavBar/>
      <div className="min-h-screen bg-gradient-to-br from-[#f3e7e1] to-[#e7d5c9] py-12 px-4 sm:px-6 lg:px-8">
             <Toaster position="top-right" reverseOrder={false}/>
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -333,245 +361,10 @@ console.log(formData);
         </form>
       </div>
     </div>
+    </>
+
   );
 }
 
 export default UserDetailsForm;
 
-
-// <div className="min-h-screen bg-[#d8cbc4] p-6 flex justify-center items-center">
-// <Toaster position="top-right" reverseOrder={false}/>
-// <div className="w-full max-w-4xl bg-[#bca89f] rounded-xl shadow-lg overflow-hidden">
-// {/* Header Section */}
-// <div className="relative mb-16">
-//   <div className="h-48 w-full rounded-xl overflow-hidden">
-//     <img
-//       src={formData.profileImage||"/placeholder.svg?height=192&width=1152"}
-//       alt="Profile Banner"  
-//       className="w-full h-full object-cover"
-//     />
-//   </div>
-//   <div className="absolute -bottom-12 left-8 flex items-end gap-6">
-//     <div className=" relative w-24 h-24 rounded-full border-4 border-white overflow-hidden group">
-//     {imageFile ? (
-//     <img
-//       src={URL.createObjectURL(imageFile)} // Show the preview image if a file is selected
-//       alt="Profile"
-//       className="w-full h-full object-cover"
-//     />
-//   ) : formData.profileImage ? (
-//         <img
-//           src={formData.profileImage}
-//           alt="Profile"
-//           className="w-full h-full object-cover"
-//         />
-//       ) : (
-//         <div className="w-full h-full flex items-center justify-center bg-gray-200">
-//         <UserCircle className="w-16 h-16 text-gray-400" />
-//       </div>
-//     )}
-//     <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-//       <Camera className="text-white w-8 h-8" />
-//       <input 
-//         type="file"
-//         accept="image/*"
-//         onChange={handleImageChange}
-//         className="hidden"
-//       />
-//     </label>
-//     </div>
-//   </div>
-// </div>
-
-// {/* Form Section */}
-// <form 
-// onSubmit={handleSubmit}
-// className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-
-//   <div className="md:col-span-2">
-//     <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-//       Personal Details
-//       <span className="w-4 h-4 text-gray-400">
-//         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-//           <circle cx="12" cy="12" r="10"/>
-//           <path d="M12 16v-4"/>
-//           <path d="M12 8h.01"/>
-//         </svg>
-//       </span>
-//     </h2>
-//   </div>
-
-//   <div className="space-y-4">
-//     <div>
-//       <label className="block text-sm text-gray-600 mb-1">Full Name</label>
-//       <input
-//         type="text"
-//         name="fullName"
-//         value={formData.fullName}
-//         onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//       />
-//     </div>
-//     {errors.fullName && <span className="text-sm text-red-500">{errors.fullName}</span>}
-//     <div>
-//       <label className="block text-sm text-gray-600 mb-1">Email</label>
-//       <input
-//         type="email"
-//         name="email"
-//         value={formData.email}
-//         onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//       />
-//     </div>
-//     {errors.email && <span className="text-sm text-red-500">{errors.email}</span>}
-//     <div>
-//       <label className="block text-sm text-gray-600 mb-1">Phone Number</label>
-//       <input
-//         type="mobile"
-//         name="fullName"
-//         value={formData.mobile}
-//         onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//       />
-//     </div>
-//   </div>
-//   {errors.mobile && <span className="text-sm text-red-500">{errors.mobile}</span>}
-//   <div className="space-y-4">
-//     <div>
-//       <label className="block text-sm text-gray-600 mb-1">Address</label>
-//       <input
-//         type="text"
-//         name="address"
-//         value={formData.address}
-//         onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//       />
-//     </div>
-    
-//     <div className="grid grid-cols-2 gap-4">
-//       <div>
-//         <label className="block text-sm text-gray-600 mb-1">Country</label>
-//         <select 
-//          name="country"
-//          value={formData.country}
-//          onChange={handleChange}
-//          className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400">
-//           <option>Select Country</option>
-//           <option value="India">India</option>
-//           <option value="USA">USA</option>
-//           {/* Add country options */}
-//         </select>
-//       </div>
-//       <div>
-//         <label className="block text-sm text-gray-600 mb-1">State</label>
-//         <select 
-//           name="state"
-//           value={formData.state}
-//           onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400">
-//           <option>Select State</option>
-//           <option value="Kerala">Kerala</option>
-//           <option value="California">California</option>
-//           {/* Add state options */}
-//         </select>
-//       </div>
-//     </div>
-
-//     <div>
-//       <label className="block text-sm text-gray-600 mb-1">Pincode</label>
-//       <input
-//        type="text"
-//        name="pincode"
-//        value={formData.pincode}
-//        onChange={handleChange}
-//         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//       />
-//     </div>
-//   </div>
-
-//   {/* Password Section */}
-//   <div className="md:col-span-2 mt-8">
-//     <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Password</h2>
-//     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-//       <div>
-//         <label className="block text-sm text-gray-600 mb-1">Current Password</label>
-//         <div className="relative">
-//           <input
-//             type={showPassword ? "text" : "password" }
-//             name="currentPassword"
-//             value={formData.currentPassword}
-//             onChange={handleChange}
-//             className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//           />
-//             <div
-//             className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-//             onClick={togglePasswordVisibility}
-//           >
-//             {showPassword ? (
-//               <EyeClosed className="h-5 w-5 text-gray-400" />
-//             ) : (
-//               <EyeIcon className="h-5 w-5 text-gray-400" />
-//             )}
-//            </div>
-//         </div>
-//       </div>
-//       <div>
-//         <label className="block text-sm text-gray-600 mb-1">New Password</label>
-//         <div className="relative">
-//         <input
-//           type={showPassword ? "text" : "password" }
-//           name="newPassword"  
-//           value={formData.newPassword}
-//           onChange={handleChange}
-//           className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//         />
-//               <div
-//             className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-//             onClick={togglePasswordVisibility}
-//           >
-//             {showPassword ? (
-//               <EyeClosed className="h-5 w-5 text-gray-400" />
-//             ) : (
-//               <EyeIcon className="h-5 w-5 text-gray-400" />
-//             )}
-//            </div>
-//        </div>
-//       </div>
-//       {errors.newPassword && (
-//     <span className="text-sm text-red-500">{errors.newPassword}</span>
-//   )}
-//       <div className="md:col-span-2">
-//         <label className="block text-sm text-gray-600 mb-1">Confirm Password</label>
-//         <input
-//           type="password"
-//           name="confirmPassword"
-//           value={formData.confirmPassword}
-//           onChange={handleChange}
-//           className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
-//         />
-//          {errors.confirmPassword && (
-//           <span className="text-sm text-red-500">{errors.confirmPassword}</span>
-//         )}
-//       </div>
-//     </div>
-//   </div>
-
-//   {/* Form Actions */}
-//   <div className="md:col-span-2 flex justify-end gap-4 mt-8">
-//     <button
-//       type="button"
-//       className="px-6 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-//     >
-//       Cancel
-//     </button>
-//     <button
-//       type="submit"
-//       className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
-//     >
-//       Save
-//     </button>
-//   </div>
-// </form>
-// </div>
-// </div>

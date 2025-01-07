@@ -16,16 +16,21 @@ const {verifyAdminToken }= require('../middleware/adminAuth')
 const {addCategory,
        fetchCategory,
        editCategory,
-       softDeleteCategory        
+       softDeleteCategory,        
+       addOfferCatogory
       }= require('../controllers/adminController/categoryControll')
 
 
  const {
   loadOrderDetails,
   updateOrderStatus,
-  cancellOrder
+  cancellOrder,
+  getReturnRequests,
+  updateReturnRequest,
+  exportPdf
  } = require('../controllers/adminController/orderManagement')    
 const { addCoupon, deleteCoupon, getAllCoupons } = require('../controllers/adminController/couponController')
+const { salesData, generatePDFReport, generateExcelReport } = require('../controllers/adminController/salesReportManage')
 
 
 
@@ -33,25 +38,54 @@ const { addCoupon, deleteCoupon, getAllCoupons } = require('../controllers/admin
 
 
 
+// Image Upload Routes
 
 admin_Route
-        .get('/generate-upload-url',cloudinaryImgUpload)        
+        .get('/generate-upload-url',cloudinaryImgUpload)    
+        
+// Product Routes
+ admin_Route
         .post('/add-product',verifyAdminToken,addProdcut)
         .get('/products',verifyAdminToken,showProduct)
         .put('/products/:id',verifyAdminToken,EditProduct)
         .put('/products/:id',verifyAdminToken,softDelete)
+
+   // User Routes     
+admin_Route
         .get('/users',verifyAdminToken,getUsers)
         .put('/users/status/:id',verifyAdminToken,toggleUserStatus)
+
+
+ // Category Routes       
+admin_Route
         .post('/categories',verifyAdminToken,addCategory)
         .get('/categories',verifyAdminToken,fetchCategory)
         .put('/categories/:id',editCategory)
+        .post('/categories/:categoryId/offer',verifyAdminToken,addOfferCatogory)
         .patch('/categories/block/:id',verifyAdminToken,softDeleteCategory)
+
+
+ // Order Management Routes
+admin_Route
+        .get('/sales-data',verifyAdminToken,salesData)
         .get('/orders-manage',verifyAdminToken,loadOrderDetails)
         .patch('/orders/status/:id',verifyAdminToken,updateOrderStatus)
         .patch('/orders/cancel/:id',verifyAdminToken,cancellOrder)
+        .patch('/return-request/:orderId/:productId',verifyAdminToken,updateReturnRequest)
+
+
+  // Coupon Routes      
+ admin_Route
         .post('/add-coupon',verifyAdminToken,addCoupon)
         .get('/coupons',verifyAdminToken,getAllCoupons)
         .delete('/delete-coupon/:couponId',verifyAdminToken,deleteCoupon)
+
+
+   // PDF and Logout Routes     
+ admin_Route
+        .get('/generate-pdf',verifyAdminToken,generatePDFReport)
+        .get('/generate-excel',verifyAdminToken,generateExcelReport)
+
         .post('/logout',loadLogout)
 
 module.exports=admin_Route

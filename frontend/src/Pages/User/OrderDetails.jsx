@@ -3,6 +3,9 @@ import { ShoppingBag, ChevronRight, Search, MapPin } from 'lucide-react';
 import axioInstance from '../../utils/axioInstence';
 import OrderTrackingUI from '../../Components/UserComponents/TrackingOrder';
 import toast, { Toaster } from "react-hot-toast";
+import NavBar from '../../Components/Navbar';
+import { format } from 'date-fns';
+import { fetchUserOrders ,cancelOrder, cancelProduct, requestReturn } from '../../services/authService';
 
 const OrdersListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,29 +13,35 @@ const OrdersListPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReturnOptions, setShowReturnOptions] = useState(false);
+  const [returnReason, setReturnReason] = useState({});
+  const [selectedProduct, setSelectedProduct] = useState('')
 
   useEffect(() => {
     const fetchOrders = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axioInstance.get('/user/orders');
-        
-        if (Array.isArray(response.data)) {
-          setOrders(response.data);
-        } else {
-          setError('Invalid response format');
+        try {
+            setIsLoading(true);
+            const data = await fetchUserOrders(); 
+            
+            if (Array.isArray(data)) {
+                setOrders(data);
+            } else {
+                setError('Invalid response format');
+            }
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            setError('Failed to fetch orders');
+            toast.error('Failed to fetch orders'); 
+        } finally {
+            setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        setError('Failed to fetch orders');
-      } finally {
-        setIsLoading(false);
-      }
     };
 
     fetchOrders();
-  }, []);
+}, []);
   console.log(orders);
+  console.log('selected order',selectedOrder);
+  
   
 
   const fetchOrderDetails = async (orderId) => {
@@ -46,6 +55,7 @@ const OrdersListPage = () => {
       setError('Failed to fetch order details');
     }
   };
+
 
   const filteredOrders = orders.filter(order => 
     order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,6 +72,7 @@ const OrdersListPage = () => {
       default: return 'text-gray-600';
     }
   };
+
 
   if (isLoading) {
     return (
@@ -80,54 +91,88 @@ const OrdersListPage = () => {
   }
 
 
-  const handleCancelOrder = async (event,orderId) => {
+  const handleCancelOrder = async (event, orderId) => {
     event.preventDefault();
-    
+
     try {
-      const response = await axioInstance.post(`/user/cancel-order/${orderId}`);
-      toast.success(response.data.message)
-      
-      setOrders((prevOrders) => 
-        prevOrders.map(order => 
-          order._id === orderId ? { ...order, status: 'cancelled' } : order
-        )
-      );
-      setSelectedOrder(null);
-      
+        const response = await cancelOrder(orderId); 
+        toast.success(response.message);
+
+
+        setOrders((prevOrders) =>
+            prevOrders.map(order =>
+                order._id === orderId ? { ...order, status: 'cancelled' } : order
+            )
+        );
+        setSelectedOrder(null);
     } catch (error) {
-      console.error('Error canceling order:', error);
-      toast.error(error.response.data.message)
-      setError('Failed to cancel order');
+        console.error('Error canceling order:', error);
+        toast.error(error.response?.data?.message || 'Failed to cancel order');
+        setError('Failed to cancel order');
     }
-  };
+};
 
-  const handleCancelProduct = async (productId) => {
 
-    try {
-      const response = await axioInstance.post('/user/cancel-product', {
-        orderId: selectedOrder._id,
-        productId: productId,
-      });
 
-      if (response.data.success) {
-        toast.success('Product canceled successfully');
-        fetchOrderDetails(selectedOrder._id); // Refresh order details
+const handleCancelProduct = async (productId) => {
+  try {
+      const response = await cancelProduct(selectedOrder._id, productId); 
+
+      if (response.success) {
+          toast.success(response.message);
+          fetchOrderDetails(selectedOrder._id); 
       } else {
-        toast.error(response.data.message || 'Failed to cancel product');
+          toast.error(response.message || 'Failed to cancel product');
       }
-    } catch (error) {
+  } catch (error) {
       toast.error('Error canceling product');
       console.error(error);
-    } finally {
+  }
+};
 
-    }
+
+
+  const handleReasonChange = (productId, value) => {
+    setReturnReason((prev) => ({
+      ...prev,
+      [productId]: value,
+    }));
   };
 
+  const handleConformReturn = async (productId) => {
+    const reason = returnReason[productId];
+    if (!reason) {
+        toast.error("Please provide a reason for the return.");
+        return;
+    }
+
+    try {
+        const response = await requestReturn(selectedOrder._id, productId, reason); 
+        console.log('Return request response:', response);
+
+        if (response) {
+            toast.success(response.message);
+            setShowReturnOptions(false);
+            setSelectedProduct(null);
+            setReturnReason({}); 
+        }
+    } catch (error) {
+        console.error('Return request error:', error);
+        toast.error(error.response?.data?.message || 'Failed to request return');
+    }
+};
 
 
-
+   const statusColors = {
+    pending: "text-yellow-500",
+    completed: "text-green-500",
+    failed: "text-red-500",
+    refunded: "text-blue-500"
+  };
 
   return (
+    <>
+      <NavBar/>
     <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
     <Toaster position="top-right" reverseOrder={false}/>
       <div className="max-w-7xl mx-auto">
@@ -157,8 +202,10 @@ const OrdersListPage = () => {
                 <div className="flex items-center gap-4">
                   <ShoppingBag className="text-gray-600" size={24} />
                   <div>
-                    <p className="font-semibold text-lg text-gray-900">{order._id}</p>
-                    <p className="text-sm text-gray-600">{order.orderDate}</p>
+                    <p className="font-semibold text-lg text-gray-900">#{order._id.slice(0,8)}</p>
+                    <p className="text-sm text-gray-600">
+                    {format(new Date(order.orderDate), 'MMMM d, yyyy')} 
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -180,12 +227,14 @@ const OrdersListPage = () => {
                 <div className="flex justify-between mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold text-gray-900">Order Details</h2>
-                    <p className="text-sm text-gray-600">Order #{selectedOrder._id}</p>
-                    <p className="text-sm text-gray-600">Ordered on {selectedOrder.orderDate}</p>
+                    <p className="text-sm text-gray-600">Order #{selectedOrder._id.slice(0,8)}</p>
+                    <p className="text-sm text-gray-600">
+                    OrderDate :{format(new Date(selectedOrder.orderDate), 'MMMM d, yyyy')} 
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-gray-900">₹{selectedOrder.totalPrice.toFixed(2)}</p>
-                    <span className={`text-sm font-medium ${getStatusColor(selectedOrder.status)}`}>
+                    <span className={` font-bold text-lg ${getStatusColor(selectedOrder.status)}`}>
                       {selectedOrder.status}
                     </span>
                   </div>
@@ -204,20 +253,66 @@ const OrdersListPage = () => {
                         <div>
                           <p className="font-medium">{product.productId.productName}</p>
                           <p className="text-sm text-gray-600">Quantity: {product.quantity}</p>
+                          {product.returnRequest && (
+                              <p className={`text-sm font-medium ${
+                                product.returnRequest.status === 'approved' ? 'text-green-600' :
+                                product.returnRequest.status === 'pending' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                Return {product.returnRequest.status}
+                              </p>
+                            )}
                         </div>
+                        <div className>
+                          <p>Payment Status</p>
+                          <p className={`${statusColors[product.paymentStatus] || "text-gray-500"} font-bold`}>
+                              {product.paymentStatus}
+                            </p>                       
+                         </div>
                       </div>
                       <div className="text-right">
-                        {/* <p className="font-semibold">${(product.price * product.quantity).toFixed(2)}</p> */}
+                      {selectedOrder.status.toLowerCase() === "delivered" &&
+                      !product.isCanceled &&
+                      (!product.returnRequest || product.returnRequest.status !== "approved") && ( 
+                          <span className="text-green-500 font-bold text-lg font-semibold">delivered</span> 
+                      )}
+                       
+                        {product.returnRequest && product.returnRequest.status === 'approved' && (
+                          <p className="text-sm text-green-600">Amount Refunded</p>
+                        )}
                       </div>
-                      <button 
-                            className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-                            onClick={() => handleCancelProduct(product.productId._id)} 
-                          >
-                            Cancel 
-                          </button>
+                      {product.isCanceled ? ( 
+                            <span className="text-red-500 font-semibold font-bold text-lg">Canceled</span> 
+                          ) : (
+                            selectedOrder.status.toLowerCase() !== 'delivered' && (
+                              <button
+                                className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+                                onClick={() => handleCancelProduct(product.productId._id)}
+                              >
+                                Cancel
+                              </button>
+                            )
+                          )}
+
+                  {selectedOrder.status.toLowerCase() === "delivered" &&
+                      !product.isCanceled &&
+                      (!product.returnRequest || product.returnRequest.status !== "approved") && ( 
+                        <button
+                          className="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                          onClick={() => {
+                            setShowReturnOptions(true);
+                            setSelectedProduct(product.productId._id);
+                          }}
+                        >
+                          Return
+                        </button>
+                      )}
+                       
                     </div>
                   ))}
                 </div>
+
+                
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -239,34 +334,79 @@ const OrdersListPage = () => {
                     <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
+                        <p>PaymentMethod</p>
+                        <p>₹{selectedOrder?.paymentInfo}</p>
+                      </div>
+                      <div className="flex justify-between">
                         <p>Subtotal</p>
                         <p>₹{selectedOrder?.subtotal?.toFixed(2)}</p>
                       </div>
                       <div className="flex justify-between">
                         <p>discount</p>
-                        <p>₹{selectedOrder?.discount?.toFixed(2)}</p>
+                        <p>₹{selectedOrder.discount ? selectedOrder?.discount?.toFixed(2):0}</p>
                       </div>
                       <div className="flex justify-between">
                         <p>Shipping</p>
-                        <p>${selectedOrder.shippingCost.toFixed(2)}</p>
+                        <p>₹{selectedOrder.shippingCost.toFixed(2)}</p>
                       </div>
                       <div className="flex justify-between font-semibold">
                         <p>Total</p>
                         <p>₹{selectedOrder.totalPrice.toFixed(2)}</p>
                     </div>{selectedOrder && (
-                        <div>
-                          {/* Existing order details code... */}
-                          <button 
+
+                      <div className="order-status">
+                      {selectedOrder.status.toLowerCase() === 'cancelled' ? ( 
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
+                          <strong className="font-bold">Order Canceled!</strong>
+                          <span className="block sm:inline"> This order has been canceled successfully.</span>
+                        </div>
+                      ) : (
+
+                        selectedOrder.status.toLowerCase() !== 'delivered' && 
+                        selectedOrder.products.some(product => !product.isCanceled) && (
+                          <button
                             className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
                             onClick={(event) => handleCancelOrder(event, selectedOrder._id)}
                           >
                             Cancel Order
                           </button>
-                        </div>
+                        )
+                      )}
+                    </div>
                       )}
                       </div>
+                      
                   </div>
                 </div>
+                     {showReturnOptions && selectedOrder.status.toLowerCase() === 'delivered' && (
+                        <div className="mt-4 border rounded p-4 ">
+                          <textarea
+                            className="w-full border rounded p-2"
+                            placeholder="Enter the reason for return..."
+                            value={returnReason[selectedProduct] || ""}
+                            onChange={(e) =>
+                              handleReasonChange(selectedProduct, e.target.value)
+                            }
+                          ></textarea>
+                          <button
+                            className="mt-2 mr-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+                            onClick={() => handleConformReturn(selectedProduct)}
+                          >
+                            Confirm Return
+                          </button>
+                          <button 
+                            className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+                            onClick={()=>{
+                              setShowReturnOptions(false)
+                              setSelectedProduct(null);
+                              setReturnReason({});
+                            }}
+                          >
+                            Cancel 
+                          </button>
+                          
+                        </div>
+                      )}
               </div>
             </div>
           )}
@@ -274,6 +414,7 @@ const OrdersListPage = () => {
         
       </div>
     </div>
+    </>
   );
 };
 

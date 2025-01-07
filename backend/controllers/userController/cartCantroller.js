@@ -12,34 +12,57 @@ const getCartItem = async(req, res)=>{
      }
 
      const cartItems = await Cart.find({user:userId})
-      .populate({
-        path:'product',
-        model:'Product',
-        select:'productName images variants'
-      })
-      .populate({
-        path:'variant',
-        select:'weight regularPrice salePrice stock'
-      })
+     .populate({
+      path: 'product',
+      select: 'productName images category variants',
+      populate: {
+        path: 'category',
+        select: 'offer'
+      }
+    })
+    .populate({
+      path: 'variant',
+      select: 'weight regularPrice salePrice stock'
+    });
+      
+      console.log('cartitem',cartItems);
+      
+     
 
-      const enrichedCartItems = cartItems.map(item=>{
-        const variant = item.product.variants.find(
-          v=> v._id.toString() === item.variant.toString()
-        )
-        return{
-         ...item.toObject(),
-         productName:item.product.productName,
-         images: item.product.images,
-         variantDetails: variant
+      const enrichedCartItems = cartItems.map(item => {
+
+        if (!item.product) {
+          console.warn(`Product not found for cart item: ${item._id}`);
+          return null; 
         }
+  
+        const variant = item.product.variants.find(
+          v => v._id.toString() === item.variant.toString()
+        );
+  
 
-      })
+        if (!variant) {
+          console.warn(`Variant not found for product: ${item.product.productName}`);
+          return null; 
+        }
+  
+        return {
+          ...item.toObject(),
+          productName: item.product.productName,
+          images: item.product.images,
+          variantDetails: variant,
+        };
+      }).filter(item => item !== null);
 
       const cartSummary = enrichedCartItems.reduce((summary, item)=> {
          const itemPrice = item.variantDetails.salePrice || item.variantDetails.regularPrice
+         const categoryDiscount = item.category?.offer?.offerPercentage || 0; // Get category discount percentage
+         const discountAmount = (itemPrice * categoryDiscount) / 100; 
           return{
-            totalItems: summary.totalItems + item.quantity,
-            totalPrice: summary.totalPrice + (itemPrice * item.quantity)
+            totalItems: summary.totalItems + item.quantity, // Sum up quantities
+            totalPrice: summary.totalPrice + (itemPrice * item.quantity), // Calculate total price
+            totalDiscount: summary.totalDiscount + (discountAmount * item.quantity) // Calculate total discount
+    
           }
       },{totalItems:0, totalPrice:0})
     

@@ -142,8 +142,12 @@ export default function EditProductWithVariants({ product, onCancel }) {
         ...productData,
         images: imageUrls.filter((img) => img),
       };
+      console.log(updatedProduct);
+      
 
       const result = await updatedProductReq(product._id, updatedProduct);
+      console.log(result);
+      
       toast.success("Product updated successfully");
     } catch (error) {
       console.error("Update Product Error:", error);

@@ -1,13 +1,13 @@
 
-
 import React, { useEffect, useState, useRef } from 'react'
 import { Search, Plus, Edit2, MoreVertical, X, Podcast } from 'lucide-react'
-import axioInstence from '../../utils/axioInstence'
 import AddProduct from '../../Components/AdminComponents/AddProduct' 
 import EditProduct from '../../Components/AdminComponents/EditProduct'
 import toast, { Toaster } from "react-hot-toast";
 import Breadcrumbs from '../../Components/BrudCrums'
 import StatusBadge from '../../Components/AdminComponents/StatusBadge'
+import Pagination from '../../Components/Pagination'
+import { fetchProducts, toggleProductStatus } from '../../services/authService'
 
 export default function AdminProductsPage() {
   const [showAddProduct, setShowAddProduct] = useState(false)
@@ -17,24 +17,28 @@ export default function AdminProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+   const [totalPages, setTotalPages] = useState(1);
   const [filterStatus, setFilterStatus] = useState("All")
   const productsPerPage = 5
 
   const formSectionRef = useRef(null)
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axioInstence.get('/admin/products')
-        console.log('Fetched products', response.data)
-        setProducts(response.data)
-      } catch (error) {
-        console.error('Error fetching products', error)
-      }
-    }
+    const loadProducts = async () => {
+        try {
+            const data = await fetchProducts(currentPage, productsPerPage, searchQuery, filterStatus);
+            console.log('Fetched products', data);
+            setProducts(data.products);
+            setTotalPages(data.pagination.pages);
+        } catch (error) {
+            console.error('Error loading products', error);
+        }
+    };
 
-    fetchProducts()
-  }, [])
+    loadProducts();
+}, [currentPage, productsPerPage, searchQuery, filterStatus]); 
+
+
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value)
@@ -42,34 +46,6 @@ export default function AdminProductsPage() {
 
    console.log(products);
    
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = 
-      product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.variants && product.variants.some(variant => 
-        Object.values(variant).some(value => 
-          value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      ))
-
-      const totalStock = product.variants 
-      ? product.variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)
-      : Number(product.qty) || 0 
-  
-      console.log('Total stock:', totalStock);
-      console.log('Is Deleted:', product.isDeleted);
-    
-
-    const matchesFilter =
-      filterStatus === "All" ||
-      (filterStatus === "Active" && totalStock > 0 && !product.isDeleted) ||
-      (filterStatus === "Blocked" && (totalStock === 0 || product.isDeleted)) ||
-      (filterStatus === "Available" && (!product.isDeleted && totalStock > 0)) ||
-      (filterStatus === "Unavailable" && (totalStock === 0 || product.isDeleted))
-  
-  
-    return matchesSearch && matchesFilter
-  })
-
   const handleMenuToggle = (productId) => {
     setMenuOpen(menuOpen === productId ? null : productId)
   }
@@ -113,28 +89,29 @@ export default function AdminProductsPage() {
     })
   }
 
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+
   const handleBlockToggle = async (productId, currentStatus) => {
     try {
-      const response = await axioInstence.put(`http://localhost:3000/admin/products/${productId}`, {
-        isDeleted: !currentStatus,
-      })
+        await toggleProductStatus(productId, currentStatus);
 
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          product._id === productId ? { ...product, isDeleted: !product.isDeleted } : product
-        )
-      )
-      toast.success(`Product ${!currentStatus ? 'blocked' : 'unblocked'} successfully!`)
-      setMenuOpen(null)
+        setProducts((prevProducts) =>
+            prevProducts.map((product) =>
+                product._id === productId ? { ...product, isDeleted: !product.isDeleted } : product
+            )
+        );
+
+        toast.success(`Product ${!currentStatus ? 'blocked' : 'unblocked'} successfully!`);
     } catch (error) {
-      console.error('Error soft-deleting product', error)
+        console.error('Error toggling product status', error);
+        toast.error(error.respons.data.message);
     }
-  }
+};
 
-  // Pagination logic
-  const indexOfLastProduct = currentPage * productsPerPage
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct)
 
   const getFieldColor = (index) => {
     const colors = ['text-blue-300', 'text-green-300', 'text-yellow-300', 'text-pink-300', 'text-purple-300']
@@ -204,7 +181,7 @@ export default function AdminProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {currentProducts.map((product, index) => (
+            {products.map((product, index) => (
               <tr key={index} className="border-b border-gray-800 text-white">
                 <td className="py-4 flex items-center gap-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-700 rounded-lg">
@@ -224,7 +201,7 @@ export default function AdminProductsPage() {
                       {product.variants.map((variant, vIndex) => (
                         <div key={vIndex} className="flex flex-wrap items-center gap-2">
                           {Object.entries(variant)
-                          .filter(([key]) => ['stock', 'weight', 'regularPrice', 'salePrice'].includes(key)) // Filter specific keys
+                          .filter(([key]) => ['stock', 'weight', 'regularPrice', 'salePrice','discount'].includes(key)) // Filter specific keys
                           .map(([key, value], index) => (
                             <span key={index} className={`${getFieldColor(index)} text-xs`}>
                               {key}: {value}
@@ -284,20 +261,11 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      <div className='flex flex-wrap justify-center items-center mt-4 gap-2'>
-        {Array.from({ length: Math.ceil(products.length / productsPerPage) }, (_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentPage(index + 1)}
-            className={`px-4 py-2 mx-1 rounded-lg  ${
-              currentPage === index + 1 ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-400'
-            }`}
-          >
-            {index + 1}
-          </button>
-        ))}
-      </div>
-
+      <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+      />
       {/* Add Product Section (Conditionally Rendered) */}
       <div ref={formSectionRef}>
         {showAddProduct && (       

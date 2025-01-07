@@ -17,6 +17,7 @@ import ForgotPassword from '../Components/ForgotPassword'
 import ResetPassword from '../Components/ResetPassword'
 import Wishlist from '../Pages/User/Wishlist'
 import WalletPage from '../Pages/User/Wallet'
+import OrderConfirmation from '../Components/OrderSuccess'
 function UserRoute() {
   return (
     <Routes>
@@ -40,6 +41,8 @@ function UserRoute() {
         <Route path='orderdetails' element={<OrdersListPage/>}/> 
         <Route path='wishlist' element={<Wishlist/>}/> 
         <Route path='wallet' element={<WalletPage/>}/> 
+        <Route path='order-success' element={<OrderConfirmation/>}/> 
+        
     </Route>
           
          <Route path="*" element={<PageNotFound />} />

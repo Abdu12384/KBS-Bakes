@@ -3,95 +3,78 @@ import { Truck, Phone, MessageCircle, GiftIcon, Minus, Plus, ShoppingCart, Trash
 import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from 'react-router-dom';
+import NavBar from '../../Components/Navbar';
+import { fetchCartItems, removeCartItem, updateCartItemQuantity } from '../../services/authService';
 const CartPage = () => {
   const [cartsummury, setCartSummury]= useState()
   const [items, setItems] = useState([]);
   const navigate = useNavigate()
 
-  const fetchCartItem = async()=>{
+  
+    const loadCartItems = async () => {
+        try {
+            const data = await fetchCartItems(); 
+            console.log('Fetched cart items', data);
+            setItems(Array.isArray(data.cartItems) ? data.cartItems : []); 
+            setCartSummury(data.summary || {}); 
+        } catch (error) {
+            console.error('Error loading cart items', error);
 
-     try {
-      const response = await axioInstence.get('/user/cart/item')
-       console.log('hjg',response.data);
-       const data = response.data;
+        }
+    };
 
-     setItems(Array.isArray(data.cartItems) ? data.cartItems : []);
-    setCartSummury(data.summary || {});
-      
-     } catch (error) {
-      console.log(error.response.data.message);
-      
-     }
-  }
-
-  useEffect(() => {
-    fetchCartItem();
-  }, []);
+ useEffect(() => {
+    loadCartItems();
+}, []); 
 
 
 
  console.log(items);
  
 
-  const removeItem = async(productId, variantId) => {
-    try {
-      const response = await axioInstence.delete('/user/cart/remove',{
-        data:{
-          productId,
-          variantId
-        }
-      })
-      toast.success(response.data.message)
-      if(response.status === 200){
-        setItems((prevItems)=> 
+ 
+ const handleRemoveItem = async (productId, variantId) => {
+  try {
+      const response = await removeCartItem(productId, variantId); 
+      toast.success(response.message); 
+      setItems((prevItems) => 
           prevItems.filter((item) => 
-            !(item.product._id === productId && item.variantDetails._id === variantId)));
-        await fetchCartItem();
-        console.log(`Item with ID ${id} removed successfully`);
-      }else {
-        console.error(`Failed to remove item: ${response.data.message}`);
-      }
-  
-    } catch (error) {
-      toast.error(error.response.data.message)
-      console.error('Error while removing item:', error.message);
-    }
-  };
-
-
-  const updateQuantity = async (id, change) => {
-    try {
-       const updatedItem = items.find(item => item._id === id)
-       const newQuantity = Math.max(1, updatedItem.quantity+change)
-       console.log(updatedItem);
-       
-
-      const response = await axioInstence.put('/user/cart/update',{
-        productId: updatedItem.product._id,
-        variantId: updatedItem.variantDetails._id,
-        newQuantity
-      })
-      toast.success(response.data.message)
-      if(response.status === 200){
-        setItems((prevItems) =>
-          prevItems.map((item) =>
-            item._id === id ? {...item, quantity: newQuantity}:item
+              !(item.product._id === productId && item.variantDetails._id === variantId)
           )
-        );
-        await fetchCartItem();
-      }else{
-        console.error('Failed to update quantity:', response.data.message);
-      }
-    } catch (error) {
-      toast.error(error.response.data.message)
-      console.error('Error updating quantity:', error.response.data.message);
-    }
-  };
+      ); 
+      console.log(`Item with ID ${productId} removed successfully`);
+  } catch (error) {
+      toast.error(error.response?.data?.message ); 
+      console.error('Error while removing item:', error.message);
+  }
+};
 
 
+
+const handleUpdateQuantity = async (id, change) => {
+  try {
+      const updatedItem = items.find(item => item._id === id);
+      const newQuantity = Math.max(1, updatedItem.quantity + change); 
+
+      const response = await updateCartItemQuantity(updatedItem.product._id, updatedItem.variantDetails._id, newQuantity); // Call the API service function
+      toast.success(response.message); 
+
+      setItems((prevItems) =>
+          prevItems.map((item) =>
+              item._id === id ? { ...item, quantity: newQuantity } : item
+          )
+      ); 
+      await loadCartItems();
+  } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update quantity. Please try again.'); // Show error message
+      console.error('Error updating quantity:', error.message);
+  }
+};
 
 
   return (
+    <>
+      <NavBar/>
     <div className="min-h-screen bg-white">
             <Toaster position="top-right" reverseOrder={false}/>
       <style jsx global>{`
@@ -143,14 +126,14 @@ const CartPage = () => {
                     <div className="text-gray-800 font-medium">₹{item.variantDetails.salePrice.toFixed(2)}</div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => updateQuantity(item._id, -1)}
+                        onClick={() => handleUpdateQuantity(item._id, -1)}
                         className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
                       <span className="w-8 text-center font-medium">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item._id, 1)}
+                        onClick={() => handleUpdateQuantity(item._id, 1)}
                         className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
                       >
                         <Plus className="w-4 h-4" />
@@ -161,7 +144,7 @@ const CartPage = () => {
                         ${(item.variantDetails.salePrice * item.quantity).toFixed(2)}
                       </span>
                       <button
-                        onClick={() => removeItem(item.product._id, item.variantDetails._id)}
+                        onClick={() => handleRemoveItem(item.product._id, item.variantDetails._id)}
                         className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors"
                         aria-label="Remove item"
                       >
@@ -242,6 +225,7 @@ const CartPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

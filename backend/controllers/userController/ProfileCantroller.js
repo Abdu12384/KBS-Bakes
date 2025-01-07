@@ -16,6 +16,7 @@ const profileUpdate = async(req, res) =>{
       newPassword
     }= req.body
     
+  
     console.log('here user',req.body);
     try {
       const user = await User.findById(req.userId)

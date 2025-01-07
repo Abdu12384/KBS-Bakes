@@ -4,7 +4,10 @@ const Product = require('../../model/productModal');
 const Cart = require('../../model/cartModel')
 const razorpay = require('../../config/razorpay')
 const Coupon = require('../../model/couponModel')
+const Wallet = require('../../model/walletModel')
 const crypto = require('crypto')
+const { v4: uuidv4 } = require('uuid'); 
+
 
 const placeOrder = async (req, res) => {
   try {
@@ -86,7 +89,10 @@ const placeOrder = async (req, res) => {
       totalPrice: total,  
       shippingAddressId:address._id,
       paymentInfo: paymentMethods,
-      products, 
+      products: products.map(prodct=>({
+        ...prodct,
+        paymentStatus:'pending'
+      })), 
       status:'pending',
       shippingCost: shippingCharge,
       discount:discount
@@ -98,7 +104,7 @@ const placeOrder = async (req, res) => {
     await Cart.deleteMany({user: req.user?.id})
 
 
-    res.status(201).json({ message: 'Order placed successfully', orderId: savedOrder._id });
+    res.status(201).json({ success:true, message: 'Order placed successfully', orderId: savedOrder._id });
   } catch (error) {
     console.error('Error placing order:', error.message);
     res.status(500).json({ message: 'Failed to place order', error: error.message });
@@ -109,9 +115,11 @@ const placeOrder = async (req, res) => {
 
 
 
+
+
 const getAllOrders = async (req, res) => {
   try {
-    // Assuming user is authenticated and we can get user ID from req.user
+
     const orders = await Order.find({ userId: req.user?.id })
       .sort({ orderDate: -1 });
       console.log(orders);
@@ -125,6 +133,8 @@ const getAllOrders = async (req, res) => {
     });
   }
 };
+
+
 
 
 
@@ -151,6 +161,9 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
+
+
+
 const cancelOrder = async (req, res) =>{
    const {orderId} = req.params
 
@@ -162,9 +175,77 @@ const cancelOrder = async (req, res) =>{
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    if(order.status === 'cancelled'){
+      return res.status(400).json({message:'Order is already cancelled '})
+    }
+
+    let refundAmount = 0
+
+    order.products.forEach((product)=>{
+      if(!product.isCanceled){
+        refundAmount += product.price * product.quantity 
+       product.isCanceled = true  
+       if (order.paymentInfo === 'Razorpay' || order.paymentInfo === 'Wallet') {
+        product.paymentStatus = 'refunded'
+      }
+      }
+    })
+
+    
+
     order.status = 'cancelled'
+    order.paymentStatus = 'refunded'  
+
+
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+      const wallet = await Wallet.findOne({ user: order.userId });
+
+      if (!wallet) {
+
+        const newWallet = new Wallet({
+          user: order.userId,
+          balance: refundAmount,
+          transactions: [{
+            transactionId: uuidv4(),
+            description: `Refund for cancelled order #${order._id.toString().slice(0, 8)}`,
+            amount: refundAmount,
+            type: 'credit',
+            status: 'completed',
+            date: new Date()
+          }]
+        });
+        await newWallet.save();
+      } else {
+
+        await Wallet.findOneAndUpdate(
+          { user: order.userId },
+          {
+            $inc: { balance: refundAmount }, 
+            $push: {
+              transactions: {
+                transactionId: uuidv4(),
+                description: `Refund for cancelled order #${order._id.toString().slice(0, 8)}`,
+                amount: refundAmount,
+                type: 'credit',
+                status: 'completed',
+                date: new Date()
+              }
+            }
+          }
+        );
+      }
+
+      console.log(`Refund of ${refundAmount} processed for user: ${order.userId}`);
+    }
+
+
     await order.save()
-    return res.json({  message: 'Order cancelled successfully' });
+
+   return res.status(200).json({
+      success: true,
+      message: 'Order cancelled successfully and refund processed (if applicable)',
+      orderId: order._id,
+    });
 
    } catch (error) {
     console.error('Error cancelling order:', error);
@@ -194,14 +275,99 @@ const cancelProduct = async (req, res)=>{
       return res.status(404).json({ success: false, message: 'Product not found in order' });
     }
 
-    order.products.splice(productIndex,1)
+    const product = order.products[productIndex];
+    const refundAmount = product.price * product.quantity;
+
+    if(product.isCanceled){
+      return res.status(400).json({message:'Product is already canceled'})
+    }
+
+    product.isCanceled = true
+
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+      product.paymentStatus = 'refunded';
+    }
+
 
     order.totalPrice = order.products.reduce(
       (total, product) => total + product.price * product.quantity,0
     )
-    await order.save();
 
-    return res.status(200).json({ success: true, message: 'Product canceled successfully' });
+    await order.save()
+    console.log('after cancell product',order);
+    
+
+    console.log('pymentmethod',order.paymentInfo);
+    
+
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+
+      const user = await User.findById(order.userId); 
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      const wallet = await Wallet.findOne({user:order.userId})
+      console.log('wallet in the refund cancel',wallet);
+      
+
+      if (!wallet) {
+        const newWallet = new Wallet({
+            user: order.userId,
+            balance: refundAmount,
+            transactions: [{
+                transactionId: uuidv4(),
+                description: `Refund for order #${order._id.toString().slice(0, 8)}`,
+                amount: refundAmount,
+                type: 'credit',
+                status: 'completed',
+                date: new Date()
+            }]
+        });
+        await newWallet.save();
+    } else {
+        await Wallet.findOneAndUpdate(
+            { user: order.userId },
+            {
+                $inc: { balance: refundAmount },
+                $push: {
+                    transactions: {
+                        transactionId: uuidv4(),
+                        description: `Refund for order #${order._id.toString().slice(0, 8)}`,
+                        amount: refundAmount,
+                        type: 'credit',
+                        status: 'completed',
+                        date: new Date()
+                    }
+                }
+            }
+        );
+    }
+
+    } 
+
+    await order.save();
+    
+
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+      return res.status(200).json({
+        success: true,
+        message: 'refund processed successfully',
+        data: {
+          refundAmount,
+          orderId: order._id,
+        },
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        message: 'Product canceled successfully',
+        data: {
+          orderId: order._id,
+        },
+      });
+    }
+
     
   } catch (error) {
     console.error('Error canceling product:', error);
@@ -209,6 +375,9 @@ const cancelProduct = async (req, res)=>{
   
   }
 }
+
+
+
 
 
 
@@ -344,8 +513,12 @@ const varifyPayment =  async (req, res) => {
         totalPrice:total,
         shippingAddressId:address._id,
         paymentInfo:paymentMethods,
-        products,
+        products: products.map(prodct=>({
+          ...prodct,
+          paymentStatus:'completed'
+        })),
         status:'pending',
+        paymentStatus:'completed',
         shippingCost: shippingCharge,
         paymentId: razorpay_payment_id,
         orderId: razorpay_order_id
@@ -383,7 +556,7 @@ const couponApply = async(req, res)=>{
   
 
    if(!code || !cartSummary){
-    return res.status(400).json({ success: false, message: 'Coupon code or cart summary missing' });
+    return res.status(400).json({ success: false, message: 'Pleas Enter the Coupon code' });
    }
    try {
 
@@ -402,14 +575,25 @@ const couponApply = async(req, res)=>{
     if(coupon.expiryDate < currentDate){
       return res.status(400).json({  message: 'Coupon has expired' });
     }
+
+    if (cartSummary.totalPrice < coupon.minAmount) {
+      return res.status(400).json({ 
+        message: `Cart subtotal must be at least ₹${coupon.minAmount} to use this coupon` 
+      });
+    }
     
-     if(cartSummary.totalPrice > coupon.maxAmount){
-      return res.status(400).json({ message: `Cart subtotal must not exceed ${coupon.maxAmount} to use this coupon`});
+    
+
+      const discount = (cartSummary.totalPrice * coupon.discount) / 100;
+      const discountedTotal = cartSummary.totalPrice - discount;
+
+     if(discount > coupon.maxAmount){
+      return res.status(400).json({ message: `Cart subtotal must not exceed ₹${coupon.maxAmount} to use this coupon`});
      }
 
      
-     const discount = (cartSummary.totalPrice * coupon.discount) / 100
-     const total = cartSummary.totalPrice + cartSummary.shipping - discount
+     const total = discountedTotal + cartSummary.shipping;
+
 
      return res.status(200).json({
       success: true,
@@ -426,6 +610,71 @@ const couponApply = async(req, res)=>{
 
 
 
+const returnController = async(req, res)=>{
+
+  try {
+    const { orderId, productId, reason } = req.body;
+    const userId = req.user.id;
+
+ console.log('return',req.body);
+ 
+    const order = await Order.findOne({
+      _id: orderId,
+      userId: userId
+    });
+
+    if (!order) {
+      return res.status(404).json({  message: 'Order not found' });
+    }
+
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ message: 'Return can only be requested for delivered orders'  });
+    }
+
+    const productIndex = order.products.findIndex(
+      product => product.productId.toString() === productId
+    );
+
+    console.log('Product index:', productIndex);
+
+
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found in order' });
+    }
+
+    if (order.products[productIndex]?.returnRequest) {
+      return res.status(400).json({ message: 'Return request already exists for this product' });
+    }
+
+    order.products[productIndex].returnRequest = {
+      reason: reason,
+      status: 'pending',
+      requestDate: new Date()
+    };
+
+    order.products[productIndex].paymentStatus = 'processing';
+
+
+    const savedOrder = await order.save();
+    console.log(order.products);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Return request submitted successfully',
+      returnRequest: savedOrder.products[productIndex].returnRequest
+    });
+
+    
+  } catch (error) {
+    console.error('Return request error:', error);
+      res.status(500).json({ message: 'Error processing return request'});
+    
+  }
+}
+
+
+
+
 module.exports = { 
   placeOrder,
   getAllOrders,
@@ -434,5 +683,6 @@ module.exports = {
   rezorpayLoad,
   varifyPayment,
   couponApply,
-  getOrderDetails
+  getOrderDetails,
+  returnController
 };

@@ -1,92 +1,103 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Download, Edit, Trash, ChevronDown, DollarSign, ShoppingCart, Package, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, Edit, FileSpreadsheet, Trash, ChevronDown, DollarSign, ShoppingCart, Package, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import Pagination from '../../Components/Pagination';
+import { fetchOrderDetails } from '../../services/authService';
+
 const SaleReportPage = () => {
   const [timeFilter, setTimeFilter] = useState('All Time');
   const [stats, setStats] = useState([]);
-
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10
-  
+  const [sortBy, setSortBy]= useState('orderDate')
+  const [sortOrder, setSortOrder] = useState(-1);
   const [orderData, setOrderData]= useState([])
-  const [filteredData, setFilteredData] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+
   
   
+
   
-  
-  const fetchOrderDetails = async()=>{
-    try {
-      const response = await axioInstence.get('/admin/orders-manage') 
-      console.log(response)
-      setOrderData(response.data)
-      const data = response.data;
-
-      const overallSalesCount = data.length; // Total number of orders
-      const overallOrderAmount = data.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
-      const overallDiscount = data.reduce((acc, order) => acc + (order.discount || 0), 0);
-
-
-
-
-      setStats([
-        // { title: 'Total Sales', value: `₹${overallOrderAmount.toFixed(2)}`, icon: DollarSign, color: 'blue' },
-        // { title: 'Total Cost', value: `₹${totalCost.toFixed(2)}`, icon: ShoppingCart, color: 'red' },
-        // { title: 'Products Sold', value: `${productsSold}`, icon: Package, color: 'purple' },
-        // { title: 'Stock on Hand', value: `₹${stockOnHand.toFixed(2)}`, icon: BarChart2, color: 'orange' },
-        { title: 'Overall Sales Count', value: `${overallSalesCount}`, icon: BarChart2, color: 'green' },
-        { title: 'Overall Order Amount', value: `₹${overallOrderAmount.toFixed(2)}`, icon: DollarSign, color: 'yellow' },
-        { title: 'Overall Discount', value: `₹${overallDiscount.toFixed(2)}`, icon: ShoppingCart, color: 'pink' },
-      ]);
-
-    } catch (error) {
-      console.log(error);
-      
-    }
-  }
-  
-
-  useEffect(()=>{
-   fetchOrderDetails()
-  },[])
-
-  const applyDateFilter = () => {
-    const now = new Date();
-    let startDate;
-
-    if (timeFilter === 'Daily') {
-      startDate = new Date(now.setHours(0, 0, 0, 0)); 
-    } else if (timeFilter === 'Weekly') {
-      const dayOfWeek = now.getDay();
-      startDate = new Date(now.setDate(now.getDate() - dayOfWeek)); 
-    } else if (timeFilter === 'Monthly') {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1); 
-    }
-
-    if (timeFilter === 'All Time') {
-      setFilteredData(orderData); 
-    } else {
-      const filtered = orderData.filter(order => {
-        const orderDate = new Date(order.orderDate);
-        return orderDate >= startDate;
-      });
-      setFilteredData(filtered);
-    }
-  };
-
   useEffect(() => {
-    applyDateFilter();
-  }, [timeFilter, orderData]);
+    const loadOrderDetails = async () => {
+        try {
+            const data = await fetchOrderDetails(timeFilter, currentPage);
+            console.log('Fetched order details', data);
+            setOrderData(data.orders); 
+            setTotalPages(data.pagination.pages); 
+            updateStatus(data.OrderSummury)
+           
+                } catch (error) {
+            console.error('Error loading order details', error);
+        }
+    };
+    
+    loadOrderDetails();
+  }, [timeFilter, currentPage]);
+  
+  
+  function updateStatus(data){
+    const overallSalesCount = data.totalOrders;
+    const overallOrderAmount = data.totalRevenue
+    const overallDiscount = data.totalDiscount
+
+    setStats([
+      { title: 'Overall Sales Count', value: `${overallSalesCount}`, icon: BarChart2, color: 'green' },
+      { title: 'Overall Order Amount', value: `₹${overallOrderAmount.toFixed(2)}`, icon: DollarSign, color: 'yellow' },
+      { title: 'Overall Discount', value: `₹${overallDiscount.toFixed(2)}`, icon: ShoppingCart, color: 'pink' },
+    ]);
+  }
+
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+
+  const exportToPDF = async () => {
+    try {
+      const response = await axioInstence.get('/admin/generate-pdf', {
+        params: {
+          timeFilter,
+          sortBy,
+          sortOrder
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sales-report.pdf';
+      link.click();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+
+  const exportToExcel = async () => {
+    try {
+      const response = await axioInstence.get('/admin/generate-excel', {
+        params: {
+          timeFilter,
+          sortBy,
+          sortOrder
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sales-report.xlsx';
+      link.click();
+    } catch (error) {
+      console.error('Excel export failed:', error);
+    }
+  };
+  
+
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
@@ -118,10 +129,10 @@ const SaleReportPage = () => {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row  items-start sm:items-center mb-6 gap-4">
         <div className="relative w-full sm:w-auto">
           <select 
-            className="appearance-none bg-white border rounded-lg pl-4 pr-10 py-2 w-full sm:w-auto"
+            className="appearance-none bg-white  border rounded-lg pl-4 pr-10 py-2 w-full sm:w-auto"
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
           >
@@ -130,12 +141,21 @@ const SaleReportPage = () => {
             <option>Weekly</option>
             <option>Monthly</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute  right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
-        <button className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg w-full sm:w-auto justify-center">
+        <button 
+        onClick={exportToPDF}
+        className="flex items-center  gap-2 bg-black text-white px-4 py-2 rounded-lg w-full sm:w-auto justify-end">
           <Download className="h-5 w-5" />
           Export
         </button>
+        <button 
+              onClick={exportToExcel}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg flex-1 sm:flex-initial justify-center"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+              Export Excel
+           </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
@@ -148,11 +168,12 @@ const SaleReportPage = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Discount</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedData.map((order) => (
+            {orderData.map((order) => (
               <tr key={order._id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{order._id.slice(0, 8)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{order.products[0]?.productId?.productName }</td>
@@ -168,6 +189,7 @@ const SaleReportPage = () => {
                     {order.status}
                   </span>
                 </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm">{order.discount ? order?.discount?.toLocaleString() : 'No Discount'}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">{order.totalPrice.toLocaleString()}</td>
                 
               </tr>

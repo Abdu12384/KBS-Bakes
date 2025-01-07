@@ -3,49 +3,45 @@ import { ChevronLeft, Edit2, Trash2, X,User,Phone,MapPin } from 'lucide-react';
 import AddressForm from '../../Components/UserComponents/AddressForm';
 import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
+import NavBar from '../../Components/Navbar';
+import { fetchAddressDetails,deleteAddress, setDefaultAddress } from '../../services/authService';
 
 function AddressPage() {
   const [addresses, setAddresses] = useState([]);
 
-
-     
-     const fetchAddres = async() =>{
-        try {
-
-          const response = await axioInstence('/user/address-details')
-            console.log(response.data);
-            
-            setAddresses(response.data)
-          
-        } catch (error) {
-          console.log(error);
-        }
-      }
-      
- useEffect(()=>{
-       
-  fetchAddres()
-        
-  },[])
-
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
 
-  const deleteAddress = async(id) => {
 
-    try {
-      
-      const response = await axioInstence.delete(`/user/delete-address/${id}`)
-        console.log(response.data);
-        toast.success(response.data.message)
+     
+  
+    const loadAddresses = async () => {
+        try {
+            const data = await fetchAddressDetails();
+            console.log('Fetched addresses', data);
+            setAddresses(data); 
+        } catch (error) {
+            console.error('Error loading addresses', error);
+        }
+    };
 
-        setAddresses(addresses.filter(address => address._id !== id));
-      } catch (error) {
-        console.log(error);
-        toast.success(error.response.data.message)
-      
-    }
-  };
+ useEffect(() => {
+    loadAddresses();
+}, []);
+
+
+
+
+const handleDeleteAddress = async (id) => {
+  try {
+      const response = await deleteAddress(id); 
+      toast.success(response.message); 
+      setAddresses(addresses.filter(address => address._id !== id)); 
+  } catch (error) {
+      console.error('Error deleting address:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete address. Please try again.'); // Show error message
+  }
+};
 
 
   const addOrUpdateAddress = (newAddress) => {
@@ -63,29 +59,33 @@ function AddressPage() {
     setIsFormOpen(true);
   };
 
-  const setDefaultAddress = async(id)=>{
-     try {
-      const response = await axioInstence.put(`/user/set-default-address/${id}`)
-       await fetchAddres()
-      toast.success(response.data.message)
 
-      setAddresses(prevAddress =>
-        prevAddress.map((address)=>({
-          ...address,
-          idDefault: address._id === id,
-        }))
-      )
-      
-     } catch (error) {
-      console.error('Error setting default address:', error.response?.data || error.message);
-      toast.error('Failed to set default address.');
 
-     }
-  }
+  const handleSetDefaultAddress = async (id) => {
+    try {
+        const response = await setDefaultAddress(id); 
+        
+        setAddresses(prevAddresses =>
+          prevAddresses.map(address => ({
+            ...address,
+            idDefault: address._id === id, 
+          }))
+        );
+        await fetchAddressDetails(); 
+        toast.success(response.message); 
+    } catch (error) {
+        console.error('Error setting default address:', error.response?.data || error.message);
+        toast.error('Failed to set default address.'); // Show error message
+    }
+};
+
 
 
   return (
+    <>
+      <NavBar/>
     <div className="min-h-screen bg-gray-100">
+    <Toaster position="top-right" reverseOrder={false}/>
       {/* Header */}
       <header className="sticky top-0 shadow-sm px-4 py-3 flex items-center bg-white">
         <button className="mr-2">
@@ -131,7 +131,7 @@ function AddressPage() {
                   ) : (
                     <button
                       className="text-blue-600 text-sm font-medium hover:underline"
-                      onClick={() => setDefaultAddress(address._id)}
+                      onClick={() => handleSetDefaultAddress(address._id)}
                     >
                       Set as default
                     </button>
@@ -146,7 +146,7 @@ function AddressPage() {
                   </button>
                   <button 
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    onClick={() => deleteAddress(address._id)}
+                    onClick={() => handleDeleteAddress(address._id)}
                   >
                     <Trash2 className="w-4 h-4 text-gray-600" />
                   </button>
@@ -188,29 +188,11 @@ function AddressPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
-// {isFormOpen && (
-//   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-//     <div className="relative  rounded-lg p-6 w-full max-w-6xl">
-//       <button 
-//         className="absolute top-[100px] text-white opacity-50  right-2 text-gray-500  z-50 hover:text-gray-700"
-//         onClick={() => setIsFormOpen(false)}
-//       >
-//         <X size={24} />
-//       </button>
-//       <h2 className="text-xl font-semibold mb-4 text-gray-800">
-//         {editingAddress ? 'Edit Address' : 'Add New Address'}
-//       </h2>
-//       <AddressForm 
-//         onSubmit={addOrUpdateAddress} 
-//         initialAddress={editingAddress}
-//       />
-//     </div>
-//   </div>
-// )}
-// </div>
+
 
 export default AddressPage;
 

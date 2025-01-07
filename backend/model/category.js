@@ -1,6 +1,27 @@
 
 const mongoose = require('mongoose');
 
+const OfferSchema = new mongoose.Schema({
+  offerName: { 
+    type: String, 
+    required: true 
+  },
+  offerPercentage: 
+  { type: Number, 
+    required: true, 
+    min: 0,
+     max: 100 
+    },
+  startDate: 
+  { type: Date, 
+    required: true 
+  },
+  endDate: { 
+    type: Date, 
+    required: true 
+  },
+}, { _id: false });
+
 const CategorySchema = new mongoose.Schema({
   name: { 
     type: String, 
@@ -17,7 +38,8 @@ const CategorySchema = new mongoose.Schema({
   isDeleted:{
     type:Boolean,
     default:false
-  }
+  },
+  offer: OfferSchema, // Add the offer field
 },
 {
   timestamps:true

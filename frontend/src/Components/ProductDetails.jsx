@@ -19,11 +19,11 @@ const ProductDetails = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [selectedVariant, setSelectedVariant] = useState(product?.variants[0]||null); // Default to the first variant
+  const [selectedVariant, setSelectedVariant] = useState(product?.variants[0]||null); 
   const [selectedWeight, setSelectedWeight] = useState(null);
 
 
-  // If it's not out of stock or sold out, it's available
+
 
   const imageRef = useRef(null);
 
@@ -39,6 +39,8 @@ const ProductDetails = () => {
   const fetchProductDetails = async () => {
     try {
       const response = await axiosInstence.get(`/user/productshow/${id}`);
+      console.log('details',response);
+      
       const productData = response.data;
       
       const defaultVariant = productData.variants.find(
@@ -232,7 +234,7 @@ const ProductDetails = () => {
 
               <div className="flex items-center space-x-4 mt-2">
                <p className="text-2xl font-bold text-[#8b6c5c]">₹{selectedVariant?.salePrice}</p>
-               <p className="text-2xl font-bold text-[#d8d8d8] line-through">₹{selectedVariant?.regularPrice}</p>
+               <p className="text-2xl font-bold text-[#d8d8d8] line-through">{selectedVariant?.salePrice!==selectedVariant?.regularPrice && `₹${selectedVariant?.regularPrice}`}</p>
               </div>
               <p className="text-lg text-[#5b3e31] leading-relaxed">{product.description}</p>
               <div>
@@ -241,12 +243,14 @@ const ProductDetails = () => {
                   Ingredients
                 </h3> */}
                 <ul className="list-none text-[#5b3e31] grid grid-cols-2 gap-2">
-                  {/* {product.ingredients.map((ingredient, index) => (
-                    <li key={index} className="flex items-center">
-                      <span className="w-2 h-2 bg-[#8b6c5c] rounded-full mr-2"></span>
-                      {ingredient}
-                    </li>
-                  ))} */}
+                {product.category && product.category.offer && (
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-bold text-green-600">
+                  {product.category.offer.offerPercentage}% Off
+                </span>
+                <span className="text-sm text-gray-500">on {product.category.name} category</span>
+              </div>
+          )}
                 </ul>
               </div>
               

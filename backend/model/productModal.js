@@ -17,10 +17,10 @@ const variantSchema = new mongoose.Schema({
     type:Number,
     required:true
    },
-   discount:{
-    type:Number,
-    default:0
-  },
+  //  discount:{
+  //   type:Number,
+  //   default:0
+  // },
   
 })
 
@@ -29,7 +29,7 @@ const variantSchema = new mongoose.Schema({
 const reviewSchema = new mongoose.Schema({
   user: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User',  // Link to User model
+    ref: 'User', 
     required: true
   },
   rating: { 
@@ -43,6 +43,27 @@ const reviewSchema = new mongoose.Schema({
     required: true 
   },
 
+});
+
+const offerSchema = new mongoose.Schema({
+  offerName: {
+    type: String,
+    required: true
+  },
+  offerPercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    required: true
+  },
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    required: true
+  }
 });
 
 const prodcutSchema = new mongoose.Schema({
@@ -83,7 +104,8 @@ const prodcutSchema = new mongoose.Schema({
    type:{
     type:[String],
     enum:['Birthday','Wedding','Anniversary','Custom']
-   }
+   },
+   offer: offerSchema,
 },
 {
   timestamps:true

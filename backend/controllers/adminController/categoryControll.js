@@ -100,10 +100,51 @@ const softDeleteCategory = async(req,res)=>{
      
 }
 
+const addOfferCatogory = async (req, res)=>{
+  const { categoryId } = req.params;
+  const { offerName, offerPercentage, startDate, endDate } = req.body;
+
+  try {
+    // Find the category
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Check if there is an existing offer
+    if (category.offer) {
+      const existingOfferEndDate = new Date(category.offer.endDate);
+      const currentDate = new Date();
+
+      // Check if the existing offer is still valid
+      if (existingOfferEndDate > currentDate) {
+        return res.status(400).json({ message: 'An offer has already been applied and is still valid.' });
+      }
+    }
+
+    // If no valid offer exists, update the category with the new offer
+    category.offer = {
+      offerName,
+      offerPercentage,
+      startDate,
+      endDate,
+    };
+
+    const updatedCategory = await category.save(); // Save the updated category
+
+    res.status(200).json({ message: 'Category offer applied successfully', updatedCategory });
+  } catch (error) {
+    console.error('Error adding offer:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 module.exports = { 
   addCategory ,
   fetchCategory,
   editCategory,
+  addOfferCatogory,
   softDeleteCategory,
 
 };

@@ -1,5 +1,21 @@
 const mongoose = require('mongoose')
 
+const returnRequestSchema = new mongoose.Schema({
+  reason: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'processing', 'completed'],
+    default: 'pending'
+  },
+  requestDate: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const orderSchema = new mongoose.Schema({
   userId:{
     type:mongoose.Schema.Types.ObjectId,
@@ -23,7 +39,17 @@ const orderSchema = new mongoose.Schema({
     price:{
       type:Number,
       required:true
-    }
+    },
+    isCanceled:{
+      type:Boolean,
+      default:false
+    },
+    paymentStatus:{
+      type: String,
+      enum:['pending','completed','processing','failed','refunded'],
+      default:'pending'
+     },
+    returnRequest:returnRequestSchema
   }],
   totalPrice:{
     type: Number,
@@ -47,11 +73,16 @@ const orderSchema = new mongoose.Schema({
     type:String,
     required:true
   },
-  subtotal: {
+  paymentStatus:{
+    type: String,
+    enum:['pending','completed','failed','refunded'],
+    default:'pending'
+   },
+  subtotal:{
     type: Number,
     // required: true
   },
-  shippingCost: {
+  shippingCost:{
     type: Number,
     default: 0
   },

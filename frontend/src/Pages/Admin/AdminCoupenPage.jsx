@@ -3,15 +3,53 @@ import { Calendar, Filter, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucid
 import axioInstence from '../../utils/axioInstence'
 import toast, { Toaster } from "react-hot-toast";
 import dayjs from 'dayjs'; 
+import { fetchCoupons, deleteCoupon } from '../../services/authService';
 
 
 export default function CouponManagement() {
   const [coupons, setCoupons] = useState([])
   const [activeTab, setActiveTab] = useState('all')
   const [newCoupon, setNewCoupon] = useState({ code: '', discount: '', minAmount: '', maxAmount: '', expiryDate: '' })
+  const [errors, setErrors] = useState({});
+
+  const validateCoupon = () => {
+    const newErrors = {};
+    
+    if (!newCoupon.code.trim()) {
+      newErrors.code = "Coupon code is required";
+    }
+
+    const discount = parseFloat(newCoupon.discount);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      newErrors.discount = "Discount must be a number between 0 and 100";
+    }
+
+    const minAmount = parseFloat(newCoupon.minAmount);
+    if (isNaN(minAmount) || minAmount <= 0) {
+      newErrors.minAmount = "Minimum amount must be a positive number";
+    }
+
+    const maxAmount = parseFloat(newCoupon.maxAmount);
+    if (isNaN(maxAmount) || maxAmount <= 0) {
+      newErrors.maxAmount = "Maximum amount must be a positive number";
+    } else if (maxAmount < minAmount) {
+      newErrors.maxAmount = "Maximum amount must be greater than or equal to minimum amount";
+    }
+
+    if (!newCoupon.expiryDate) {
+      newErrors.expiryDate = "Expiry date is required";
+    } else if (new Date(newCoupon.expiryDate) <= new Date()) {
+      newErrors.expiryDate = "Expiry date must be in the future";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
 
   const handleAddCoupon = async(e) => {
     e.preventDefault()
+    if (!validateCoupon()) return;    
     const couponData ={
       code:newCoupon.code,
       discount:newCoupon.discount,
@@ -33,35 +71,34 @@ export default function CouponManagement() {
   }
   
   
-  const fetchCoupons = async()=>{
-    try {
-      
-      const response = await axioInstence.get('/admin/coupons')
-      console.log(response);
-      
-      setCoupons(response.data)
-      
-    } catch (error) {
-      console.log(error);
-      
-    }
-  }
-  
-  useEffect(()=>{
-    fetchCoupons()
-  },[])
+ 
+  useEffect(() => {
+    const loadCoupons = async () => {
+        try {
+            const data = await fetchCoupons(); 
+            console.log('Fetched coupons', data);
+            setCoupons(data); 
+        } catch (error) {
+            console.error('Error loading coupons', error);
+        }
+    };
 
-  const handleDelete= async(couponId)=>{
-    try {
-      console.log(couponId);
-      
-      const response = await axioInstence.delete(`/admin/delete-coupon/${couponId}`)
-      toast.success(response.data.message)
-    } catch (error) {
-      console.log(error);
-      
-    }
+    loadCoupons();
+}, []); 
+
+
+const handleDelete = async (couponId) => {
+  try {
+      const response = await deleteCoupon(couponId); 
+      toast.success(response.message); 
+
+      setCoupons((prevCoupons) => prevCoupons.filter(coupon => coupon._id !== couponId));
+  } catch (error) {
+      console.error('Error deleting coupon:', error);
+      toast.error('Failed to delete coupon. Please try again.');
   }
+};
+
   
   console.log(coupons);
   
@@ -178,9 +215,11 @@ export default function CouponManagement() {
                 value={newCoupon.code}
                 onChange={(e) => setNewCoupon({...newCoupon, code: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
+
               />
+            {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code}</p>}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Discount
@@ -190,8 +229,8 @@ export default function CouponManagement() {
                 value={newCoupon.discount}
                 onChange={(e) => setNewCoupon({...newCoupon, discount: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
               />
+            {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -204,8 +243,8 @@ export default function CouponManagement() {
                 value={newCoupon.minAmount}
                 onChange={(e) => setNewCoupon({...newCoupon, minAmount: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
               />
+            {errors.minAmount && <p className="text-red-500 text-xs mt-1">{errors.minAmount}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -216,8 +255,8 @@ export default function CouponManagement() {
                 value={newCoupon.maxAmount}
                 onChange={(e) => setNewCoupon({...newCoupon, maxAmount: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
               />
+            {errors.maxAmount && <p className="text-red-500 text-xs mt-1">{errors.maxAmount}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -228,8 +267,8 @@ export default function CouponManagement() {
                 value={newCoupon.expiryDate}
                 onChange={(e) => setNewCoupon({...newCoupon, expiryDate: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
               />
+            {errors.expiryDate && <p className="text-red-500 text-xs mt-1">{errors.expiryDate}</p>}
             </div>
           </div>
           <div className="flex justify-end">

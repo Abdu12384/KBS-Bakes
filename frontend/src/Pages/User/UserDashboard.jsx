@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, Clock, Truck, ShoppingCart, Heart, MapPin, Wallet, LogOut } from 'lucide-react';
-
+import NavBar from '../../Components/Navbar';
 const UserDashboard = () => {
   const dashboardItems = [
     {
@@ -70,6 +70,8 @@ const UserDashboard = () => {
   ];
 
   return (
+      <>
+        <NavBar/>
     <div className="min-h-screen bg-white p-6">
       <style>
         {`
@@ -182,6 +184,7 @@ const UserDashboard = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

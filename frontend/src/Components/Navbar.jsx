@@ -19,7 +19,7 @@ export default function NavBar() {
 
   return (
     
-      <nav className="mb-10 bg-[#3d2516] bg-opacity-80 backdrop-blur-md shadow-lg">
+      <nav className=" bg-[#3d2516] bg-opacity-80 backdrop-blur-md shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-24">
             <div className="flex items-center">
@@ -46,47 +46,7 @@ export default function NavBar() {
                   <User className="h-6 w-6" />
                 </button>
 
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 w-56 bg-white rounded-lg shadow-xl py-2 mt-2">
-                    {isAuthenticated ? (     
-                      <div className="px-4 py-2 border-b border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">Welcome, John Doe!</p>
-                        <p className="text-xs text-gray-500">john@example.com</p>
-                      </div>
-                    ) : (
-                      <div className="px-4 py-2 border-b">
-                        <p className="text-sm font-medium text-gray-900">Welcome to KBS Bakes! Please log in to place your order.</p>
-                      </div>
-                    )}
-                    {isAuthenticated && (
-                      <a
-                        href="/user/dashboard"
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200 flex items-center"
-                      >
-                        <User className="mr-3 h-5 w-5 text-[#8b6c5c]" />
-                        Your Account 
-                      </a>
-                    )}                  
-                    <div className="border-t border-gray-200 mt-2">
-                      <button
-                        onClick={toggleAuth}
-                        className="block px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 transition-colors duration-200 flex items-center w-full text-left"
-                      >
-                        {isAuthenticated ? (
-                          <>
-                            <LogOut className="mr-3 h-5 w-5" />
-                            Logout
-                          </>
-                        ) : (
-                          <>
-                            <LogIn className="mr-3 h-5 w-5" /> 
-                            Login
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
+               
               </div>
               <a href="/user/cart" className="text-white hover:text-[#d8cbc4]">
                 <ShoppingCart className="h-6 w-6" />

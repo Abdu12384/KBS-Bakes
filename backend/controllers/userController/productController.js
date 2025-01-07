@@ -31,7 +31,7 @@ const productDetails= async(req, res)=>{
    console.log(id);
    
    try {
-    const product = await Product.findById(id)
+    const product = await Product.findById(id).populate('category')
 
     if(!product){
       return res.status(404).json({message:"Product not found"})
@@ -79,11 +79,21 @@ const productDetails= async(req, res)=>{
    try {
     console.log(req.query);
      
-    const {sort,type} = req.query
+    const {sort,type, category, page=1, limit = 9} = req.query
     
      let query = {isDeleted: false}
-
      let sortConfig ={}
+
+
+     if(category && category !== 'All'){
+      query.category = category
+     }
+
+     if(type && type !== 'All'){
+      query.type = type
+     }
+
+     const skip = (page - 1) * limit;
 
      switch (sort){
        case 'price_asc':
@@ -111,10 +121,22 @@ const productDetails= async(req, res)=>{
      }
      const products = await Product.find(query)
      .sort(sortConfig)
-     .select('productName images variants.salePrice category type')
+     .skip(skip)
+     .limit(parseInt(limit))
+     .select('productName images variants category type')
+     .populate({
+      path: 'category', 
+      select: 'name', 
+    })
      .lean()
+     
+     const totalCount = await Product.countDocuments(query)
 
-     res.status(200).json(products)
+     res.status(200).json({
+      products,
+      totalPages:Math.ceil(totalCount/limit),
+      currentPage:parseInt(page)
+    })
    } catch (error) {
     console.error("Error fetching cakes:", error);
     res.status(500).json({ error: "Failed to fetch cakes" });

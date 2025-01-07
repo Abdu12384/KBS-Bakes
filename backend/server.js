@@ -14,7 +14,7 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use(cors({
-  origin:'http://localhost:5173',
+  origin:process.env.CLIENT_URL,
   credentials:true
 }))
 
@@ -36,6 +36,6 @@ app.use('/user',userRoute)
 
 
 
-const PORT =  3000;
-app.listen(PORT,()=>console.log(`Server running http://localhost:${PORT}`))
+const PORT = process.env.PORT || 3000;
+app.listen(PORT,()=>console.log(`Server running Successfully`))
 

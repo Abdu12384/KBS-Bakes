@@ -4,13 +4,18 @@ import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import { OrderAnimation } from '../../Components/cakeAnimation';
 import CouponCard from '../../Components/Coupon';
+import NavBar from '../../Components/Navbar';
+import { useNavigate } from 'react-router-dom';
+import { fetchCartItems, deductFromWallet, initiatePayment, verifyPayment } from '../../services/authService';
+import { fetchAddressDetails, fetchWalletBalance, placeOrder, applyCoupon } from '../../services/authService';
+
 
 
 
 const paymentMethods = [
-  { id: 'credit', name: 'Credit Card', icon: CreditCard },
+  { id: 'wallet', name: 'Wallet Pay', icon: Wallet },
   { id: 'razorpay', name: 'Pay Online (Card/UPI/Wallet)', icon: CreditCard },
-  { id: 'cash', name: 'Cash on Delivery', icon: DollarSign },
+  { id: 'COD', name: 'Cash on Delivery', icon: DollarSign },
 ];
 
 const CheckoutPage = () => {
@@ -28,9 +33,11 @@ const CheckoutPage = () => {
     total: 0
   });
 
+  const [walletBalance, setWalletBalance] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
+  const navigate = useNavigate()
 
   console.log('summ',cartSummary);
   
@@ -45,59 +52,127 @@ const CheckoutPage = () => {
     });
   };
 
-   const fetchCartItem = async() =>{
-       try {
-         const response = await axioInstence.get('/user/cart/item') 
-             console.log('jkhkjkjhkhkk',response);
-             
-          if(response.data && response.data.cartItems){
-            console.log('ghghghgh',response.data.cartItems);
-            
-            setCartItems(response.data.cartItems)
-          }  
-          if (response.data.summary) {
-            const subtotal = response.data.summary.totalPrice;
+  const loadCartItems = async () => {
+    try {
+        const data = await fetchCartItems(); 
+        console.log('Fetched cart items:', data);
+
+        if (data && data.cartItems) {
+            console.log('Cart items:', data.cartItems);
+            setCartItems(data.cartItems); 
+        }
+
+        if (data.summary) {
+            const subtotal = data.summary.totalPrice;
             const shippingCharge = subtotal < 1000 ? 50 : 0; 
-            const total = subtotal + shippingCharge
-      
+            const total = subtotal + shippingCharge;
+
             setCartSummary({
-              subtotal,
-              shippingCharge,
-              total,
+                subtotal,
+                shippingCharge,
+                total,
             });
-          }
-      
-       } catch (error) {
-       toast.error(error.response?.data?.message);
-      console.error('Cart fetch error:', error);
-      }
-   }
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to fetch cart items');
+        console.error('Cart fetch error:', error);
+    }
+};
+   
+
    console.log(cartItems);
 
-   const fechAddresses = async () =>{
-     try {
-       const response = await axioInstence.get('/user/address-details')
-        if(response.data && response.data.length>0){
-          setSavedAddress(response.data)
 
-           setSelectedAddress(
-            response.data.find(addr => addr.isDefault) || response.data[0]
-           )
+   const fetchAddresses = async () => {
+    try {
+        const data = await fetchAddressDetails(); 
+        if (data && data.length > 0) {
+            setSavedAddress(data);
+
+
+            setSelectedAddress(data.find(addr => addr.isDefault) || data[0]);
         }
-     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to fetch addresses');
-     }
-   }
-   console.log('addree',savedAddress);
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to fetch addresses');
+        console.error('Error fetching addresses:', error);
+    }
+};
+
+
+   console.log('wallet balance here',walletBalance);
+   
    
 
 
+
+
+  const loadWalletBalance = async () => {
+    try {
+        const data = await fetchWalletBalance();
+        if (data) {
+            setWalletBalance(data); 
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to fetch wallet balance');
+        console.error('Error loading wallet balance:', error);
+    }
+};
+
+
+
+  const handleWalletPayment = async () => {
+
+    if (walletBalance.balance < cartSummary.total) {
+        toast.error('Insufficient wallet balance. Please choose another payment method.');
+        return;
+    }
+
+    if (!selectedAddress) {
+        toast.error('Please select a shipping address');
+        return;
+    }
+
+    try {
+
+        const orderDetails = {
+            address: selectedAddress,
+            paymentMethods: selectedPayment,
+            cartItems,
+            cartSummary,
+        };
+
+        const response = await deductFromWallet(orderDetails);
+        console.log(response);
+
+        if (response.success) {
+          toast.success(response.message);
+    
+          setTimeout(() => {
+            setLoading(true);
+            setTimeout(() => {
+              setLoading(false); 
+              navigate('/user/order-success')
+              setWalletBalance(walletBalance.balance - cartSummary.total); 
+            }, 2000);
+          }, 1000);
+      } else {
+          setLoading(false);
+          toast.error(response.data.message || 'Payment failed');
+        }  
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Payment failed');
+        console.error('Error during wallet payment:', error);
+    } finally {
+        setLoading(false); 
+    }
+};
 
    
 
    useEffect(()=>{
-     fetchCartItem()
-     fechAddresses()
+    loadCartItems()
+     fetchAddresses()
+     loadWalletBalance()
    },[])
 
    
@@ -105,164 +180,155 @@ const CheckoutPage = () => {
 
 
 
-   const handleRazorpayPayment = async () =>{
-    
-     if(!selectedAddress){
-       toast.error('Please select a shipping address')
-       return
-      }
-      
-      
-      try {
+   const handleRazorpayPayment = async () => {
 
+    if (!selectedAddress) {
+        toast.error('Please select a shipping address');
+        return;
+    }
+
+    try {
         const totalPrice = cartSummary.total;
-        const response = await axioInstence.post('/user/order/payment',{amount: totalPrice})
-        const {id, amount, currency, key_id } =response.data
-        
-        console.log('Backend Response:', response.data);
+        const paymentResponse = await initiatePayment(totalPrice); 
+        const { id, amount, currency, key_id } = paymentResponse;
+
+        console.log('Backend Response:', paymentResponse);
+
 
         const scriptLoaded = await loadRazorpayScript();
-
         if (!scriptLoaded) {
-          toast.error('Payment Initialization Error: Razorpay library not loaded');
-          return;
-        }       
-
-        console.log('Key ID:', key_id,id);
-        const options = {
-           key:key_id,
-           amount:amount,
-           currency:currency,
-           name:'KBS Bakes',
-           decription:'Order Payment',
-           order_id: id,
-           handler: async function(response){
-
-            // if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
-            //   toast.error('Invalid payment response received');
-            //   return;
-            // }`
-             const paymentData = {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-               orderDetails : {
-                address: selectedAddress,
-                paymentMethods: selectedPayment,
-                cartItems,
-                cartSummary
-              }
-             }
-             
-             try {
-                const verifyResponse = await axioInstence.post('/user/verify-payment',paymentData)
-                 if(verifyResponse.data){
-                  toast.success('Payment Successful!');
-                 } else{
-                  toast.error('Payment Verification Failed');
-                 }
-             } catch (error) {
-              toast.error('Payment Verification Error');
-             }
-           },
-  
-           prefill: {
-            name: selectedAddress.fullName,
-            email:selectedAddress.email ||'',
-            contact: selectedAddress.phone 
-           },
-           theme:{
-            color:'#6C63FF'
-           }
+            toast.error('Payment Initialization Error: Razorpay library not loaded');
+            return;
         }
 
-       
-      const rzp = new window.Razorpay(options); 
-        rzp.open()
-      
+        console.log('Key ID:', key_id, id);
+        const options = {
+            key: key_id,
+            amount: amount,
+            currency: currency,
+            name: 'KBS Bakes',
+            description: 'Order Payment',
+            order_id: id,
+            handler: async function (response) {
+                const paymentData = {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    orderDetails: {
+                        address: selectedAddress,
+                        paymentMethods: selectedPayment,
+                        cartItems,
+                        cartSummary,
+                    },
+                };
 
-     } catch (error) {
-      toast.error(error.response?.data?.message || 'Payment Initialization Error');
-      console.log('keyerror',error);
-      
-     }
-   }
+                try {
+                    const verifyResponse = await verifyPayment(paymentData); 
+                    if (verifyResponse.success) {
+                        toast.success(verifyResponse.message);
+                        setTimeout(() => {
+                            setLoading(true);
+                            setTimeout(() => {
+                                setLoading(false);
+                                navigate('/user/order-success');
+                            }, 2000);
+                        }, 1000);
+                    } else {
+                        toast.error(verifyResponse.message || 'Payment verification failed');
+                    }
+                } catch (error) {
+                    toast.error('Payment Verification Error');
+                    console.error('Verification Error:', error);
+                }
+            },
+            prefill: {
+                name: selectedAddress.fullName,
+                email: selectedAddress.email || '',
+                contact: selectedAddress.phone,
+            },
+            theme: {
+                color: '#6C63FF',
+            },
+        };
+
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Payment Initialization Error');
+        console.error('Payment Initialization Error:', error);
+    }
+};
+
    
 
    
-
-   
-
 
    const handlePlaceOrder = async () => {
-     
-     if(!selectedAddress){
-      toast.error('Please select a shipping address')
-      return
-     }
-     if(!selectedPayment){
-      toast.error('Please select a payment method');
-      return;
-     }
-
-
-     const orderData = {
-       address: selectedAddress,
-       paymentMethods: selectedPayment,
-       cartItems,
-       cartSummary
-     }
-     console.log('ordedata',orderData);
-     
-
-     try {
-
-     setLoading(true)
-      const response = await axioInstence.post('/user/place-order',orderData)
-       if(response.data){
-        setTimeout(() => {
-          toast.success(response.data.message)
-          setLoading(false)
-        }, 2000);
-       }else{
-        setLoading(false)
-        toast.error('Failed to place order')
-      }
-    } catch (error) {
-       setLoading(false)
-      
-      toast.error(error.response.data.message);
-      console.error(error.response.data.message);
-
-     }
-   }
-
-   const handleApplyCoupon = async () => {
-    try {
-      const response = await axioInstence.post('/user/apply-coupon', { 
-        code: couponCode,
-        cartSummary:{totalPrice: cartSummary.total}
-      });
-      if (response.data) {
-        setAppliedCoupon(couponCode);
-        setCartSummary(prevSummary => ({
-          ...prevSummary,
-          discount: response.data.discount,
-          total: prevSummary.subtotal + prevSummary.shippingCharge - response.data.discount
-        }));
-        toast.success('Coupon applied successfully!');
-     
-  
-      } else {
-        toast.error(response.data.message || 'Failed to apply coupon');
-      }
-    } catch (error) {
-      toast.error(error.response.data.message);
-      console.error(error.response.data.message);
-
+    if (!selectedAddress) {
+        toast.error('Please select a shipping address');
+        return;
     }
-    setCouponCode('');
-  };
+    if (!selectedPayment) {
+        toast.error('Please select a payment method');
+        return;
+    }
+
+    const orderData = {
+        address: selectedAddress,
+        paymentMethods: selectedPayment,
+        cartItems,
+        cartSummary,
+    };
+    console.log('Order data:', orderData);
+
+    try {
+        const response = await placeOrder(orderData); 
+        
+        if (response.success) {
+          toast.success(response.message);
+    
+          setTimeout(() => {
+            setLoading(true);
+            setTimeout(() => {
+              setLoading(false); 
+              navigate('/user/order-success')
+            }, 2000);
+          }, 1000);
+      } else {
+          setLoading(false);
+          toast.error(response.data.message || 'Payment failed');
+        }  
+    } catch (error) {
+        setLoading(false);
+        toast.error(error.response?.data?.message || 'Failed to place order');
+        console.error('Error placing order:', error.response?.data?.message);
+    }
+};
+
+
+   
+const handleApplyCoupon = async () => {
+  try {
+      const response = await applyCoupon(couponCode, cartSummary.total); 
+      if (response) {
+          setAppliedCoupon(couponCode);
+          setCartSummary(prevSummary => ({
+              ...prevSummary,
+              discount: response.discount,
+              total: prevSummary.subtotal + prevSummary.shippingCharge - response.discount,
+          }));
+          toast.success('Coupon applied successfully!');
+      } else {
+          toast.error(response.message || 'Failed to apply coupon');
+      }
+  } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to apply coupon');
+      console.error('Error applying coupon:', error.response?.data?.message);
+  }
+  setCouponCode(''); 
+};
+
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
@@ -278,10 +344,9 @@ const CheckoutPage = () => {
   
   
   
-  
-  
-  
   return (
+    <>
+      <NavBar/>
     <div className="min-h-screen bg-gray-50 p-6">
       {loading && <OrderAnimation/>}
             <Toaster position="top-right" reverseOrder={false}/>
@@ -378,7 +443,7 @@ const CheckoutPage = () => {
                     </button>
                   </div>
                   <p className="text-sm text-purple-600 mt-2">
-                    Discount of ₹{cartSummary.discount.toFixed(2)} applied to your order
+                    Discount of ₹{cartSummary?.discount?.toFixed(2)} applied to your order
                   </p>
                 </div>
               ) : (
@@ -437,30 +502,14 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
-              {selectedPayment === 'credit' && (
+              {selectedPayment === 'wallet' && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label  className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                      <input type="text" id="cardNumber" className="w-full p-2 border rounded-md" placeholder="1234 5678 9012 3456" />
-                    </div>
-                    <div>
-                      <label  className="block text-sm font-medium text-gray-700 mb-1">Name on Card</label>
-                      <input type="text" id="cardName" className="w-full p-2 border rounded-md" placeholder="John Doe" />
-                    </div>
-                    <div>
-                      <label  className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                      <input type="text" id="expiry" className="w-full p-2 border rounded-md" placeholder="MM/YY" />
-                    </div>
-                    <div>
-                      <label  className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                      <input type="text" id="cvv" className="w-full p-2 border rounded-md" placeholder="123" />
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-600">
+                    You will pay for your order using your wallet balance.₹{walletBalance.balance}
+                  </p>
                 </div>
               )}
-
-              {selectedPayment === 'cash' && (
+              {selectedPayment === 'COD' && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">
                     You will pay for your order when it is delivered. Please have the exact amount ready.
@@ -520,8 +569,8 @@ const CheckoutPage = () => {
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className={`font-medium ${cartSummary.subtotal > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {cartSummary.subtotal > 0 
+                  <span className={`font-medium ${cartSummary.subtotal < 1000 ? 'text-red-600' : 'text-green-600'}`}>
+                    {cartSummary.subtotal < 1000  
                       ? '₹50.00' 
                       : 'FREE'}
                   </span>               
@@ -534,11 +583,19 @@ const CheckoutPage = () => {
 
               
               <button
-                onClick={selectedPayment === 'razorpay' ? handleRazorpayPayment : handlePlaceOrder}
+                onClick={selectedPayment === 'wallet' 
+                ? handleWalletPayment
+                : selectedPayment === 'razorpay' 
+                ? handleRazorpayPayment 
+                : handlePlaceOrder}
                 className="w-full bg-purple-600 text-white rounded-lg py-4 mt-6 font-medium hover:bg-purple-700 transition-colors flex items-center justify-center"
                 >
                 <ShieldCheck className="w-5 h-5 mr-2" />
-                {selectedPayment === 'razorpay' ? 'Pay with Razorpay' : 'Place Order'}
+                {selectedPayment === 'wallet'
+                ? 'Pay With Wallet'
+                : selectedPayment === 'razorpay' 
+                ? 'Pay with Razorpay' 
+                : 'Place Order'}
               </button>
             
 
@@ -550,6 +607,7 @@ const CheckoutPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -7,7 +7,6 @@ const addProdcut = async (req,res)=>{{
      
   const {productName,
          category,
-         stock,
          weight,
          description,
          images,
@@ -30,11 +29,13 @@ const addProdcut = async (req,res)=>{{
               const salePrice = discount ? regularPrice - (regularPrice * discount)/100 : regularPrice
               return {...variant, salePrice}
             })
-          
+            const totalStock = updatedVariants.reduce((total, variant) => total + variant.stock, 0);
+
+           console.log('totalstock',totalStock);
+           
                 const newProduct = new Product({
                       productName,
                       category,
-                      stock,
                       weight,
                       description,
                       images,
@@ -46,7 +47,7 @@ const addProdcut = async (req,res)=>{{
  
               const updatedCategory = await Category.findByIdAndUpdate(
                 category,
-                {$inc:{stock:stock}},
+                {$inc:{stock:totalStock}},
                 {new:true}
               )
 

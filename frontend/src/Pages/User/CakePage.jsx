@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight, SortAsc, SortDesc, Star, DollarSign, Clock, Zap, TrendingUp, ChevronDown, Filter, IndianRupee, Octagon } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, SortAsc, SortDesc, Star,  Clock, Zap, TrendingUp, ChevronDown, Filter, IndianRupee, Octagon } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import NavBar from '../../Components/Navbar';
 import Footer from '../../Components/Footer'
+import Pagination from '../../Components/Pagination';
+import { fetchCategories } from '../../services/authService';
+import OutOfStockSign from '../../Components/OutOfStockBanner';
 
 const CakePage = () => {
   const [products, setProducts] = useState([]);
@@ -13,10 +16,12 @@ const CakePage = () => {
   const [productsPerPage] = useState(9);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortOption, setSortOption] = useState('newest');
+  const [showDropdown, setShowDropdown] = useState(false); 
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [showSortButton, setShowSortButton] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState('All');
-
+  const [totalPages, setTotalPages]= useState(1)
+  const [categories, setCategories] = useState([])
 
   const sortOptions = [
     { value: 'popularity', label: 'Popularity', icon: <TrendingUp size={16} /> },
@@ -32,12 +37,18 @@ const CakePage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const params = new URLSearchParams()
-         if(sortOption) params.append('sort',sortOption)
-          if (selectedOccasion !== 'All') params.append('type', selectedOccasion);
+        
+        const params = new URLSearchParams();
+        params.append('sort', sortOption);
+        params.append('type', selectedOccasion);
+        params.append('category', selectedCategory);
+        params.append('page', currentPage);
+        params.append('limit', productsPerPage);
+
         const response = await axioInstence.get(`/user/products-list?${params.toString()}`);
         console.log('ooooo',response.data);
-        setProducts(response.data);
+        setProducts(response.data.products);
+        setTotalPages(response.data.totalPages)
         setLoading(false);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -46,7 +57,7 @@ const CakePage = () => {
     };
 
     fetchProducts();
-  },[sortOption,selectedOccasion]);
+  },[sortOption, selectedOccasion, selectedCategory, currentPage, productsPerPage]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,24 +69,44 @@ const CakePage = () => {
 
   const occasions = ['All', 'Birthday', 'Wedding', 'Anniversary', 'Custom'];
 
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category._id);
+    setShowDropdown(false); // Close dropdown after selection
+};
  
+  const fetchAllCategories = async ()=>{
+     try {
+       const response = await fetchCategories()
+       console.log('category',response);
+       
+       setCategories(response)
+     } catch (error) {
+      console.log(error);  
+     }
+  }
+
+  useEffect(()=>{
+    fetchAllCategories()
+  },[])
 
   const filteredProducts = products.filter((product) =>
-    product.productName.toLowerCase().startsWith(searchTerm.toLowerCase()) &&
-    (selectedOccasion === 'All' || (product.type && product.type?.includes(selectedOccasion)))
-)
+    product.productName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
 
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+
 
   return (
     <section className="bg-gradient-to-br from-[#f3e8e3] to-[#d8cbc4] min-h-screen">
       <NavBar/>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mt-10 mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-5xl font-bold text-[#3d2516] mb-8 text-center font-serif">Our Delicious Cakes</h1>
         
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-center">
@@ -109,6 +140,33 @@ const CakePage = () => {
           </div>
         </div>
 
+
+        <div className="relative mb-8">
+        <button
+            className="px-4 py-2 bg-[#8b6c5c] text-white rounded-full"
+            onClick={() => setShowDropdown(!showDropdown)} // Toggle dropdown
+        >
+            { selectedCategory.name || 'Select Category'}
+        </button>
+
+        {showDropdown && (
+            <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl z-10 p-2 w-48 transition-all duration-300 ease-in-out">
+                {categories.map((category) => (
+                    <button
+                        key={category._id}
+                        className={`w-full text-left px-4 py-2 hover:bg-[#f3e8e3] flex items-center gap-2 transition-colors duration-200 ${
+                            selectedCategory === category._id
+                                ? 'bg-[#f3e8e3] text-[#8b6c5c]'
+                                : 'text-gray-700'
+                        }`}
+                        onClick={() => handleCategorySelect(category)}
+                    >
+                        {category.name}
+                    </button>
+                ))}
+            </div>
+        )}
+    </div>
         <div className="relative mb-8">
           {showSortButton && (
             <button
@@ -152,7 +210,7 @@ const CakePage = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {currentProducts.map((product) => (
+              {filteredProducts.map((product) => (
                 <Link to={`/user/product-details/${product._id}`} key={product._id}>
                   <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 group">
                     <div className="relative h-64">
@@ -161,9 +219,11 @@ const CakePage = () => {
                         alt={product.productName}
                         className="w-full h-full object-cover transition duration-300 group-hover:opacity-75"
                       />
-                      <div className="absolute top-0 left-0 bg-[#8b6c5c] text-white px-3 py-1 m-2 rounded-full text-xs font-bold">
-                        {/* {product.category} */}
-                      </div>
+                         {product.variants.every((variant) => variant.stock <= 0) && (
+                          <div className="absolute inset-0 flex items-center  backdrop-blur-sm">
+                            <OutOfStockSign />
+                          </div>
+                        )}
                     </div>
                     <div className="p-6">
                       <h3 className="text-xl font-semibold text-[#5b3e31] mb-2 group-hover:text-[#8b6c5c] transition duration-300">{product.productName}</h3>
@@ -191,37 +251,13 @@ const CakePage = () => {
               ))}
             </div>
 
-            <div className="mt-12 flex justify-center">
-              <nav className="flex items-center bg-white px-4 py-2 rounded-full shadow-md">
-                <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="mr-2 p-2 rounded-full text-[#8b6c5c] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f3e8e3] transition duration-300"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                {[...Array(Math.ceil(products.length / productsPerPage))].map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => paginate(index + 1)}
-                    className={`mx-1 w-8 h-8 rounded-full flex items-center justify-center ${
-                      currentPage === index + 1
-                        ? 'bg-[#8b6c5c] text-white'
-                        : 'text-[#8b6c5c] hover:bg-[#f3e8e3]'
-                    } transition duration-300`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === Math.ceil(products.length / productsPerPage)}
-                  className="ml-2 p-2 rounded-full text-[#8b6c5c] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f3e8e3] transition duration-300"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </nav>
-            </div>
+            <Pagination
+             currentPage={currentPage}
+             totalPages={totalPages}
+             onPageChange={handlePageChange}
+            
+            />
+
           </>
         )}
       </div>

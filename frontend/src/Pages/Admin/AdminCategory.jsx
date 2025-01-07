@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight,  Edit3, Eye, MoreVertical, Plus, Trash2, UserX } from 'lucide-react'
+import { ChevronLeft, ChevronRight,Percent,  Edit3, Eye, MoreVertical, Plus, UserX } from 'lucide-react'
 import Breadcrumbs from '../../Components/BrudCrums'
 import AddCategory from '../../Components/AdminComponents/AddCategory'
 import {format} from 'date-fns'
 import StatusBadge from '../../Components/AdminComponents/StatusBadge'
-import axioInstence from '../../utils/axioInstence'
 import Pagination from '../../Components/Pagination'
+import { fetchCategories, toggleCategoryBlockStatus } from '../../services/authService'
 import OfferCategoryForm from '../../Components/AdminComponents/AddOffer'
+import toast, { Toaster } from "react-hot-toast";
 
 function AdminCategory() {
   const [showForm, setShowForm]=useState(false)
@@ -14,6 +15,7 @@ function AdminCategory() {
   const [menuOpen, setMenuOpen] = useState(null) 
   const [showOffer, setShowOffer] = useState(false)
   const [editCategory, setEditCategory] = useState(null); 
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null); // State for selected category ID
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 5;
   
@@ -60,6 +62,7 @@ function AdminCategory() {
 
    const handleMenuToggle = (id) => {
     setMenuOpen((prev) => (prev === id ? null : id))
+    setSelectedCategoryId(id)
   }
 
   const handlePageChange = (pageNumber) => {
@@ -72,34 +75,40 @@ function AdminCategory() {
 
    useEffect(()=>{
 
-     const fetchCategories = async()=>{
-        try {
-  
-         const response = await axioInstence.get('/admin/categories')
-         setCategories(response.data)
-        } catch (error) {
-          console.error('Error in fetching Categories')
-        }
-     }
-     fetchCategories()
+    const loadCategories = async () => {
+      try {
+          const data = await fetchCategories(); 
+          console.log('Fetched categories', data);
+          setCategories(data); 
+      } catch (error) {
+          console.error('Error loading categories', error);
+      }
+  };
+
+  loadCategories();
    },[])
 
+
    const handleBlockToggle = async (id, isDeleted) => {
-    try {
-      const response = await axioInstence.patch(`/admin/categories/block/${id}`,{ isDeleted:!isDeleted });
-      setCategories((prevCategories) =>
-        prevCategories.map((category) =>
-          category._id === id ? { ...category, isDeleted:!category.isDeleted } : category
-        )
-      );
-    } catch (error) {
-      console.error('Error toggling block status:', error);
-    }
-  };
+        try {
+           const response = await toggleCategoryBlockStatus(id, isDeleted);
+           
+           setCategories((prevCategories) =>
+            prevCategories.map((category) =>
+              category._id === id ? { ...category, isDeleted: !category.isDeleted } : category
+          )
+        );
+        toast.success(`Category ${!isDeleted ? 'blocked' : 'unblocked'} successfully!`);
+        } catch (error) {
+            console.error(error.response.data.message);
+            toast.error('Failed to update category status. Please try again.');
+        }
+    };
   
 
   return (
       <div className="min-h-screen  p-6">
+              <Toaster position="top-right" reverseOrder={false}/>
       <div className="max-w-7xl mx-auto">
         <Breadcrumbs/>
         {/* Header Section */}
@@ -132,6 +141,7 @@ function AdminCategory() {
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-left">Stock</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-left">Added</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-left">Status</th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-left">Offer</th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-left">Action</th>
               </tr>
             </thead>
@@ -146,7 +156,7 @@ function AdminCategory() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{category.description}</td>
+                  <td className="px-6 py-4 max-w-[200px] text-gray-600">{category.description}</td>
                   <td className="px-6 py-4 text-gray-600">{category.stock}</td>
                   <td className="px-6 py-4 text-gray-600">
                   {category.createdAt ? format(new Date(category.createdAt), 'dd MMM yyyy') : 'Invalid Date'}
@@ -161,6 +171,16 @@ function AdminCategory() {
                   }
                   />
                   </td>
+                  <td className="px-6 py-4 text-gray-600">
+                      {category.offer ? (
+                        <div className="flex items-center">
+                          <Percent/>
+                          <span>{category.offer.offerPercentage}% Off</span>
+                        </div>
+                      ) : (
+                        <span>No Offer</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                     <div className="relative dropdown-container">
                       <button
@@ -178,11 +198,21 @@ function AdminCategory() {
                             Edit
                           </button>
                           <button
-                          onClick={() => handleBlockToggle(category._id, category.isDeleted)} 
-                          className="w-full px-4 py-2 text-left text-white  text-sm hover:bg-gray-700 flex gap-2 items-center">
-                            <UserX className="w-4 h-4" />
-                            Block
-                          </button>
+                            onClick={() => handleBlockToggle(category._id, category.isDeleted)}
+                            className="w-full px-4 py-2 text-left text-white text-sm hover:bg-gray-700 flex gap-2 items-center"
+                        >
+                            {category.isDeleted ? (
+                                <>
+                                    <UserX Check className="w-4 h-4" />
+                                    Unblock
+                                </>
+                            ) : (
+                                <>
+                                    <UserX X className="w-4 h-4" />
+                                    Block
+                                </>
+                            )}
+                        </button>
                           <button
                           onClick={() => handleAddOffer(category._id)} 
                           className="w-full px-4 py-2 text-left text-white text-sm hover:bg-gray-700 flex gap-2 items-center">
@@ -218,8 +248,8 @@ function AdminCategory() {
       )}
       {showOffer &&(
        <OfferCategoryForm
+       categoryId={selectedCategoryId} // Pass the selected category ID
        onClose={() => setShowOffer(false)} // Ensure modal can be closed
-       
        />
 
       )}

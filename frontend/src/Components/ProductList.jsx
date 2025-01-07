@@ -1,8 +1,8 @@
 import React,{useState,useEffect} from 'react'
-import { Star } from 'lucide-react';
+import { Star,XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axioInstence from '../utils/axioInstence';
-
+import OutOfStockSign from './OutOfStockBanner';
 
 function ProductList() {
   
@@ -14,7 +14,7 @@ function ProductList() {
     const fetchProducts = async () => {
       try {
         const response = await axioInstence.get('/user/home-list-Product'); 
-        console.log(response.data);
+        console.log('productsdata',response.data);
         setProducts(response.data); 
         setLoading(false);
       } catch (error) {
@@ -52,6 +52,11 @@ console.log('product list',products);
                   alt={product.productName}
                   className="w-full h-full object-cover"
                   />
+                {product.variants.every((variant) => variant.stock <= 0) && (
+                   <div className="absolute inset-0 flex  items-center  backdrop-blur-sm">
+                     <OutOfStockSign />
+                  </div>
+               )}
             </div>
             <div className="p-6">
               <h3 className="text-xl font-semibold text-[#5b3e31] mb-2">{product.productName}</h3>
