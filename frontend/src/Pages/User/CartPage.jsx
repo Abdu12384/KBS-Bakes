@@ -1,6 +1,5 @@
 import React, { useState,useEffect } from 'react';
 import { Truck, Phone, MessageCircle, GiftIcon, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from 'react-router-dom';
 import NavBar from '../../Components/Navbar';
@@ -106,14 +105,25 @@ const handleUpdateQuantity = async (id, change) => {
             {/* Product List */}
             <div className="space-y-6">
               {items.map((item, index) => (
-                <div key={item._id} className="bg-white rounded-lg p-6 shadow-md border-2 border-[#d8cbc4] animate-fadeIn" style={{animationDelay: `${index * 0.1}s`}}>
-                  <div className="grid md:grid-cols-4 gap-6 items-center">
-                    <div className="flex gap-4">
+                <div key={item._id} className="bg-white relative rounded-lg p-6 shadow-md border-2 border-[#d8cbc4] animate-fadeIn" style={{animationDelay: `${index * 0.1}s`}}>
+                  <div className="grid   md:grid-cols-4 gap-6 items-center">
+                    <div className="flex gap-4 ">
                       <img
                         src={item.images[0]}
                         alt={item.productName}
-                        className="w-24 h-24 object-cover rounded-md"
+                        className="w-24 h-24 object-cover  rounded-md"
                       />
+                         {item.product.offer.offerPercentage && (
+                          <div className="absolute top-0 left-0  bg-gradient-to-r from-red-600 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">
+                            <div className="relative">
+                              <span className="block text-center text-sm">
+                                {item.product.offer.offerPercentage}%
+                              </span>
+                              <span className="block text-center text-[10px] font-normal">OFF</span>
+                              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                            </div>
+                          </div>
+                        )}
                       <div>
                         <p className="text-[#a08679] font-medium">{item.category}</p>
                         <h3 className="font-semibold text-gray-800">{item.productName}</h3>
@@ -123,7 +133,7 @@ const handleUpdateQuantity = async (id, change) => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-gray-800 font-medium">₹{item.variantDetails.salePrice.toFixed(2)}</div>
+                    <div className="text-gray-800 font-medium">₹{item.variantDetails.salePrice ?item.variantDetails?.salePrice?.toFixed(2): item.variantDetails.regularPrice}</div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleUpdateQuantity(item._id, -1)}
@@ -141,7 +151,7 @@ const handleUpdateQuantity = async (id, change) => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#3d251e] text-lg">
-                        ${(item.variantDetails.salePrice * item.quantity).toFixed(2)}
+                        ₹{(item.variantDetails.salePrice * item.quantity || item.variantDetails.regularPrice * item.quantity).toFixed(2)}
                       </span>
                       <button
                         onClick={() => handleRemoveItem(item.product._id, item.variantDetails._id)}
@@ -169,14 +179,16 @@ const handleUpdateQuantity = async (id, change) => {
                   <span>Cart Subtotal</span>
                   <span>₹{cartsummury?.totalPrice}</span>
                 </div>
-                {/* <div className="flex justify-between text-white">
-                  <span>Design by Fluttertop</span>
-                  <span>Free</span>
-                </div> */}
-                {/* <div className="flex justify-between text-[#d8cbc4]">
+                <div className="flex justify-between text-white">
+                  <span>Quantity</span>
+                  <span>₹{cartsummury?.totalItems}</span>
+                </div>
+               
+                {/* {cartsummury?.totalDiscount > 0 &&
+                (<div className="flex justify-between text-[#d8cbc4]">
                   <span>Discount</span>
-                  <span>-₹{discount.toFixed(2)}</span>
-                </div> */}
+                  <span>-₹{cartsummury?.totalDiscount}</span>
+                </div>)} */}
                 <div className="flex justify-between font-bold text-xl pt-4 border-t border-[#8b6c5c] text-white">
                   <span>Cart Total</span>
                   <span>₹{cartsummury?.totalPrice}</span>

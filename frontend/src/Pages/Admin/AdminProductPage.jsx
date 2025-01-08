@@ -8,6 +8,8 @@ import Breadcrumbs from '../../Components/BrudCrums'
 import StatusBadge from '../../Components/AdminComponents/StatusBadge'
 import Pagination from '../../Components/Pagination'
 import { fetchProducts, toggleProductStatus } from '../../services/authService'
+import AddProductOffer from '../../Components/AdminComponents/AddProductOffer';
+import axioInstence from '../../utils/axioInstence';
 
 export default function AdminProductsPage() {
   const [showAddProduct, setShowAddProduct] = useState(false)
@@ -19,6 +21,7 @@ export default function AdminProductsPage() {
   const [currentPage, setCurrentPage] = useState(1)
    const [totalPages, setTotalPages] = useState(1);
   const [filterStatus, setFilterStatus] = useState("All")
+  const [showAddOffer, setShowAddOffer] = useState(false)
   const productsPerPage = 5
 
   const formSectionRef = useRef(null)
@@ -57,10 +60,21 @@ export default function AdminProductsPage() {
     formSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const handleAddOffer = (product)=>{
+     setShowAddOffer(true)
+     setSelectedProduct(product)
+     if (formSectionRef.current) {
+      setTimeout(() => {
+        formSectionRef.current.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }
+
   const handleCancel = () => {
     setShowEditProduct(false)
     setShowAddProduct(false)
     setSelectedProduct(null)
+    setShowAddOffer(false)
   }
 
   const handleProductUpdated = (updatedProduct) => {
@@ -111,6 +125,20 @@ export default function AdminProductsPage() {
         toast.error(error.respons.data.message);
     }
 };
+
+
+const handleRemoveOffer = async (productId)=>{
+   try {
+    
+    const response = await axioInstence.patch(`/admin/product/${productId}/remove-offer`)
+    console.log(response);
+    toast.success(response.data.message)
+    
+   } catch (error) {
+     console.log(error.response.data.message);
+     
+   }
+}
 
 
   const getFieldColor = (index) => {
@@ -174,6 +202,7 @@ export default function AdminProductsPage() {
             <tr className="text-left text-gray-400 border-b border-gray-700">
               <th className="pb-4">Product Name</th>
               <th className="pb-4">Variants</th>
+              <th className="pb-4">offerPercentage</th>
               <th className="pb-4">type</th>
               <th className="pb-4">Category</th>
               <th className="pb-4">Status</th>
@@ -201,7 +230,7 @@ export default function AdminProductsPage() {
                       {product.variants.map((variant, vIndex) => (
                         <div key={vIndex} className="flex flex-wrap items-center gap-2">
                           {Object.entries(variant)
-                          .filter(([key]) => ['stock', 'weight', 'regularPrice', 'salePrice','discount'].includes(key)) // Filter specific keys
+                          .filter(([key]) => ['stock', 'weight', 'regularPrice', 'salePrice'].includes(key)) // Filter specific keys
                           .map(([key, value], index) => (
                             <span key={index} className={`${getFieldColor(index)} text-xs`}>
                               {key}: {value}
@@ -214,8 +243,25 @@ export default function AdminProductsPage() {
                     <span className="text-gray-400">No variants</span>
                   )}
                 </td>
-                <td className="py-4 text-sm sm:text-base">{product?.type}</td>
-                <td className="py-4 text-sm sm:text-base">{product.category?.name}</td>
+                <td className="py-5 text-sm sm:text-base">
+                {product?.offer?.offerPercentage ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-500 font-semibold">
+                      {product.offer.offerPercentage}%
+                    </span>
+                    <div className="w-20 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="bg-green-500 h-2"
+                        style={{ width: `${product.offer.offerPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-gray-200 italic">No Offers</span>
+                )}
+              </td>              
+                <td className="py-2 text-sm sm:text-base">{product?.type}</td>
+                <td className="py-2 text-sm sm:text-base">{product.category?.name}</td>
                 <td>
                     <StatusBadge
                       status={
@@ -251,6 +297,20 @@ export default function AdminProductsPage() {
                         >
                           Edit
                         </button>
+                        <button
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-700"
+                        onClick={() => handleAddOffer(product)}
+                      >
+                        Add Offer
+                      </button>
+                      {product?.offer && (
+                        <button
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-700"
+                          onClick={() => handleRemoveOffer(product._id)}
+                        >
+                          Remove Offer
+                        </button>
+                      )}
                       </div>
                     )}
                   </div>
@@ -284,6 +344,13 @@ export default function AdminProductsPage() {
             onCancel={handleCancel}
             onProductAdded={handleProductUpdated}
           />
+        )}
+
+        {showAddOffer && (
+         <AddProductOffer
+         product={selectedProduct}
+         onCancel={handleCancel}
+         />
         )}
       </div>
     </div>

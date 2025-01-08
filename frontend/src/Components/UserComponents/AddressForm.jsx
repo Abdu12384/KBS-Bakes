@@ -13,6 +13,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
     pincode: "",
   });
 
+  const [errors, setErrors] = useState({}); 
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setAddressData((prev) => ({ ...prev, [name]: value }));
@@ -25,8 +28,43 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
       }, [initialAddress]);
 
 
+      const validate = () => {
+        const newErrors = {};
+    
+        if (!addressData.fullName.trim()) {
+          newErrors.fullName = "Full name is required.";
+        }
+        if (!addressData.mobile.trim() || !/^\d{10}$/.test(addressData.mobile)) {
+          newErrors.mobile = "Mobile number must be 10 digits.";
+        }
+
+        if (!addressData.address.trim()) {
+          newErrors.address = "Address is required.";
+        }
+
+        if (!addressData.country.trim()) {
+          newErrors.country = "Country is required.";
+        }
+
+        if (!addressData.state.trim()) {
+          newErrors.state = "State is required.";
+        }
+
+        if (!addressData.city.trim()) {
+          newErrors.city = "City is required.";
+        }
+        if (!addressData.pincode.trim() || !/^\d{6}$/.test(addressData.pincode)) {
+          newErrors.pincode = "Pincode must be 6 digits.";
+        }
+    
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0; 
+      };
+
       const handleSubmit = async(e) => {
             e.preventDefault();
+            if (!validate()) return; 
+
             try {
           
               const response = await axioInstence.post('/user/add-address',addressData) 
@@ -63,9 +101,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   type="text"
                   value={addressData.fullName}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 />
+               {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">Mobile</label>
@@ -75,9 +113,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   type="number"
                   value={addressData.mobile}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
-                />
+                  />
+                {errors.mobile && <p className="text-sm text-red-500">{errors.mobile}</p>}
               </div>
             <div className="space-y-2">
               <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
@@ -87,9 +125,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                 type="text"
                 value={addressData.address}
                 onChange={handleChange}
-                required
                 className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
               />
+             {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -100,14 +138,15 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   name="country"
                   value={addressData.country}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
-                >
+                >            
+
                   <option value="">Select country</option>
                   <option value="united States">United States</option>
                   <option value="united Kingdom">United Kingdom</option>
                   <option value="india">India</option>
                 </select>
+                 {errors.country && <p className="text-sm text-red-500">{errors.country}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="state" className="block text-sm font-medium text-gray-700">State</label>
@@ -116,7 +155,6 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   name="state"
                   value={addressData.state}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 >
                   <option value="">Select state</option>
@@ -124,6 +162,7 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   <option value="delhi">Delhi</option>
                   <option value="mumbai">Mumbai</option>
                 </select>
+                {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
               </div>
             </div>
 
@@ -136,9 +175,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   type="text"
                   value={addressData.city}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 />
+              {errors.city && <p className="text-sm text-red-500">{errors.city}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">Pincode</label>
@@ -148,9 +187,9 @@ const AddressForm = ({ onSubmit, initialAddress }) => {
                   type="text"
                   value={addressData.pincode}
                   onChange={handleChange}
-                  required
                   className="mt-1 block w-full h-8 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
                 />
+             {errors.pincode && <p className="text-sm text-red-500">{errors.pincode}</p>}
               </div>
             </div>
 

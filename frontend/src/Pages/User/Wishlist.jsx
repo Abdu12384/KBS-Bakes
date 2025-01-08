@@ -43,6 +43,23 @@ const [wishlistItems, setWishlistItems]=useState([])
 console.log(wishlistItems);
 
 
+const handleAddtoCartCart = async(productId,variantId, quantity)=>{
+       
+  try {
+    const response = await axioInstence.post('/user/cart-add',{
+      productId: productId,
+      variantId: variantId,
+      quantity
+    })
+      toast.success(response.data.message)
+    
+  } catch (error) {
+    console.error(error.response.data);
+    toast.error(error.response.data.message);
+  }
+   
+}
+
   return (
     <>
       <NavBar/>
@@ -83,19 +100,31 @@ console.log(wishlistItems);
 
         {/* Wishlist Items */}
         {wishlistItems.map((item) => (
-          <div key={item?.productId._id} className="grid grid-cols-12 gap-4 py-6 px-6 border-b items-center hover:bg-gray-50 transition-colors">
+          <div key={item?.productId._id} className="grid  relative grid-cols-12 gap-4 py-6 px-6 border-b items-center hover:bg-gray-50 transition-colors">
             {/* Delete Button and Image */}
             <div className="col-span-5 flex items-center gap-4">
               <button 
               onClick={()=>removeProduct(item?.productId._id)}
-              className="text-gray-400 hover:text-red-500 transition-colors">
+              className="text-gray-400  hover:text-red-500 transition-colors">
                 <Trash2 className="w-5 h-5" />
               </button>
               <img 
                 src={item?.productId.images?.[0]} 
                 alt={item?.proudctName} 
-                className="w-15 h-20 object-cover rounded-md shadow-sm"
+                className="w-15 h-20 object-cover  rounded-md shadow-sm"
               />
+                {item?.productId?.offer?.offerPercentage && (
+                    <div className="absolute  top-0 bg-gradient-to-r from-red-600 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">
+                    <div className="relative">
+                      <span className="block text-center text-sm">
+                            {item.productId.offer.offerPercentage}%
+                       </span>
+                     <span className="block text-center text-[10px] font-normal">OFF</span>
+                     <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+                          </div>
+                          </div>
+                        )}
+              
               <span className="font-medium text-gray-800">{item?.productId.productName}</span>
             </div>
 
@@ -121,7 +150,9 @@ console.log(wishlistItems);
             {/* Add to Cart and Date */}
             <div className="col-span-2">
               <div className="flex flex-col items-end gap-2">
-                <button className="bg-teal-600 text-white px-4 py-2 rounded-full hover:bg-teal-700 transition-colors flex items-center">
+                <button 
+                onClick={()=>handleAddtoCartCart(item.productId._id, item.productId.variants._id ,item.productId.quantity)}
+                className="bg-teal-600 text-white px-4 py-2 rounded-full hover:bg-teal-700 transition-colors flex items-center">
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to cart
                 </button>

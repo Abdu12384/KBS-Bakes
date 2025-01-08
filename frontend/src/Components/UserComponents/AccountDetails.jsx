@@ -5,10 +5,14 @@ import uploadImageToCloudinary from "../../services/uploadServise";
 import {  EyeIcon, EyeOffIcon, UserCircle, Mail, Phone, Lock, Save, X, Camera  } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from "../Navbar";
+import ConfirmationPopup from "../ConformButton";
 
 
 
 function UserDetailsForm() {
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
 
   const [showPassword, setShowPassword] = useState({
@@ -114,19 +118,25 @@ console.log(formData);
 
 
 
+    const handleFormSubmit = async (e) => {
+      e.preventDefault();
+      if (!validate()) return;
+      setFormDataToSubmit(formData);
+      setShowConfirmation(true);
+    };
 
-  const handleSubmit = async (e) =>{
-     e.preventDefault()
-      if(!validate()) return
+
+
+  const handleConfirm = async (e) =>{
      try {
        if(imageFile){
          const uploadedUrls = await uploadImageToCloudinary([imageFile])
          if(uploadedUrls && uploadedUrls.length>0){
-           formData.profileImage = uploadedUrls[0]
+          formDataToSubmit.profileImage = uploadedUrls[0]
          }
        }
 
-      const response = await axioInstence.post('/user/profile-update',formData)
+      const response = await axioInstence.post('/user/profile-update',formDataToSubmit)
       console.log("Response:", response.data);
       toast.success(response.data.message)
       
@@ -149,7 +159,7 @@ console.log(formData);
           <p className="mt-2 text-amber-100">Manage your personal information and security</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-8">
+        <form onSubmit={handleFormSubmit} className="p-8">
           <div className="mb-8 flex flex-col items-center">
             <div className="relative w-32 h-32 mb-4">
             {imageFile ? (
@@ -360,6 +370,18 @@ console.log(formData);
           </div>
         </form>
       </div>
+
+      {showConfirmation && (
+          <ConfirmationPopup
+            message="Are you sure you want to save these changes?"
+            onConfirm={() => {
+              handleConfirm();
+              setShowConfirmation(false);
+            }}
+            onCancel={() => setShowConfirmation(false)}
+          />
+        )}
+
     </div>
     </>
 

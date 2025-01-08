@@ -39,7 +39,7 @@ const CategorySchema = new mongoose.Schema({
     type:Boolean,
     default:false
   },
-  offer: OfferSchema, // Add the offer field
+  offer: OfferSchema, 
 },
 {
   timestamps:true

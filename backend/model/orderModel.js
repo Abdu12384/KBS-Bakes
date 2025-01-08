@@ -80,7 +80,6 @@ const orderSchema = new mongoose.Schema({
    },
   subtotal:{
     type: Number,
-    // required: true
   },
   shippingCost:{
     type: Number,
@@ -92,7 +91,15 @@ const orderSchema = new mongoose.Schema({
   isDeleted:{
     type:Boolean,
     default:false
-  }
+  },
+  gstRate: {
+    type: Number, 
+    required: true,
+  },
+  gstAmount: {
+    type: Number, 
+    required: true,
+  },
 },
 {
   timestamps:true

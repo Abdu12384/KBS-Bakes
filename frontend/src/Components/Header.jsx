@@ -7,10 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import axioInstence from '../utils/axioInstence';
 import { useSelector } from 'react-redux';
 import toast, { Toaster } from "react-hot-toast";
+import ConfirmationPopup from './ConformButton';
 
 const Header = () => {
-
+  
   const {isAuthenticated, user} = useSelector((state)=>state.user)
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false); 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navigate = useNavigate()
@@ -61,7 +63,9 @@ const Header = () => {
   return (
     <header className="relative">
       <Toaster position="top-right" reverseOrder={false}/>
+     
       <div className="absolute inset-0 z-0 overflow-hidden">
+
         {images.map((image, index) => (
           <img
             key={index}
@@ -123,7 +127,7 @@ const Header = () => {
                     <div className="border-t border-gray-200 mt-2">
                       {isAuthenticated ?(
                         <button
-                        onClick={handleLogout} 
+                        onClick={()=>setIsLogoutConfirmationOpen(true)} 
                         className="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center w-full text-left"
                       >
                         <LogOut className="mr-3 h-5 w-5" />
@@ -140,6 +144,16 @@ const Header = () => {
                       )}
                     </div>
                   </div>
+                )}
+                   {isLogoutConfirmationOpen && (
+                  <ConfirmationPopup
+                    message = 'Are you sure you want to logout?' 
+                    onConfirm={() => {
+                      handleLogout();
+                      setIsLogoutConfirmationOpen(false); 
+                    }}
+                    onCancel={() => setIsLogoutConfirmationOpen(false)} 
+                  />
                 )}
               </div>
               <a href="/user/cart" className="text-white hover:text-[#d8cbc4]">

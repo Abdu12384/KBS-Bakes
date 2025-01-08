@@ -233,8 +233,8 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex items-center space-x-4 mt-2">
-               <p className="text-2xl font-bold text-[#8b6c5c]">₹{selectedVariant?.salePrice}</p>
-               <p className="text-2xl font-bold text-[#d8d8d8] line-through">{selectedVariant?.salePrice!==selectedVariant?.regularPrice && `₹${selectedVariant?.regularPrice}`}</p>
+               <p className="text-2xl font-bold text-[#8b6c5c]">₹{selectedVariant?.salePrice ? selectedVariant?.salePrice : selectedVariant?.regularPrice}</p>
+               <p className="text-2xl font-bold text-[#d8d8d8] line-through">{!selectedVariant?.salePrice || selectedVariant?.salePrice!==selectedVariant?.regularPrice && `₹${selectedVariant?.regularPrice}`}</p>
               </div>
               <p className="text-lg text-[#5b3e31] leading-relaxed">{product.description}</p>
               <div>

@@ -276,19 +276,6 @@ export default function EditProductWithVariants({ product, onCancel }) {
                       )}
                     </div>
                     <div>
-                      <label className="block text-gray-400 mb-1">Discount</label>
-                      <input
-                        type="number"
-                        value={variant.discount}
-                        onChange={(e) => handleVariantChange(index, 'discount', parseFloat(e.target.value))}
-                        className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="0.00"
-                      />
-                      {errors[`variant${index}discount`] && (
-                        <p className="text-red-500 text-xs mt-1">{errors[`variant${index}discount`]}</p>
-                      )}
-                    </div>
-                    <div>
                       <label className="block text-gray-400 mb-1">Stock</label>
                       <input
                         type="number"

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Home, MapPin, Truck, ChevronRight, CreditCard, Wallet, Building, Tag, ShieldCheck, Lock, DollarSign, Calendar,Percent,Copy,X  } from 'lucide-react';
-import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import { OrderAnimation } from '../../Components/cakeAnimation';
 import CouponCard from '../../Components/Coupon';
@@ -29,7 +28,11 @@ const CheckoutPage = () => {
    const [cartSummary, setCartSummary] = useState({
     subtotal: 0,
     shippingCharge: 0,
-    discount: 0, 
+    totalGST:0,
+    totalPriceWithGST:0,
+    gstInfo:0,
+    coupon:0,
+    discount: 0,
     total: 0
   });
 
@@ -56,19 +59,18 @@ const CheckoutPage = () => {
     try {
         const data = await fetchCartItems(); 
         console.log('Fetched cart items:', data);
-
-        if (data && data.cartItems) {
-            console.log('Cart items:', data.cartItems);
+        
             setCartItems(data.cartItems); 
-        }
 
         if (data.summary) {
             const subtotal = data.summary.totalPrice;
             const shippingCharge = subtotal < 1000 ? 50 : 0; 
-            const total = subtotal + shippingCharge;
+            const total = data.summary.totalPriceWithGST + shippingCharge;
 
             setCartSummary({
                 subtotal,
+                totalGST:data.summary.totalGST,
+                gstRate:data.summary.gstRate,
                 shippingCharge,
                 total,
             });
@@ -80,7 +82,7 @@ const CheckoutPage = () => {
 };
    
 
-   console.log(cartItems);
+   console.log('car',cartItems);
 
 
    const fetchAddresses = async () => {
@@ -311,12 +313,15 @@ const CheckoutPage = () => {
 const handleApplyCoupon = async () => {
   try {
       const response = await applyCoupon(couponCode, cartSummary.total); 
+       console.log('copuon ',response);
+       
       if (response) {
           setAppliedCoupon(couponCode);
           setCartSummary(prevSummary => ({
               ...prevSummary,
+              coupon:response.coupon.discount,
               discount: response.discount,
-              total: prevSummary.subtotal + prevSummary.shippingCharge - response.discount,
+              total:response.discountedTotal 
           }));
           toast.success('Coupon applied successfully!');
       } else {
@@ -530,22 +535,22 @@ const handleApplyCoupon = async () => {
               <h2 className="text-xl font-semibold mb-6">Order summary</h2>
 
               <div className="space-y-4">
-                {cartItems.map(item => (
-                  <div key={item._id} className="flex gap-4">
+                {cartItems?.map(item => (
+                  <div key={item?._id} className="flex gap-4">
                     <img
-                      src={item.images[0]}
-                      alt={item.productName}
+                      src={item?.images[0]}
+                      alt={item?.productName}
                       className="w-20 h-20 object-cover rounded-lg"
                     />
                     <div className="flex-1">
                       <div className="flex justify-between">
-                        <h3 className="font-medium">{item.productName}</h3>
-                        <p className="text-sm text-gray-600">{`x${item.quantity}`}</p>
-                        <p className="font-medium">₹{item.variantDetails.salePrice.toFixed(2)}</p>
+                        <h3 className="font-medium">{item?.productName}</h3>
+                        <p className="text-sm text-gray-600">{`x${item?.quantity}`}</p>
+                        <p className="font-medium">₹{item?.variantDetails?.salePrice?.toFixed(2)||item.variantDetails.regularPrice.toFixed(2)}</p>
                       </div>
                       <div className="text-sm text-gray-500">
-                         <p>Size: {item.variantDetails.weight}</p>
-                        {/* <p>Color: {item.color}</p>  */}
+                         <p>Size: {item?.variantDetails?.weight}</p>
+
                       </div>
                     </div>
                   </div>
@@ -556,28 +561,35 @@ const handleApplyCoupon = async () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">
-                    ₹{cartSummary.subtotal}
+                    ₹{cartSummary?.subtotal}
                   </span>
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between items-center">
-                    <p className="font-medium text-purple-600">Discount</p>
-                    <p className="font-medium text-purple-600">{`-₹${cartSummary.discount.toFixed(
+                    <p className="font-medium text-purple-600">Discount({cartSummary.coupon}%)</p>
+                    <p className="font-medium text-purple-600">{`-₹${cartSummary?.discount.toFixed(
                       2
                     )}`}</p>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className={`font-medium ${cartSummary.subtotal < 1000 ? 'text-red-600' : 'text-green-600'}`}>
-                    {cartSummary.subtotal < 1000  
+                  <span className={`font-medium ${cartSummary?.subtotal < 1000 ? 'text-red-600' : 'text-green-600'}`}>
+                    {cartSummary?.subtotal < 1000  
                       ? '₹50.00' 
                       : 'FREE'}
                   </span>               
-                   </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">GST ({cartSummary?.gstRate}%)</span>
+                <span className="font-medium text-blue-600">{`₹${(cartSummary?.totalGST).toFixed(2)}`}</span> 
+              </div>
+                
+
                 <div className="flex justify-between text-lg font-bold">
                   <span>Order total</span>
-                  <span>₹{cartSummary.total}</span>
+                  <span>₹{cartSummary?.total.toFixed(2)}</span>
                 </div>
               </div>
 

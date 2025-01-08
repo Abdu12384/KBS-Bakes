@@ -7,7 +7,7 @@ const varifyToken = (req, res, next)=>{
  console.log('working',token);
  
      if(!token){
-       return res.status(403).json({message:"AccessToken is missing"})
+       return res.status(403).json({message:"Please login to continue"})
      }
 
        try {

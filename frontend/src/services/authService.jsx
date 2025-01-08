@@ -45,7 +45,7 @@ export const fetchProducts = async (currentPage, productsPerPage, searchQuery, f
 
 export const toggleProductStatus = async (productId, currentStatus) => {
    try {
-       const response = await axioInstence.put(`http://localhost:3000/admin/products/${productId}`, {
+       const response = await axioInstence.patch(`/admin/products/${productId}`, {
            isDeleted: !currentStatus,
        });
        return response.data; 

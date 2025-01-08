@@ -182,7 +182,8 @@ const insertUser = async(req,res)=>{
         fullName: otpRecord.fullName,
         email: otpRecord.email,
         password: otpRecord.password,
-        mobile: otpRecord.mobile
+        mobile: otpRecord.mobile,
+        isActive:user.isActive
       })
        
       await user.save()

@@ -1,6 +1,7 @@
 
 const Category = require('../../model/category');
-
+const Product = require('../../model/productModal')
+const cron = require('node-cron');
 
 const addCategory = async (req, res) => {
   try {
@@ -100,30 +101,33 @@ const softDeleteCategory = async(req,res)=>{
      
 }
 
+
+
+
 const addOfferCatogory = async (req, res)=>{
   const { categoryId } = req.params;
   const { offerName, offerPercentage, startDate, endDate } = req.body;
 
   try {
-    // Find the category
+
     const category = await Category.findById(categoryId);
 
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    // Check if there is an existing offer
+
     if (category.offer) {
       const existingOfferEndDate = new Date(category.offer.endDate);
       const currentDate = new Date();
 
-      // Check if the existing offer is still valid
+
       if (existingOfferEndDate > currentDate) {
         return res.status(400).json({ message: 'An offer has already been applied and is still valid.' });
       }
     }
 
-    // If no valid offer exists, update the category with the new offer
+
     category.offer = {
       offerName,
       offerPercentage,
@@ -131,7 +135,51 @@ const addOfferCatogory = async (req, res)=>{
       endDate,
     };
 
-    const updatedCategory = await category.save(); // Save the updated category
+    const products = await Product.find({category:categoryId})
+
+
+    for(const product of products){
+ 
+      product.variants.forEach(variant =>{
+        const variantRegularPrice = variant.regularPrice
+        
+
+        const newDiscountAmount = (offerPercentage/100) * variantRegularPrice
+        const newSalePrice = variantRegularPrice - newDiscountAmount
+
+        const productOffer = product.offer
+        if(productOffer){
+          const existingDiscountAmount = (productOffer.offerPercentage / 100) * variantRegularPrice
+          const existingSalePrice = variantRegularPrice - existingDiscountAmount
+
+           if(newSalePrice < existingSalePrice){
+             variant.salePrice = newSalePrice
+             product.offer={
+              offerName,
+              offerPercentage,
+              startDate,
+              endDate
+             }
+
+           }else{
+             variant.salePrice = existingSalePrice
+           }
+        } else{
+          variant.salePrice = newSalePrice
+          product.offer = {
+            offerName,
+            offerPercentage,
+            startDate,
+            endDate
+          }
+        }
+      })
+
+      await product.save()
+
+    }
+
+    const updatedCategory = await category.save(); 
 
     res.status(200).json({ message: 'Category offer applied successfully', updatedCategory });
   } catch (error) {
@@ -140,11 +188,80 @@ const addOfferCatogory = async (req, res)=>{
   }
 }
 
+
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const currentDate = new Date();
+
+    const categories = await Category.find({ 'offer.endDate': { $lt: currentDate } });
+
+    for (const category of categories) {
+
+      category.offer = null;
+
+      const products = await Product.find({ category: category._id });
+
+      for (const product of products) {
+
+        product.variants.forEach((variant) => {
+          variant.salePrice = variant.regularPrice;
+        });
+
+        product.offer = null;
+
+        await product.save();
+      }
+      await category.save();
+    }
+
+    console.log('Expired offers removed successfully.');
+  } catch (error) {
+    console.error('Error removing expired offers:', error);
+  }
+});
+
+
+
+const removeCategoryOffer = async (req, res)=>{
+  try {
+    const categoryId = req.params.id;
+
+
+    const category = await Category.findById(categoryId);
+    
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    category.offer = null;
+
+    const products = await Product.find({ category: categoryId });
+
+
+    for (const product of products) {
+      product.offer = null; 
+      product.variants.forEach(variant => {
+        variant.salePrice = variant.regularPrice; 
+      });
+      await product.save(); 
+    }
+
+    const updatedCategory = await category.save();
+
+
+    res.status(200).json({ message: 'Offer removed successfully', category: updatedCategory });
+  } catch (error) {
+    console.error('Error removing offer:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+
 module.exports = { 
   addCategory ,
   fetchCategory,
   editCategory,
   addOfferCatogory,
   softDeleteCategory,
-
+  removeCategoryOffer
 };

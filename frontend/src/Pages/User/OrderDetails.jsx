@@ -6,6 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import NavBar from '../../Components/Navbar';
 import { format } from 'date-fns';
 import { fetchUserOrders ,cancelOrder, cancelProduct, requestReturn } from '../../services/authService';
+import ConfirmationPopup from '../../Components/ConformButton';
 
 const OrdersListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,6 +17,15 @@ const OrdersListPage = () => {
   const [showReturnOptions, setShowReturnOptions] = useState(false);
   const [returnReason, setReturnReason] = useState({});
   const [selectedProduct, setSelectedProduct] = useState('')
+  const [showCancelOrderConfirmation, setShowCancelOrderConfirmation] = useState(false);
+  const [showCancelProductConfirmation, setShowCancelProductConfirmation] = useState(false);
+  const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [productToCancel, setProductToCancel] = useState(null);
+  const [productToReturn, setProductToReturn] = useState(null);
+
+
+
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -91,17 +101,22 @@ const OrdersListPage = () => {
   }
 
 
-  const handleCancelOrder = async (event, orderId) => {
+
+
+ const handleCancelOrderClick = (event, orderId) => {
     event.preventDefault();
+    setOrderToCancel(orderId);
+    setShowCancelOrderConfirmation(true);
+  };
 
+  const handleCancelOrder = async () => {
     try {
-        const response = await cancelOrder(orderId); 
+        const response = await cancelOrder(orderToCancel); 
         toast.success(response.message);
-
 
         setOrders((prevOrders) =>
             prevOrders.map(order =>
-                order._id === orderId ? { ...order, status: 'cancelled' } : order
+                order._id === orderToCancel ? { ...order, status: 'cancelled' } : order
             )
         );
         setSelectedOrder(null);
@@ -114,9 +129,15 @@ const OrdersListPage = () => {
 
 
 
-const handleCancelProduct = async (productId) => {
+
+const handleCancelProductClick = (productId) => {
+  setProductToCancel(productId);
+  setShowCancelProductConfirmation(true);
+};
+
+const handleCancelProduct = async () => {
   try {
-      const response = await cancelProduct(selectedOrder._id, productId); 
+      const response = await cancelProduct(selectedOrder._id, productToCancel); 
 
       if (response.success) {
           toast.success(response.message);
@@ -139,6 +160,15 @@ const handleCancelProduct = async (productId) => {
     }));
   };
 
+
+
+
+
+  const handleReturnClick = (productId) => {
+    setProductToReturn(productId);
+    setShowReturnOptions(true);
+  };
+
   const handleConformReturn = async (productId) => {
     const reason = returnReason[productId];
     if (!reason) {
@@ -147,7 +177,7 @@ const handleCancelProduct = async (productId) => {
     }
 
     try {
-        const response = await requestReturn(selectedOrder._id, productId, reason); 
+        const response = await requestReturn(selectedOrder._id, productToReturn, reason); 
         console.log('Return request response:', response);
 
         if (response) {
@@ -246,13 +276,13 @@ const handleCancelProduct = async (productId) => {
                     <div key={index} className="flex items-center justify-between mb-4 pb-4 border-b">
                       <div className="flex items-center gap-4">
                         <img
-                          src={product.productId.images[0]}
-                          alt={product.productId.productName}
+                          src={product.productId?.images[0]}
+                          alt={product.productId?.productName}
                           className="w-16 h-16 rounded object-cover"
                         />
                         <div>
-                          <p className="font-medium">{product.productId.productName}</p>
-                          <p className="text-sm text-gray-600">Quantity: {product.quantity}</p>
+                          <p className="font-medium">{product.productId?.productName}</p>
+                          <p className="text-sm text-gray-600">Quantity: {product?.quantity}</p>
                           {product.returnRequest && (
                               <p className={`text-sm font-medium ${
                                 product.returnRequest.status === 'approved' ? 'text-green-600' :
@@ -265,8 +295,8 @@ const handleCancelProduct = async (productId) => {
                         </div>
                         <div className>
                           <p>Payment Status</p>
-                          <p className={`${statusColors[product.paymentStatus] || "text-gray-500"} font-bold`}>
-                              {product.paymentStatus}
+                          <p className={`${statusColors[product?.paymentStatus] || "text-gray-500"} font-bold`}>
+                              {product?.paymentStatus}
                             </p>                       
                          </div>
                       </div>
@@ -287,7 +317,7 @@ const handleCancelProduct = async (productId) => {
                             selectedOrder.status.toLowerCase() !== 'delivered' && (
                               <button
                                 className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-                                onClick={() => handleCancelProduct(product.productId._id)}
+                                onClick={() => handleCancelProductClick(product.productId._id)}
                               >
                                 Cancel
                               </button>
@@ -315,41 +345,58 @@ const handleCancelProduct = async (productId) => {
                 
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="w-5 h-5 text-gray-600" />
-                      <p className="font-medium">{selectedOrder.shippingAddressId.fullName}</p>
+                  <div className="bg-white shadow-lg rounded-lg p-6">
+                    <h3 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">
+                      Shipping Address
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 p-2 rounded-full">
+                          <MapPin className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <p className="font-medium text-lg text-gray-900">
+                          {selectedOrder?.shippingAddressId?.fullName}
+                        </p>
+                      </div>
+                      <div className="pl-10 text-gray-600 space-y-2">
+                        <p className="text-sm">{selectedOrder?.shippingAddressId?.address}</p>
+                        <p className="text-sm">
+                          {selectedOrder?.shippingAddressId?.city}, {selectedOrder?.shippingAddressId?.state}{" "}
+                          {selectedOrder?.shippingAddressId?.postalCode}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Phone:</span> {selectedOrder?.shippingAddressId?.mobile}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600">{selectedOrder.shippingAddressId.address}</p>
-                    <p className="text-sm text-gray-600">
-                      {selectedOrder.shippingAddressId.city}, 
-                      {selectedOrder.shippingAddressId.state} 
-                      {selectedOrder.shippingAddressId.postalCode}
-                    </p>
-                    <p className="text-sm text-gray-600">Phone: {selectedOrder.shippingAddressId.mobile}</p>
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <p>PaymentMethod</p>
-                        <p>₹{selectedOrder?.paymentInfo}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p>Subtotal</p>
-                        <p>₹{selectedOrder?.subtotal?.toFixed(2)}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p>discount</p>
-                        <p>₹{selectedOrder.discount ? selectedOrder?.discount?.toFixed(2):0}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p>Shipping</p>
-                        <p>₹{selectedOrder.shippingCost.toFixed(2)}</p>
-                      </div>
-                      <div className="flex justify-between font-semibold">
+                  <div className="bg-white shadow-lg rounded-lg p-6">
+                      <h3 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">Order Summary</h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-gray-600">
+                          <p className="font-medium">Payment Method</p>
+                          <p className="font-medium">₹{selectedOrder?.paymentInfo}</p>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <p className="font-medium">Subtotal</p>
+                          <p className="font-medium">₹{selectedOrder?.subtotal?.toFixed(2)}</p>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <p className="font-medium">Discount</p>
+                          <p className={`font-medium ${selectedOrder.discount ? 'text-green-500' : 'text-gray-600'}`}>
+                            ₹{selectedOrder.discount ? selectedOrder?.discount?.toFixed(2) : 0}
+                          </p>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <p className="font-medium">Shipping</p>
+                          <p className="font-medium">₹{selectedOrder?.shippingCost?.toFixed(2)}</p>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <p className="font-medium">GST ({selectedOrder?.gstRate}%)</p>
+                          <p className="font-medium">₹{selectedOrder?.gstAmount?.toFixed(2)}</p>
+                        </div>
+                        <div className="flex justify-between text-gray-900 font-bold text-lg border-t pt-4">
                         <p>Total</p>
                         <p>₹{selectedOrder.totalPrice.toFixed(2)}</p>
                     </div>{selectedOrder && (
@@ -366,7 +413,7 @@ const handleCancelProduct = async (productId) => {
                         selectedOrder.products.some(product => !product.isCanceled) && (
                           <button
                             className="mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-                            onClick={(event) => handleCancelOrder(event, selectedOrder._id)}
+                            onClick={(event) => handleCancelOrderClick(event, selectedOrder._id)}
                           >
                             Cancel Order
                           </button>
@@ -390,7 +437,7 @@ const handleCancelProduct = async (productId) => {
                           ></textarea>
                           <button
                             className="mt-2 mr-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-                            onClick={() => handleConformReturn(selectedProduct)}
+                            onClick={() => handleReturnClick(selectedProduct)}
                           >
                             Confirm Return
                           </button>
@@ -411,6 +458,49 @@ const handleCancelProduct = async (productId) => {
             </div>
           )}
         </div>
+        {showCancelOrderConfirmation && (
+          <ConfirmationPopup
+            message="Are you sure you want to cancel this order?"
+            onConfirm={() => {
+              handleCancelOrder();
+              setShowCancelOrderConfirmation(false);
+            }}
+            onCancel={() => {
+              setShowCancelOrderConfirmation(false);
+              setOrderToCancel(null);
+            }}
+          />
+        )}
+
+        {showCancelProductConfirmation && (
+          <ConfirmationPopup
+            message="Are you sure you want to cancel this product?"
+            onConfirm={() => {
+              handleCancelProduct();
+              setShowCancelProductConfirmation(false);
+            }}
+            onCancel={() => {
+              setShowCancelProductConfirmation(false);
+              setProductToCancel(null);
+            }}
+          />
+        )}
+
+         {showReturnConfirmation && (
+          <ConfirmationPopup
+            message="Are you sure you want to return this product?"
+            onConfirm={() => {
+              handleConformReturn();
+              setShowReturnConfirmation(false);
+            }}
+            onCancel={() => {
+              setShowReturnConfirmation(false);
+              setProductToReturn(null);
+              setReturnReason({});
+            }}
+          />
+        )}
+
         
       </div>
     </div>

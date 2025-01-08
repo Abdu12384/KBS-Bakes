@@ -8,6 +8,7 @@ import Pagination from '../../Components/Pagination'
 import { fetchCategories, toggleCategoryBlockStatus } from '../../services/authService'
 import OfferCategoryForm from '../../Components/AdminComponents/AddOffer'
 import toast, { Toaster } from "react-hot-toast";
+import axioInstence from '../../utils/axioInstence'
 
 function AdminCategory() {
   const [showForm, setShowForm]=useState(false)
@@ -105,6 +106,17 @@ function AdminCategory() {
         }
     };
   
+
+    const handleRemoveOffer = async (categoryId) => {
+      try {
+        const response= await axioInstence.patch(`/admin/category/${categoryId}/remove-offer`); 
+        console.log('Fetched categories',response);
+        toast.success(response.data.message)
+
+    } catch (error) {
+        console.error('Error loading categories', error);
+    }
+    };
 
   return (
       <div className="min-h-screen  p-6">
@@ -219,6 +231,14 @@ function AdminCategory() {
                           <Plus className="w-4 h-4" />
                           Add Offer
                         </button>
+                        {category.offer && (
+                        <button
+                          onClick={() => handleRemoveOffer(category._id)} 
+                          className="w-full px-4 py-2 text-left text-white text-sm hover:bg-gray-700 flex gap-2 items-center">
+                          <UserX className="w-4 h-4" />
+                          Remove Offer
+                        </button>
+                      )}
                         </div>
                       )}
                     </div>

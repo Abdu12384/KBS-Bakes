@@ -219,6 +219,14 @@ const CakePage = () => {
                         alt={product.productName}
                         className="w-full h-full object-cover transition duration-300 group-hover:opacity-75"
                       />
+                               {product?.offer?.offerPercentage && (
+                          <div className="absolute top-4 left-0 bg-gradient-to-r from-red-600 to-pink-500 text-white py-1 px-4 rounded-r-full shadow-md transform -skew-x-12">
+                            <div className="transform skew-x-12">
+                              <span className="text-xl font-bold">{product.offer.offerPercentage}%</span>
+                              <span className="text-sm font-semibold ml-1">OFF</span>
+                            </div>
+                          </div>
+                        )}
                          {product.variants.every((variant) => variant.stock <= 0) && (
                           <div className="absolute inset-0 flex items-center  backdrop-blur-sm">
                             <OutOfStockSign />
@@ -236,6 +244,7 @@ const CakePage = () => {
                             : 'N/A'
                           : 'N/A'}
                       </span>
+                   
                         <span className="text-yellow-500 flex items-center">
                           <Star size={16} className="mr-1" fill="currentColor" />
                           {product.avgRating ? product.avgRating.toFixed(1) : 'N/A'}

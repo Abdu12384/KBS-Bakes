@@ -4,7 +4,9 @@ const  {cloudinaryImgUpload}= require('../controllers/cloudinaryController')
 const {showProduct,
         EditProduct,
         softDelete,
-        addProdcut}= require('../controllers/adminController/productController')
+        addProduct,
+        addProductOffer,
+        removeProductOffer}= require('../controllers/adminController/productController')
 
 const {getUsers,
       toggleUserStatus,
@@ -17,20 +19,30 @@ const {addCategory,
        fetchCategory,
        editCategory,
        softDeleteCategory,        
-       addOfferCatogory
+       addOfferCatogory,
+       removeCategoryOffer
       }= require('../controllers/adminController/categoryControll')
 
 
  const {
   loadOrderDetails,
   updateOrderStatus,
-  cancellOrder,
+  cancelOrder,
   getReturnRequests,
   updateReturnRequest,
   exportPdf
  } = require('../controllers/adminController/orderManagement')    
-const { addCoupon, deleteCoupon, getAllCoupons } = require('../controllers/adminController/couponController')
-const { salesData, generatePDFReport, generateExcelReport } = require('../controllers/adminController/salesReportManage')
+
+const { 
+        addCoupon, 
+        deleteCoupon,
+         getAllCoupons
+         } = require('../controllers/adminController/couponController')
+
+const { salesData,
+         generatePDFReport, 
+         generateExcelReport 
+        } = require('../controllers/adminController/salesReportManage')
 
 
 
@@ -45,10 +57,12 @@ admin_Route
         
 // Product Routes
  admin_Route
-        .post('/add-product',verifyAdminToken,addProdcut)
+        .post('/add-product',verifyAdminToken,addProduct)
         .get('/products',verifyAdminToken,showProduct)
         .put('/products/:id',verifyAdminToken,EditProduct)
-        .put('/products/:id',verifyAdminToken,softDelete)
+        .patch('/products/:id',verifyAdminToken,softDelete)
+        .post('/product/:id/offer',verifyAdminToken,addProductOffer)
+        .patch('/product/:id/remove-offer',verifyAdminToken,removeProductOffer)
 
    // User Routes     
 admin_Route
@@ -60,17 +74,18 @@ admin_Route
 admin_Route
         .post('/categories',verifyAdminToken,addCategory)
         .get('/categories',verifyAdminToken,fetchCategory)
-        .put('/categories/:id',editCategory)
+        .put('/categories/:id',verifyAdminToken,editCategory)
         .post('/categories/:categoryId/offer',verifyAdminToken,addOfferCatogory)
         .patch('/categories/block/:id',verifyAdminToken,softDeleteCategory)
+        .patch('/category/:id/remove-offer',verifyAdminToken,removeCategoryOffer)
 
 
  // Order Management Routes
 admin_Route
         .get('/sales-data',verifyAdminToken,salesData)
-        .get('/orders-manage',verifyAdminToken,loadOrderDetails)
+        .get('/orders/manage',verifyAdminToken,loadOrderDetails)
         .patch('/orders/status/:id',verifyAdminToken,updateOrderStatus)
-        .patch('/orders/cancel/:id',verifyAdminToken,cancellOrder)
+        .patch('/orders/cancel/:id',verifyAdminToken,cancelOrder)
         .patch('/return-request/:orderId/:productId',verifyAdminToken,updateReturnRequest)
 
 

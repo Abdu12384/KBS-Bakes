@@ -2,7 +2,6 @@ import React, { useState, } from 'react'
 import { Mail, Lock, Coffee } from 'lucide-react'
 import Carousel from '../../Components/Carousel'
 import axioInstence from '../../utils/axioInstence'
-import axios from 'axios'
 import { useNavigate } from 'react-router-dom' 
 import { useDispatch } from 'react-redux'
 import {GoogleLogin} from '@react-oauth/google'
@@ -83,9 +82,9 @@ function LoginPage() {
        
                   
  const res = await axioInstence.post('http://localhost:3000/auth/google/signup', { tokenId:credential });
- console.log('Google SignUp Successful:', res.data);
+ console.log('Google SignUp Successful:', res);
        if (res.data) {
-          toast.success("Google Sign-In successful!");
+          toast.success(res.data.message);
           const{user, role} = res.data
           if(role === 'user'){
             setTimeout(() => {
@@ -97,7 +96,7 @@ function LoginPage() {
         }
       } catch (error) {
         console.error("Google Sign-In Error:", error);
-        toast.error("Google Sign-In failed. Please try again.");
+        toast.error(error.response.data.message);
       }
     };
 

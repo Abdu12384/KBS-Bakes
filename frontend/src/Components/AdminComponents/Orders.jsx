@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ShoppingCart, MoreVertical, Calendar, User,X, CreditCard, Package, RefreshCw, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import Pagination from '../Pagination';
+import ConfirmationPopup from '../ConformButton';
 // Status badge component
 const StatusBadge = ({ status }) => {
   const getStatusStyles = () => {
@@ -47,6 +48,7 @@ const StatusBadge = ({ status }) => {
 
 export function OrdersPage() {
 
+
   const [orders, setOrders] = useState([])
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -54,12 +56,15 @@ export function OrdersPage() {
   const [selectedReturnRequest, setSelectedReturnRequest] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedOrderId, setExpandedOrderId] = useState(null)
+  const [showStatusChangeConfirmation, setShowStatusChangeConfirmation] = useState(false);
+  const [newStatus, setNewStatus] = useState('');
+
   const ordersPerPage = 5;
 
   const fetchOrderDetails = async() =>{
      try {
 
-      const response = await axioInstence.get('/admin/orders-manage')
+      const response = await axioInstence.get('/admin/orders/manage')
       const transformedOrders = response.data.map(order => ({
         ...order,
         products: order.products.map(product => ({
@@ -83,6 +88,8 @@ export function OrdersPage() {
     setSelectedReturnRequest({ order, product });
     setIsReturnPopupOpen(true);
   };
+
+
 
 
   const renderReturnRequest = (order,product) => {
@@ -160,17 +167,27 @@ export function OrdersPage() {
   }
 
 
-  const handleStatusChange = async (newStatus) =>{
+
+
+  const openStatusChangeConfirmation = (status) => {
+    setNewStatus(status);
+    setShowStatusChangeConfirmation(true);
+  };
+
+  const handleStatusChange = async () =>{
      try {
        const response = await axioInstence.patch(`/admin/orders/status/${selectedOrder._id}`,{status: newStatus})
+        console.log('status',response);
+        
        if(response.status === 200){
         
         setOrders((prevOrders)=>
         prevOrders.map((order) =>
          order._id === selectedOrder._id ? { ...order, status: newStatus} : order
-        )
-        )
+        ) )
        }
+       
+       setIsPopupOpen(false)
      } catch (error) {
       console.error('Error updating order status:', error.response?.data?.message );
      }
@@ -438,7 +455,7 @@ console.log('orde',orders);
                   {['pending', 'shipped', 'delivered'].map((status) => (
                     <button
                       key={status}
-                      onClick={() => handleStatusChange(status)}
+                      onClick={() => openStatusChangeConfirmation(status)}
                       className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                     >
                       {status}
@@ -454,6 +471,19 @@ console.log('orde',orders);
               </button>
             </div>
           </div>
+          {showStatusChangeConfirmation && (
+                <ConfirmationPopup
+                  message={`Are you sure you want to update the status to '${newStatus}'?`}
+                  onConfirm={() => {
+                    handleStatusChange();
+                    setShowStatusChangeConfirmation(false);
+                  }}
+                  onCancel={() => {
+                    setShowStatusChangeConfirmation(false);
+                    newStatus(null);
+                  }}
+                />
+            )}
         </div>
       )}
        {isReturnPopupOpen && selectedReturnRequest && (
@@ -478,7 +508,7 @@ console.log('orde',orders);
               <div>
                 <h4 className="font-medium mb-2">Update Return Status:</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {['approved', 'rejected', 'processing', 'completed'].map((status) => (
+                  {['approved', 'rejected'].map((status) => (
                     <button
                       key={status}
                       onClick={() => handleReturnRequestUpdate(
@@ -492,6 +522,7 @@ console.log('orde',orders);
                     </button>
                   ))}
                 </div>
+               
               </div>
             </div>
           </div>

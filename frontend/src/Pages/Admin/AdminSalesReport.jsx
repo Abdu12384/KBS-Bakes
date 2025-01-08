@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Download, Edit, FileSpreadsheet, Trash, ChevronDown, DollarSign, ShoppingCart, Package, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, Edit, FileSpreadsheet, Trash, ChevronDown, DollarSign, ShoppingCart, Package, BarChart2, ChevronLeft,IndianRupee, ChevronRight } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import Pagination from '../../Components/Pagination';
 import { fetchOrderDetails } from '../../services/authService';
@@ -42,7 +42,7 @@ const SaleReportPage = () => {
 
     setStats([
       { title: 'Overall Sales Count', value: `${overallSalesCount}`, icon: BarChart2, color: 'green' },
-      { title: 'Overall Order Amount', value: `₹${overallOrderAmount.toFixed(2)}`, icon: DollarSign, color: 'yellow' },
+      { title: 'Overall Order Amount', value: `₹${overallOrderAmount.toFixed(2)}`, icon: IndianRupee, color: 'yellow' },
       { title: 'Overall Discount', value: `₹${overallDiscount.toFixed(2)}`, icon: ShoppingCart, color: 'pink' },
     ]);
   }
@@ -190,7 +190,7 @@ const SaleReportPage = () => {
                   </span>
                 </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">{order.discount ? order?.discount?.toLocaleString() : 'No Discount'}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">{order.totalPrice.toLocaleString()}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm">₹{order.totalPrice.toLocaleString()}</td>
                 
               </tr>
             ))}

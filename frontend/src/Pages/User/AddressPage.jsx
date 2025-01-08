@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, Edit2, Trash2, X,User,Phone,MapPin } from 'lucide-react';
 import AddressForm from '../../Components/UserComponents/AddressForm';
-import axioInstence from '../../utils/axioInstence';
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from '../../Components/Navbar';
 import { fetchAddressDetails,deleteAddress, setDefaultAddress } from '../../services/authService';
@@ -71,7 +70,7 @@ const handleDeleteAddress = async (id) => {
             idDefault: address._id === id, 
           }))
         );
-        await fetchAddressDetails(); 
+        await loadAddresses(); 
         toast.success(response.message); 
     } catch (error) {
         console.error('Error setting default address:', error.response?.data || error.message);

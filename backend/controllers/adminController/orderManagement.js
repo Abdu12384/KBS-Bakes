@@ -34,13 +34,14 @@ const updateOrderStatus = async(req, res) =>{
   
   try {
     const order = await Orders.findById(id)
-
+    
     if(!order) return res.status(404).json({message: 'Order not found'})
-     
-      order.status =status
-
+      
+      order.status = status
+      
+      
       if (status.toLowerCase() === 'delivered' && order.paymentInfo === 'COD') {
-
+        
         order.products = order.products.map(product => {
           if (!product.isCanceled && (!product.returnRequest || product.returnRequest.status !== 'approved')) {
             return {
@@ -50,10 +51,11 @@ const updateOrderStatus = async(req, res) =>{
           }
           return product;
         });
-  
+        
         order.paymentStatus = 'completed';
       }
       await order.save()
+      console.log(order);
     res.status(200).json({message:'Status update Successfully'})
   } catch (error) {
     res.status(500).json({ message:'UpdateOrder status failed'});
@@ -62,7 +64,7 @@ const updateOrderStatus = async(req, res) =>{
 }
 
 
-const cancellOrder = async(req, res) => {
+const cancelOrder = async(req, res) => {
   const {id} = req.params
   
   try {
@@ -241,7 +243,7 @@ const exportPdf = async(req, res)=>{
 module.exports={
   loadOrderDetails,
   updateOrderStatus,
-  cancellOrder,
+  cancelOrder,
   updateReturnRequest,
   exportPdf
 }

@@ -28,10 +28,10 @@ function UserRoute() {
             <Route path='reset-password/:token' element={<ResetPassword/>}/>
             
        </Route>
-
-    <Route element={<ProtectedRoute/>}>
         <Route path='home' element={<Home/>}/>
         <Route path='product-details/:id' element={<ProductDetails/>}/>
+
+    <Route element={<ProtectedRoute/>}>
         <Route path='cakes' element={<CakePage/>}/> 
         <Route path='dashboard' element={<UserDashboard/>}/> 
         <Route path='account-details' element={<UserDetailsForm/>}/> 

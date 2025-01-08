@@ -17,10 +17,7 @@ const variantSchema = new mongoose.Schema({
     type:Number,
     required:true
    },
-  //  discount:{
-  //   type:Number,
-  //   default:0
-  // },
+ 
   
 })
 
@@ -101,11 +98,17 @@ const prodcutSchema = new mongoose.Schema({
    },
    variants:[variantSchema],
    reviews: [reviewSchema], 
-   type:{
+ type:{
     type:[String],
     enum:['Birthday','Wedding','Anniversary','Custom']
    },
    offer: offerSchema,
+
+ gstRate: {
+  type: Number, 
+   required: true,
+   default: 18, 
+  }
 },
 {
   timestamps:true

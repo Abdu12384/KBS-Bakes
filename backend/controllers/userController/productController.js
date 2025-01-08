@@ -1,6 +1,6 @@
 const { pipeline } = require('nodemailer/lib/xoauth2')
 const Product = require('../../model/productModal') 
-
+const Category = require('../../model/category')
 
 
 
@@ -8,13 +8,15 @@ const homeListProduct = async (req, res)=>{
   
     try {
 
-  const proudcts = await Product.find({isDeleted:false})
+  const products = await Product.find({isDeleted:false}).populate('category')
 
- if(!proudcts || proudcts.length === 0){
-    return res.status(400).json({message:"product Not Fount"})
- }
+  const activeProducts = products.filter(product => product.category && !product.category.isDeleted);
 
-  return res.status(200).json(proudcts)
+  if (!activeProducts || activeProducts.length === 0) {
+    return res.status(400).json({ message: "No active products found" });
+  }
+
+  return res.status(200).json(activeProducts)
       
     } catch (error) {
       console.error("Server Error",error)
@@ -123,7 +125,7 @@ const productDetails= async(req, res)=>{
      .sort(sortConfig)
      .skip(skip)
      .limit(parseInt(limit))
-     .select('productName images variants category type')
+     .select('productName images variants category offer type')
      .populate({
       path: 'category', 
       select: 'name', 

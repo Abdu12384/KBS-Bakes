@@ -8,13 +8,13 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
-    { userId },
+    { id:userId },
     process.env.USER_ACCESS_TOKEN_SECRET,
     { expiresIn: '45m' }
   );
   
   const refreshToken = jwt.sign(
-    { userId },
+    { id:userId },
     process.env.USER_REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' }
   );
@@ -45,8 +45,13 @@ const googleSignup = async (req, res) => {
         let user = await User.findOne({ email });
         
         console.log(user);
+        
   
         if (user) {
+
+            if (!user.isActive) {
+                return res.status(403).json({ message: 'Your account is blocked. Please contact support.' });
+            }
         
             const { accessToken, refreshToken } = generateTokens(user._id);
             user.refreshToken = refreshToken;
@@ -75,6 +80,7 @@ const googleSignup = async (req, res) => {
                     email: user.email,
                     name: user.fullName,
                     profileImage: user.profileImage,
+                    isActive:user.isActive
                 },
                 role: 'user'
             });
@@ -110,13 +116,14 @@ const googleSignup = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-// Send the response for successful signup
+
         return res.status(200).json({
             user: {
                 id: user._id,
                 email: user.email,
                 name: user.fullName,
                 profileImage: user.profileImage,
+                isActive:user.isActive
             },
             role: 'user'
         });

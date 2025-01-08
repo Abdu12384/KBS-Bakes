@@ -83,8 +83,7 @@ const placeWalletOrder = async (req, res) => {
     }
      console.log(wallet);
      
-    let subtotal = 0;
-    let shippingCharge = 0;
+
 
     const products = await Promise.all(
       cartItems.map(async (item) => {
@@ -109,11 +108,6 @@ const placeWalletOrder = async (req, res) => {
           throw new Error(`Insufficient stock for product: ${product.name}`);
         }
 
-        const itemPrice = item.variantDetails?.salePrice;
-        const quantity = item.quantity;
-        const totalItemPrice = itemPrice * quantity;
-
-        subtotal += totalItemPrice;
 
         variant.stock -= item.quantity;
         await product.save();
@@ -130,12 +124,9 @@ const placeWalletOrder = async (req, res) => {
     console.log(products);
     
 
-    if (subtotal < 1000) {
-      shippingCharge = 50;
-    }
 
-    const { discount = 0 } = cartSummary || {};
-    const total = subtotal + shippingCharge - discount;
+    const { discount = 0, totalGST,subtotal ,total, gstRate , shippingCharge  } = cartSummary || {};
+
 
     // Check wallet balance
 
@@ -157,7 +148,9 @@ const placeWalletOrder = async (req, res) => {
 
     const newOrder = new Order({
       userId: req.user?.id,
-      subtotal,
+      subtotal:subtotal,
+      gstRate:gstRate,
+      gstAmount:totalGST,
       totalPrice: total,
       shippingAddressId: address._id,
       paymentInfo: 'Wallet',

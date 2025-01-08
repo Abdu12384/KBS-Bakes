@@ -44,11 +44,8 @@ function WalletPage() {
         }
     } catch (error) {
         console.error('Error loading wallet info:', error);
-        setError('Failed to fetch wallet information');
         toast.error('Failed to fetch wallet information');
-    } finally {
-        setIsLoading(false);
-    }
+    } 
 };
 
 const handleAddMoneyToWallet = async () => {
@@ -86,7 +83,7 @@ const handleAddMoneyToWallet = async () => {
                 <span className="text-white/80 text-lg">Wallet Balance</span>
               </div>
               <div className="text-5xl font-bold text-white mb-1">
-                ₹{walletBalance.balance}
+              ₹{parseFloat(walletBalance.balance).toFixed(2)}
               </div>
               <div className="text-white/80">
                 Available Balance
@@ -148,7 +145,7 @@ const handleAddMoneyToWallet = async () => {
                     <td className={`py-4 px-6 font-medium ${
                       transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount}
+                      {transaction.type === 'credit' ? '+' : '-'}₹{parseFloat(transaction.amount)?.toFixed(2)} 
                     </td>
                   </tr>
                 ))}

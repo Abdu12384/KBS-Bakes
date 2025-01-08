@@ -14,7 +14,7 @@ const getCartItem = async(req, res)=>{
      const cartItems = await Cart.find({user:userId})
      .populate({
       path: 'product',
-      select: 'productName images category variants',
+      select: 'productName images category variants gstRate offer',
       populate: {
         path: 'category',
         select: 'offer'
@@ -45,26 +45,41 @@ const getCartItem = async(req, res)=>{
           console.warn(`Variant not found for product: ${item.product.productName}`);
           return null; 
         }
-  
+
+
+       
         return {
           ...item.toObject(),
           productName: item.product.productName,
           images: item.product.images,
           variantDetails: variant,
+          quantity: item.quantity,
         };
       }).filter(item => item !== null);
 
-      const cartSummary = enrichedCartItems.reduce((summary, item)=> {
+
+      const cartSummary = enrichedCartItems.reduce(
+        (summary, item)=> {
          const itemPrice = item.variantDetails.salePrice || item.variantDetails.regularPrice
-         const categoryDiscount = item.category?.offer?.offerPercentage || 0; // Get category discount percentage
-         const discountAmount = (itemPrice * categoryDiscount) / 100; 
+         const OfferDiscount = item.product?.offer?.offerPercentage || 0; 
+         const discountAmount = (itemPrice * OfferDiscount) / 100; 
+
           return{
-            totalItems: summary.totalItems + item.quantity, // Sum up quantities
-            totalPrice: summary.totalPrice + (itemPrice * item.quantity), // Calculate total price
-            totalDiscount: summary.totalDiscount + (discountAmount * item.quantity) // Calculate total discount
-    
+            totalItems: summary.totalItems + item.quantity, 
+            totalPrice: summary.totalPrice + itemPrice  * item.quantity, 
+            totalDiscount: summary.totalDiscount + (discountAmount * item.quantity), 
           }
-      },{totalItems:0, totalPrice:0})
+      },{totalItems:0, totalPrice:0, totalDiscount:0, })
+
+      const gstRate = 18
+      const totalGST = Math.floor((cartSummary.totalPrice * gstRate) / 100)
+      const totalPriceWithGST =  Math.floor(cartSummary.totalPrice + totalGST)  
+
+
+      cartSummary.gstRate = gstRate
+      cartSummary.totalGST = totalGST; 
+      cartSummary.totalPriceWithGST = totalPriceWithGST;
+
     
       res.status(200).json({cartItems:enrichedCartItems, summary:cartSummary})
     

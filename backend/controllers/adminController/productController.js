@@ -3,7 +3,7 @@ const Category = require('../../model/category');
 
 
 
-const addProdcut = async (req,res)=>{{
+const addProduct = async (req,res)=>{{
      
   const {productName,
          category,
@@ -24,11 +24,10 @@ const addProdcut = async (req,res)=>{{
             return res.status(400).json({ message: 'Product already exists. Duplicate entries are not allowed.' });
           }
 
-            const updatedVariants = variants.map((variant)=>{
-              const {regularPrice, discount} = variant
-              const salePrice = discount ? regularPrice - (regularPrice * discount)/100 : regularPrice
-              return {...variant, salePrice}
-            })
+          const updatedVariants = variants.map((variant) => ({
+            ...variant,
+            salePrice: variant.regularPrice, 
+          }));
             const totalStock = updatedVariants.reduce((total, variant) => total + variant.stock, 0);
 
            console.log('totalstock',totalStock);
@@ -63,11 +62,84 @@ const addProdcut = async (req,res)=>{{
   const showProduct = async (req,res)=>{
      console.log('getu proudect');
      
-       try {
-         const products = await Product.find()
-          .populate('category','name')
-          .exec()
-          res.status(200).json(products)
+     try {
+      const { 
+          page = 1, 
+          limit = 5,
+          search = '',
+          status = 'All'
+      } = req.query;
+
+      const query = {};
+      
+      if (search) {
+          query.$or = [
+              { productName: { $regex: search, $options: 'i' } },
+              { 'variants.name': { $regex: search, $options: 'i' } }
+          ];
+      }
+
+      if (status !== 'All') {
+          switch (status) {
+              case 'Active':
+                  query.isDeleted = false;
+                  query.$or = [
+                      { qty: { $gt: 0 } },
+                      { 'variants.stock': { $gt: 0 } }
+                  ];
+                  break;
+              case 'Blocked':
+                  query.$or = [
+                      { isDeleted: true },
+                      { 
+                          $and: [
+                              { qty: { $eq: 0 } },
+                              { 'variants.stock': { $eq: 0 } }
+                          ]
+                      }
+                  ];
+                  break;
+              case 'Available':
+                  query.isDeleted = false;
+                  query.$or = [
+                      { qty: { $gt: 0 } },
+                      { 'variants.stock': { $gt: 0 } }
+                  ];
+                  break;
+              case 'Unavailable':
+                  query.$or = [
+                      { isDeleted: true },
+                      { 
+                          $and: [
+                              { qty: { $eq: 0 } },
+                              { 'variants.stock': { $eq: 0 } }
+                          ]
+                      }
+                  ];
+                  break;
+          }
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [products, total] = await Promise.all([
+          Product.find(query)
+              .skip(skip)
+              .limit(parseInt(limit))
+              .sort({ createdAt: -1 })
+              .populate('category', 'name'),
+          Product.countDocuments(query)
+      ]);
+
+      res.json({
+          products,
+          pagination: {
+              total,
+              pages: Math.ceil(total / limit),
+              currentPage: parseInt(page),
+              limit: parseInt(limit)
+          }
+      });
 
        } catch (error) {
          res.status(500).json({message:'Failed to fetch Product'})
@@ -76,6 +148,8 @@ const addProdcut = async (req,res)=>{{
 
 
 
+  
+
    const EditProduct = async (req,res)=>{     
        try {
    console.log('edit prodect');
@@ -83,7 +157,7 @@ const addProdcut = async (req,res)=>{{
         const productId = req.params.id
         const updatedData =req.body
         console.log(productId);
-        
+      
         // const productData = req.body
         console.log('mmmm',updatedData);
       
@@ -96,7 +170,7 @@ const addProdcut = async (req,res)=>{{
           }
           return variant;
         });
-        delete updatedData.variants;
+        
       }
 
         
@@ -142,9 +216,90 @@ const addProdcut = async (req,res)=>{{
    }
 
 
+
+
+   const addProductOffer = async(req, res)=>{
+   
+    try {
+ console.log(req.body);
+ 
+      const { offerData} = req.body
+      const {offerName, offerPercentage, startDate, endDate} = offerData
+      const productId = req.params.id
+
+
+      if (!offerName || offerPercentage < 0 || offerPercentage > 100 || !startDate || !endDate) {
+        return res.status(400).json({ message: 'Invalid offer data' });
+      }
+
+      const product = await Product.findById(productId)
+
+      if(!product){
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      product.variants.forEach(variant => {
+        const discountAmount = (variant.regularPrice * offerPercentage) / 100
+        variant.salePrice = variant.regularPrice - discountAmount
+      })
+      
+      product.offer = {
+        offerName,
+        offerPercentage,
+        startDate,
+        endDate,
+      }
+      
+      await product.save()
+      res.status(200).json({ message: 'Offer added successfully', product });
+
+    } catch (error) {
+      console.error('Error adding offer:', error);
+      res.status(500).json({ message: 'Failed to add offer' });
+    }
+       
+   }
+
+
+
+   const removeProductOffer = async (req, res)=>{
+     try {
+
+      const productId = req.params.id
+      console.log(productId);
+      
+  const product = await Product.findById(productId);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    product.variants.forEach(variant => {
+      variant.salePrice = variant.regularPrice; 
+    });
+
+
+    product.offer = null; 
+
+    const updatedProduct = await product.save();
+
+
+
+     res.status(200).json({ message: 'Offer removed successfully', product: updatedProduct });
+
+     } catch (error) {
+      console.error('Error removing offer:', error);
+      res.status(500).json({ message: 'Internal server error' });
+     }
+   }
+
+
+
 module.exports={
-   addProdcut,
+   addProduct,
    showProduct,
    EditProduct,
-   softDelete
+   softDelete,
+   addProductOffer,
+   removeProductOffer
 }

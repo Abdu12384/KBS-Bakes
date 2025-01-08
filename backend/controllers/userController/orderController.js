@@ -19,9 +19,7 @@ const placeOrder = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    let totalPrice = 0;
-    let subtotal = 0 
-    let shippingCharge =0
+    // let shippingCharge =0
 
 
     const products = await Promise.all(
@@ -49,17 +47,10 @@ const placeOrder = async (req, res) => {
         }
 
         if (variant.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product: ${product.name}`);
+          throw new Error(`Insufficient stock for product: ${product.productName}`);
         }
 
-  
-        const itemPrice = item.variantDetails?.salePrice
-        const quantity = item.quantity
-        const totalItemPrice = itemPrice * quantity
-
-        subtotal += totalItemPrice
-        totalPrice += totalItemPrice
-
+        
          console.log('here the stock informantion',variant.stock);
          
          variant.stock-= item.quantity;
@@ -69,23 +60,23 @@ const placeOrder = async (req, res) => {
           productId: product._id,
           variantId: variantId,
           quantity: item.quantity,
-          price: item.variantDetails.salePrice, 
+          price: variant.salePrice || variant.regularPrice, 
+          totalPrice: variant.salePrice || variant.regularPrice * item.quantity
         };
       })
     );
 
-    if(subtotal < 1000){
-      shippingCharge = 50
-      totalPrice += shippingCharge
-    }
+    
+    const { discount = 0, totalGST,subtotal ,total,gstRate , shippingCharge } = cartSummary || {};
+    
 
-    const { discount = 0,  } = cartSummary || {};
-    const total = subtotal + shippingCharge - discount;
 
 
     const newOrder = new Order({
       userId: req.user?.id,
       subtotal:subtotal,
+      gstRate:gstRate,
+      gstAmount:totalGST,
       totalPrice: total,  
       shippingAddressId:address._id,
       paymentInfo: paymentMethods,
@@ -94,7 +85,7 @@ const placeOrder = async (req, res) => {
         paymentStatus:'pending'
       })), 
       status:'pending',
-      shippingCost: shippingCharge,
+      shippingCost:shippingCharge,
       discount:discount
 
     });
@@ -180,21 +171,24 @@ const cancelOrder = async (req, res) =>{
     }
 
     let refundAmount = 0
+   
 
     order.products.forEach((product)=>{
       if(!product.isCanceled){
         refundAmount += product.price * product.quantity 
        product.isCanceled = true  
-       if (order.paymentInfo === 'Razorpay' || order.paymentInfo === 'Wallet') {
+       if (order.paymentInfo === 'razorpay' || order.paymentInfo === 'Wallet') {
         product.paymentStatus = 'refunded'
+      }else if( order.paymentInfo === 'COD'){
+        product.paymentStatus = 'failed'
       }
       }
     })
 
     
-
+    
     order.status = 'cancelled'
-    order.paymentStatus = 'refunded'  
+
 
 
     if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
@@ -441,9 +435,6 @@ const varifyPayment =  async (req, res) => {
       .digest("hex");
 
 
-        let totalPrice = 0;
-        let subtotal = 0 
-        let shippingCharge =0
 
   
         const products = await Promise.all(
@@ -475,13 +466,6 @@ const varifyPayment =  async (req, res) => {
               throw new Error(`Insufficient stock for product: ${product.name}`);
             }
     
-      
-            const itemPrice = item.variantDetails?.salePrice
-            const quantity = item.quantity
-            const totalItemPrice = itemPrice * quantity
-    
-            subtotal += totalItemPrice
-            totalPrice += totalItemPrice
     
              console.log('here the stock informantion',variant.stock);
              
@@ -497,19 +481,17 @@ const varifyPayment =  async (req, res) => {
           })
         );
     
-        if(subtotal < 1000){
-          shippingCharge = 50
-          totalPrice += shippingCharge
-        }
-    
+       
 
-    const { discount = 0 } = cartSummary || {};
-    const total = subtotal + shippingCharge - discount;
+    const { discount = 0, totalGST,subtotal ,total,gstRate , shippingCharge } = cartSummary || {};
+
 
     if (expectedSignature === razorpay_signature) {
-      const order = await Order.create({
+      const newOrder = await Order.create({
         userId: req.user.id,
         subtotal:subtotal,
+        gstRate:gstRate,
+        gstAmount:totalGST,
         totalPrice:total,
         shippingAddressId:address._id,
         paymentInfo:paymentMethods,
@@ -521,19 +503,23 @@ const varifyPayment =  async (req, res) => {
         paymentStatus:'completed',
         shippingCost: shippingCharge,
         paymentId: razorpay_payment_id,
-        orderId: razorpay_order_id
+        orderId: razorpay_order_id,
+        discount:discount
+
       });
   
+       const savedOrder  = await newOrder.save();
+       console.log('save order',savedOrder);
+       
       
       await Cart.deleteMany({user: req.user?.id})
-    //  const savedOrder = await order.save();
-    //  console.log('abcd',savedOrder);
+
      
 
       res.json({
          success: true,
          message: 'Payment verified successfully',
-         order });
+         savedOrder });
          
     } else {
       res.status(400).json({ success: false, message: 'Invalid signature' });
@@ -584,21 +570,19 @@ const couponApply = async(req, res)=>{
     
     
 
-      const discount = (cartSummary.totalPrice * coupon.discount) / 100;
-      const discountedTotal = cartSummary.totalPrice - discount;
+      const discount =  Math.floor((cartSummary.totalPrice * coupon.discount) / 100) ;
+      const discountedTotal = Math.floor(cartSummary.totalPrice - discount);
 
      if(discount > coupon.maxAmount){
       return res.status(400).json({ message: `Cart subtotal must not exceed ₹${coupon.maxAmount} to use this coupon`});
      }
-
-     
-     const total = discountedTotal + cartSummary.shipping;
-
+   
 
      return res.status(200).json({
       success: true,
       discount,
-      total,
+      coupon,
+      discountedTotal,
       message: 'Coupon applied successfully',
     });
     
