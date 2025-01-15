@@ -9,6 +9,8 @@ import NavBar from '../../Components/Navbar';
 export default function Wishlist() {
 
 const [wishlistItems, setWishlistItems]=useState([])
+const [selectedVariants, setSelectedVariants] = useState({})
+
 
   const fetchWishlist = async() =>{
     try {
@@ -43,15 +45,34 @@ const [wishlistItems, setWishlistItems]=useState([])
 console.log(wishlistItems);
 
 
-const handleAddtoCartCart = async(productId,variantId, quantity)=>{
-       
+const handleAddToCart = async(productId,variantId)=>{
+
+       const quantity = 1
+
   try {
     const response = await axioInstence.post('/user/cart-add',{
       productId: productId,
       variantId: variantId,
       quantity
     })
-      toast.success(response.data.message)
+
+    if(response.status === 200){
+       try {
+
+        await axioInstence.delete(`/user/mywishlist/${productId}`)
+
+        setWishlistItems(prevItems => 
+          prevItems.filter(item => item.productId._id !== productId)
+        );
+
+        
+       } catch (removeError) {
+        
+        toast.success(response.data.message);
+        toast.warning('Added to cart but could not remove from wishlist');
+        console.error('Error removing from wishlist:', removeError);
+       }
+    }
     
   } catch (error) {
     console.error(error.response.data);
@@ -60,6 +81,12 @@ const handleAddtoCartCart = async(productId,variantId, quantity)=>{
    
 }
 
+const handleVariantChange = (productId, variantId) => {
+  setSelectedVariants(prev => ({
+    ...prev,
+    [productId]: variantId
+  }))
+}
   return (
     <>
       <NavBar/>
@@ -98,10 +125,10 @@ const handleAddtoCartCart = async(productId,variantId, quantity)=>{
           <div className="col-span-2"></div>
         </div>
 
-        {/* Wishlist Items */}
+
         {wishlistItems.map((item) => (
           <div key={item?.productId._id} className="grid  relative grid-cols-12 gap-4 py-6 px-6 border-b items-center hover:bg-gray-50 transition-colors">
-            {/* Delete Button and Image */}
+
             <div className="col-span-5 flex items-center gap-4">
               <button 
               onClick={()=>removeProduct(item?.productId._id)}
@@ -117,7 +144,7 @@ const handleAddtoCartCart = async(productId,variantId, quantity)=>{
                     <div className="absolute  top-0 bg-gradient-to-r from-red-600 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">
                     <div className="relative">
                       <span className="block text-center text-sm">
-                            {item.productId.offer.offerPercentage}%
+                            {item?.productId?.offer?.offerPercentage}%
                        </span>
                      <span className="block text-center text-[10px] font-normal">OFF</span>
                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
@@ -126,6 +153,17 @@ const handleAddtoCartCart = async(productId,variantId, quantity)=>{
                         )}
               
               <span className="font-medium text-gray-800">{item?.productId.productName}</span>
+              <select
+                  className="mt-2 p-1 text-sm border rounded-md"
+                  value={selectedVariants[item?.productId?._id] || ''}
+                  onChange={(e) => handleVariantChange(item?.productId?._id, e.target.value)}
+                >
+                  {item.productId.variants.map((variant) => (
+                    <option key={variant._id} value={variant._id}>
+                      {variant.weight} -  ({variant.stock} available)
+                    </option>
+                  ))}
+                </select>
             </div>
 
             {/* Price */}
@@ -150,9 +188,22 @@ const handleAddtoCartCart = async(productId,variantId, quantity)=>{
             {/* Add to Cart and Date */}
             <div className="col-span-2">
               <div className="flex flex-col items-end gap-2">
-                <button 
-                onClick={()=>handleAddtoCartCart(item.productId._id, item.productId.variants._id ,item.productId.quantity)}
-                className="bg-teal-600 text-white px-4 py-2 rounded-full hover:bg-teal-700 transition-colors flex items-center">
+              <button 
+                  onClick={() => handleAddToCart(
+                    item.productId._id,
+                    selectedVariants[item.productId._id]
+                  )}
+                  disabled={!item.productId.variants.find(v => 
+                    v._id === selectedVariants[item.productId._id] && v.stock > 0
+                  )}
+                  className={`px-4 py-2 rounded-full flex items-center ${
+                    item.productId.variants.find(v => 
+                      v._id === selectedVariants[item.productId._id] && v.stock > 0
+                    )
+                      ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                      : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  }`}
+                >
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Add to cart
                 </button>

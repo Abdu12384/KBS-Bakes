@@ -13,9 +13,9 @@ const addProduct = async (req,res)=>{{
          variants,
          type
          }=req.body
-  console.log(variants);
+
   
-         console.log('this is product data',req.body);
+
          
         try {
 
@@ -30,7 +30,7 @@ const addProduct = async (req,res)=>{{
           }));
             const totalStock = updatedVariants.reduce((total, variant) => total + variant.stock, 0);
 
-           console.log('totalstock',totalStock);
+
            
                 const newProduct = new Product({
                       productName,
@@ -60,7 +60,7 @@ const addProduct = async (req,res)=>{{
 }}
 
   const showProduct = async (req,res)=>{
-     console.log('getu proudect');
+
      
      try {
       const { 
@@ -152,14 +152,14 @@ const addProduct = async (req,res)=>{{
 
    const EditProduct = async (req,res)=>{     
        try {
-   console.log('edit prodect');
+
    
         const productId = req.params.id
         const updatedData =req.body
-        console.log(productId);
+
       
         // const productData = req.body
-        console.log('mmmm',updatedData);
+
       
        
        if (updatedData.variants) {
@@ -179,7 +179,7 @@ const addProduct = async (req,res)=>{{
           {$set:updatedData },
           {new:true, runValidators:true}
         )
-       console.log('sdfdsfdsfdfsdfff',updatedProduct);
+
        
         if(!updatedProduct){
           return res.status(404).json({error:"Product not found"})
@@ -221,7 +221,7 @@ const addProduct = async (req,res)=>{{
    const addProductOffer = async(req, res)=>{
    
     try {
- console.log(req.body);
+
  
       const { offerData} = req.body
       const {offerName, offerPercentage, startDate, endDate} = offerData
@@ -240,7 +240,7 @@ const addProduct = async (req,res)=>{{
 
       product.variants.forEach(variant => {
         const discountAmount = (variant.regularPrice * offerPercentage) / 100
-        variant.salePrice = variant.regularPrice - discountAmount
+        variant.salePrice = Math.round(variant.regularPrice - discountAmount)
       })
       
       product.offer = {
@@ -266,7 +266,7 @@ const addProduct = async (req,res)=>{{
      try {
 
       const productId = req.params.id
-      console.log(productId);
+
       
   const product = await Product.findById(productId);
     

@@ -262,6 +262,29 @@ export const verifyPayment = async (paymentData) => {
     }
 };
 
+export const verifyRepayment = async (paymentData) => {
+    try {
+        const response = await axioInstence.post('/user/verify-repayment', paymentData);
+        return response.data;
+    } catch (error) {
+        console.error('Error verifying payment:', error);
+        throw error; 
+    }
+};
+
+export const PaymentFailed = async (paymentData) => {
+    try {
+        const response = await axioInstence.post('/user/handle-failed-payment', paymentData);
+        return response.data;
+    } catch (error) {
+        console.error('Error verifying payment:', error);
+        throw error; 
+    }
+};
+
+
+
+
 
 export const fetchUserOrders = async () => {
     try {

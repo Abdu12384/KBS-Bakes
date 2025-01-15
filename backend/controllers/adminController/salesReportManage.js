@@ -264,7 +264,7 @@ const generatePDFReport = async (req, res) => {
 
 const salesData =  async (req, res) => {
     try {
-      console.log(req.query);
+
       
         const { 
             timeFilter, 
@@ -315,10 +315,10 @@ const salesData =  async (req, res) => {
               sortOrder: sortOrder === 1 ? 'ascending' : 'descending'
           };
         const total = await Order.countDocuments(dateFilter);
-        console.log(orders);
 
 
-    console.log('change',OrderSummury);
+
+
     
 
         res.json({

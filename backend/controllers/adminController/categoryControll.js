@@ -5,7 +5,6 @@ const cron = require('node-cron');
 
 const addCategory = async (req, res) => {
   try {
-    console.log('category');
     
     const { name, description } = req.body;
    
@@ -16,7 +15,7 @@ const addCategory = async (req, res) => {
      }
 
     const category = new Category({ name, description });
-    console.log(category);
+
     
     await category.save();
 
@@ -78,7 +77,7 @@ const  fetchCategory = async(req, res)=>{
 
 
 const softDeleteCategory = async(req,res)=>{
-     console.log('categroy delete');
+
      const id = req.params.id
 
      const{isDeleted}= req.body
@@ -89,7 +88,7 @@ const softDeleteCategory = async(req,res)=>{
         {isDeleted},
         {new:true}
       )
-      console.log(category);
+
       
 
       res.status(200).json(category)

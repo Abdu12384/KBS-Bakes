@@ -5,7 +5,7 @@ import OrderTrackingUI from '../../Components/UserComponents/TrackingOrder';
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from '../../Components/Navbar';
 import { format } from 'date-fns';
-import { fetchUserOrders ,cancelOrder, cancelProduct, requestReturn } from '../../services/authService';
+import { fetchUserOrders ,cancelOrder, cancelProduct, requestReturn, initiatePayment, verifyPayment, verifyRepayment } from '../../services/authService';
 import ConfirmationPopup from '../../Components/ConformButton';
 
 const OrdersListPage = () => {
@@ -166,15 +166,15 @@ const handleCancelProduct = async () => {
 
   const handleReturnClick = (productId) => {
     setProductToReturn(productId);
-    setShowReturnOptions(true);
+    setShowReturnConfirmation(true);
   };
 
   const handleConformReturn = async (productId) => {
     const reason = returnReason[productId];
-    if (!reason) {
-        toast.error("Please provide a reason for the return.");
-        return;
-    }
+    // if (!reason) {
+    //     toast.error("Please provide a reason for the return.");
+    //     return;
+    // }
 
     try {
         const response = await requestReturn(selectedOrder._id, productToReturn, reason); 
@@ -199,6 +199,158 @@ const handleCancelProduct = async () => {
     failed: "text-red-500",
     refunded: "text-blue-500"
   };
+
+
+
+  const handleDownloadInvoice = async (orderId) => {
+
+     try {
+       const response = await axioInstance.get(`/user/order-invoice/${orderId}`,{
+         responseType:'blob'
+       })
+
+       const url = window.URL.createObjectURL(new Blob([response.data]));
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `Invoice_${orderId}.pdf`);
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+
+     } catch (error) {
+       console.error('Error downloading invoice:', error); // [CHANGED! Added error handling log]
+        toast.error('Failed to download invoice. Please try again later.')
+     }
+  }
+
+
+
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => reject(false);
+      document.body.appendChild(script);
+    });
+  };
+
+
+
+
+
+
+
+  const handleRepayment = async (orderId) => {
+    try {
+
+        // const orderDetails = await fetchOrderDetails(orderId); // Adjust this function to fetch order details
+        const totalPrice = selectedOrder.totalPrice; 
+
+        const paymentResponse = await initiatePayment(totalPrice); 
+        const { id, amount, currency, key_id } = paymentResponse;
+
+        console.log('Backend Response:', paymentResponse);
+
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+            toast.error('Payment Initialization Error: Razorpay library not loaded');
+            return;
+        }
+
+        const options = {
+            key: key_id,
+            amount: amount,
+            currency: currency,
+            name: 'KBS Bakes',
+            description: 'Repayment for Order',
+            order_id: id,
+            handler: async function (response) {
+                const paymentData = {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    orderId:selectedOrder._id , 
+                };
+
+                try {
+                    const verifyResponse = await verifyRepayment(paymentData); 
+                    console.log('Verify Response:', verifyResponse);
+                    
+                    if (verifyResponse.success) {
+                        toast.success(verifyResponse.message);
+                        setTimeout(() => {
+                            // setLoading(true);
+                            setTimeout(() => {
+                                // setLoading(false);
+                                navigate('/user/order-success');
+                            }, 2000);
+                        }, 1000);
+                    } else {
+                        toast.error(verifyResponse.message || 'Payment verification failed');
+                    }
+                } catch (error) {
+                    toast.error('Payment Verification Error');
+                    console.error('Verification Error:', error);
+                }
+            },
+            prefill: {
+                name: selectedOrder.shippingAddressId.fullName,
+                email: selectedOrder.shippingAddressId.email || '',
+                contact: selectedOrder.shippingAddressId.mobile,
+            },
+            theme: {
+                color: '#6C63FF',
+            },
+        };
+
+        const rzp = new window.Razorpay(options);
+
+        rzp.on('payment.failed', async function (response) {
+            console.error('Payment Failed:', response.error);
+            try {
+                rzp.close();
+                console.log('Razorpay modal closed');
+            } catch (closeError) {
+                console.error('Error closing Razorpay modal:', closeError);
+            }
+
+            const failedPaymentData = {
+                orderDetails: orderDetails,
+                paymentFailure: {
+                    reason: response.error.reason,
+                    description: response.error.description,
+                    order_id: response.error.metadata.order_id,
+                    payment_id: response.error.metadata.payment_id,
+                }
+            };
+
+            try {
+                const failureResponse = await PaymentFailed(failedPaymentData); 
+                console.log('Failure Response:', failureResponse);
+                
+                if (failureResponse.success) {
+                    toast.success(failureResponse.message);
+                } else {
+                    toast.error(failureResponse.message || 'Failed to create order for failed payment.');
+                }
+            } catch (error) {
+                toast.error('Error handling failed payment.');
+                console.error('Failed Payment Error:', error);
+            }
+        });
+
+        rzp.open();
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Payment Initialization Error');
+        console.error('Payment Initialization Error:', error);
+    }
+};
+
+
+
 
   return (
     <>
@@ -324,9 +476,9 @@ const handleCancelProduct = async () => {
                             )
                           )}
 
-                  {selectedOrder.status.toLowerCase() === "delivered" &&
-                      !product.isCanceled &&
-                      (!product.returnRequest || product.returnRequest.status !== "approved") && ( 
+                      {selectedOrder.status.toLowerCase() === "delivered" &&
+                          !product.isCanceled &&
+                        (!product.returnRequest || product.returnRequest.status !== "approved") && ( 
                         <button
                           className="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
                           onClick={() => {
@@ -421,7 +573,21 @@ const handleCancelProduct = async () => {
                       )}
                     </div>
                       )}
+                      <div className="text-right">
+
+                        {selectedOrder.status.toLowerCase() === "delivered" &&
+                        selectedOrder?.products?.every(product => product?.paymentStatus?.toLowerCase() === "completed")&& (
+                            <button
+                                className="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                                onClick={() => handleDownloadInvoice(selectedOrder._id)} // [CHANGED! Added handler for invoice download]
+                            >
+                                Download Invoice
+                            </button>
+                        )}
+                    </div>
+
                       </div>
+
                       
                   </div>
                 </div>
@@ -430,7 +596,7 @@ const handleCancelProduct = async () => {
                           <textarea
                             className="w-full border rounded p-2"
                             placeholder="Enter the reason for return..."
-                            value={returnReason[selectedProduct] || ""}
+                            value={returnReason[selectedProduct] ||""}
                             onChange={(e) =>
                               handleReasonChange(selectedProduct, e.target.value)
                             }
@@ -454,6 +620,36 @@ const handleCancelProduct = async () => {
                           
                         </div>
                       )}
+                      
+                      {selectedOrder && (
+                    <div className="bg-white rounded-lg shadow-md p-6 mt-4">
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Order Details</h2>
+                      <div className="space-y-3">
+                        <p className="text-gray-600"><span className="font-medium">Order ID:</span> {selectedOrder?._id}</p>
+                        <p className="text-gray-600"><span className="font-medium">Total Amount:</span> ₹{selectedOrder?.totalPrice?.toFixed(2)}</p>
+                        <p className="text-gray-600"><span className="font-medium">Payment Status:</span> 
+                          <span className={`ml-2 inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                            selectedOrder?.paymentStatus?.toLowerCase() === "pending" 
+                              ? "bg-yellow-100 text-yellow-800" 
+                              : "bg-green-100 text-green-800"
+                          }`}>
+                            {selectedOrder?.paymentStatus}
+                          </span>
+                        </p>
+                      </div>
+                      {selectedOrder?.paymentStatus?.toLowerCase() === "pending" && (
+                        <div className="mt-6">
+                          <button
+                            className="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
+                            onClick={() => handleRepayment(selectedOrder?._id)}
+                          >
+                            Repay Now
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
               </div>
             </div>
           )}
@@ -490,7 +686,7 @@ const handleCancelProduct = async () => {
           <ConfirmationPopup
             message="Are you sure you want to return this product?"
             onConfirm={() => {
-              handleConformReturn();
+              handleConformReturn(productToReturn);
               setShowReturnConfirmation(false);
             }}
             onCancel={() => {

@@ -5,6 +5,7 @@ const Cart = require('../../model/cartModel')
 const razorpay = require('../../config/razorpay')
 const Coupon = require('../../model/couponModel')
 const Wallet = require('../../model/walletModel')
+const PDFDocument = require('pdfkit');
 const crypto = require('crypto')
 const { v4: uuidv4 } = require('uuid'); 
 
@@ -47,7 +48,7 @@ const placeOrder = async (req, res) => {
         }
 
         if (variant.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product: ${product.productName}`);
+          return res.status(400).json({message:`Insufficient stock for product: ${product.productName}`})
         }
 
         
@@ -101,6 +102,106 @@ const placeOrder = async (req, res) => {
     res.status(500).json({ message: 'Failed to place order', error: error.message });
   }
 };
+
+
+
+
+
+
+const handleFailedPayment = async (req, res) => {
+  console.log('failedpaymentt');
+  
+  try {
+    const { orderDetails, paymentFailure } = req.body;
+
+    if (!orderDetails || !paymentFailure) {
+      return res.status(400).json({ success: false, message: 'Invalid data provided.' });
+    }
+
+    const { address, paymentMethods, cartItems, cartSummary } = orderDetails;
+    const { reason, description, order_id, payment_id } = paymentFailure;
+
+
+    if (!address || !paymentMethods || !cartItems || cartItems.length === 0) {
+      return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+
+    const products = await Promise.all(
+      cartItems.map(async (item) => {
+        const productId = item.product?._id;
+        const variantId = item.variant;
+
+        if (!productId || !variantId) {
+          throw new Error(`Invalid cart item: ${JSON.stringify(item)}`);
+        }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+          throw new Error(`Product with ID ${productId} not found.`);
+        }
+
+        const variant = product.variants.find(v => v._id.toString() === variantId);
+        if (!variant) {
+          throw new Error(`Variant with ID ${variantId} not found for product ${product._id}`);
+        }
+
+        if (variant.stock < item.quantity) {
+          throw new Error(`Insufficient stock for product: ${product.name}`);
+        }
+
+
+        variant.stock -= item.quantity;
+        await product.save();
+
+        return {
+          productId: product._id,
+          variantId,
+          quantity: item.quantity,
+          price: item.variantDetails.salePrice,
+          paymentStatus: 'pending', 
+        };
+      })
+    );
+
+    const { discount = 0, totalGST, subtotal, total, gstRate, shippingCost } = cartSummary || {};
+
+
+    const newOrder = await Order.create({
+      userId: req.user.id,
+      subtotal,
+      gstRate,
+      gstAmount: totalGST,
+      totalPrice: total,
+      shippingAddressId: address._id,
+      paymentInfo: paymentMethods,
+      products,
+      status: 'pending',
+      paymentStatus: 'pending', 
+      shippingCost,
+      discount,
+      paymentFailureReason: { reason, description },
+      razorpayOrderId: order_id,
+      razorpayPaymentId: payment_id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Order created with pending payment status due to failed payment.',
+      order: newOrder,
+    });
+    await Cart.deleteMany({user: req.user?.id})
+
+  } catch (error) {
+    console.error('Failed Payment Handling Error:', error);
+    res.status(500).json({ success: false, message: 'Error handling failed payment.', error: error.message });
+  }
+};
+
+
+
+
+
 
 
 
@@ -409,6 +510,8 @@ const rezorpayLoad = async (req, res)=>{
 
 
 
+
+
 const varifyPayment =  async (req, res) => {
   try {
     console.log('nbnbn',req.body);
@@ -535,6 +638,50 @@ const varifyPayment =  async (req, res) => {
 
 
 
+
+
+
+   const handleRepayment =  async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+
+    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+    shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const generatedSignature = shasum.digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+    }
+
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+
+     order.paymentStatus='completed'
+
+     if (Array.isArray(order.products)) {
+      order.products.forEach(product => {
+        product.paymentStatus='completed' 
+      });
+    }
+
+    await order.save();
+
+    res.status(200).json({ success: true, message: 'Payment processed successfully'});
+  } catch (error) {
+    console.error('Error verifying payment and updating order:', error);
+    res.status(500).json({ success: false, message: 'Payment verification failed' });
+  }
+}
+
+
+
+
+
 const couponApply = async(req, res)=>{
   const {code, cartSummary} =req.body
 
@@ -591,6 +738,8 @@ const couponApply = async(req, res)=>{
     return res.status(500).json({ success: false, message: 'Internal server error' });
    }
 }
+
+
 
 
 
@@ -659,14 +808,270 @@ const returnController = async(req, res)=>{
 
 
 
+const invoiceDownLoad = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId)
+      .populate('userId', 'fullName email')
+      .populate('shippingAddressId')
+      .populate({
+        path: 'products.productId',
+        select: 'name'
+      });
+
+    if (!order || order.isDeleted) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const doc = new PDFDocument({ 
+      size: 'A4',
+      margin: 0
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Invoice_${order._id}.pdf`);
+    doc.pipe(res);
+
+    const colors = {
+      primary: '#1a237e',
+      secondary: '#303f9f',
+      accent: '#3949ab',
+      text: '#263238',
+      lightText: '#546e7a',
+      border: '#e0e0e0',
+      highlight: '#bbdefb'
+    };
+
+    const layout = {
+      margin: 40,
+      maxWidth: 515,
+      lineHeight: 20,
+      tableRowHeight: 25
+    };
+
+    // Header section
+    doc.rect(0, 0, 595.28, 150)
+       .fill(colors.primary);
+
+    doc.font('Helvetica-Bold')
+       .fontSize(28)
+       .fillColor('white')
+       .text('KBS BAKES', layout.margin, 50, {
+         width: layout.maxWidth,
+         align: 'center'
+       });
+
+    doc.fontSize(16)
+       .fillColor(colors.highlight)
+       .text('Tax Invoice', layout.margin, 90, {
+         width: layout.maxWidth,
+         align: 'center'
+       });
+
+    // Details section with proper alignment
+    const detailsStartY = 180;
+    const columnWidth = (595.28 - (layout.margin * 2)) / 2;
+
+    // Left column - Billing & Shipping info
+    doc.rect(layout.margin - 10, detailsStartY - 10, columnWidth - 20, 160)
+       .fill(colors.highlight);
+
+    // Billing Details
+    doc.fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .fontSize(12)
+       .text('BILL TO', layout.margin, detailsStartY);
+
+    doc.font('Helvetica')
+       .fontSize(10)
+       .fillColor(colors.text)
+       .text(order.userId.fullName, layout.margin, detailsStartY + 20)
+       .text(order.userId.email, layout.margin, detailsStartY + 35);
+
+    // Shipping Details
+    doc.fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('SHIP TO', layout.margin, detailsStartY + 65);
+
+    const address = order.shippingAddressId;
+    doc.font('Helvetica')
+       .fillColor(colors.text)
+       .text([
+         address.address,
+         `${address.city}, ${address.state}`,
+         address.pincode
+       ].filter(Boolean).join('\n'), layout.margin, detailsStartY + 85);
+
+    // Right column - Invoice details
+    const rightColumnX = layout.margin + columnWidth + 20;
+    doc.rect(rightColumnX - 10, detailsStartY - 10, columnWidth - 20, 160)
+       .fill(colors.highlight);
+
+    doc.fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('INVOICE DETAILS', rightColumnX, detailsStartY);
+
+    doc.font('Helvetica')
+       .fillColor(colors.text)
+       .text(`Invoice No: INV-${order._id.toString().slice(-6)}`, rightColumnX, detailsStartY + 20)
+       .text(`Date: ${new Date(order.orderDate).toLocaleDateString()}`, rightColumnX, detailsStartY + 35)
+       .text(`Due Date: ${new Date().toLocaleDateString()}`, rightColumnX, detailsStartY + 50);
+
+    // Items table with improved alignment
+    const tableTop = 380;
+    const tableWidth = 515;
+    const columns = [
+      { name: 'Item Description', width: 240, align: 'left' },
+      { name: 'Quantity', width: 70, align: 'center' },
+      { name: 'Price', width: 100, align: 'right' },
+      { name: 'Amount', width: 105, align: 'right' }
+    ];
+
+    // Table header
+    doc.rect(layout.margin - 10, tableTop - 10, tableWidth + 20, 30)
+       .fill(colors.primary);
+
+    let currentX = layout.margin;
+    columns.forEach(column => {
+      doc.fillColor('white')
+         .font('Helvetica-Bold')
+         .fontSize(10)
+         .text(column.name, currentX, tableTop + 5, {
+           width: column.width,
+           align: column.align
+         });
+      currentX += column.width;
+    });
+
+    // Table content
+    let currentY = tableTop + 40;
+    order.products.forEach((item, index) => {
+      if (!item.isCanceled) {
+        if (index % 2 === 0) {
+          doc.rect(layout.margin - 10, currentY - 5, tableWidth + 20, layout.tableRowHeight)
+             .fill(colors.highlight);
+        }
+
+        currentX = layout.margin;
+        doc.fillColor(colors.text)
+           .font('Helvetica')
+           .fontSize(10);
+
+        // Product name
+        doc.text(item.productId.name, currentX, currentY, {
+          width: columns[0].width,
+          align: 'left'
+        });
+        currentX += columns[0].width;
+
+        // Quantity
+        doc.text(item.quantity.toString(), currentX, currentY, {
+          width: columns[1].width,
+          align: 'center'
+        });
+        currentX += columns[1].width;
+
+        // Price
+        doc.text(`₹${item.price.toFixed(2)}`, currentX, currentY, {
+          width: columns[2].width,
+          align: 'right'
+        });
+        currentX += columns[2].width;
+
+        // Total amount
+        doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, currentX, currentY, {
+          width: columns[3].width,
+          align: 'right'
+        });
+
+        currentY += layout.tableRowHeight;
+      }
+    });
+
+    // Summary section with improved alignment
+    currentY += 30;
+    const summaryWidth = 250;
+    const summaryX = 595.28 - layout.margin - summaryWidth;
+    
+    doc.rect(summaryX - 10, currentY - 10, summaryWidth + 20, 150)
+       .fill(colors.highlight);
+
+    const summaryItems = [
+      { label: 'Subtotal:', value: `₹${order.subtotal.toFixed(2)}` },
+      { label: 'GST:', value: `₹${order.gstAmount.toFixed(2)} (${order.gstRate}%)` },
+      ...(order.discount ? [{ label: 'Discount:', value: `-₹${order.discount.toFixed(2)}` }] : []),
+      ...(order.shippingCost ? [{ label: 'Shipping:', value: `₹${order.shippingCost.toFixed(2)}` }] : []),
+      { label: 'Total Amount:', value: `₹${order.totalPrice.toFixed(2)}`, bold: true }
+    ];
+
+    summaryItems.forEach((item, index) => {
+      doc.font(item.bold ? 'Helvetica-Bold' : 'Helvetica')
+         .fillColor(item.bold ? colors.primary : colors.text)
+         .fontSize(10);
+
+
+      doc.text(item.label, summaryX, currentY + (index * layout.lineHeight), {
+        width: 100,
+        align: 'left'
+      });
+
+
+      doc.text(item.value, summaryX + 100, currentY + (index * layout.lineHeight), {
+        width: 140,
+        align: 'right'
+      });
+    });
+
+
+    const paymentY = currentY + (summaryItems.length * layout.lineHeight) + 20;
+    doc.fillColor(colors.primary)
+       .font('Helvetica-Bold')
+       .text('Payment Information', layout.margin, paymentY);
+
+    doc.font('Helvetica')
+       .fillColor(colors.text)
+       .text(`Status: ${order.paymentStatus.toUpperCase()}`, layout.margin, paymentY + layout.lineHeight)
+       .text(`Method: ${order.paymentInfo}`, layout.margin, paymentY + (layout.lineHeight * 2));
+
+    // Footer
+    const footerY = 750;
+    doc.rect(0, footerY - 10, 595.28, 100)
+       .fill(colors.primary);
+
+    doc.fillColor('white')
+       .fontSize(10)
+       .font('Helvetica-Bold')
+       .text('Thank you for your business!', 0, footerY + 15, {
+         width: 595.28,
+         align: 'center'
+       });
+
+    doc.fontSize(8)
+       .font('Helvetica')
+       .text('This is a computer-generated invoice and needs no signature.', 0, footerY + 35, {
+         width: 595.28,
+         align: 'center'
+       });
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    res.status(500).json({ message: 'Error generating invoice' });
+  }
+};
+
+
 module.exports = { 
   placeOrder,
   getAllOrders,
   cancelOrder,
   cancelProduct,
   rezorpayLoad,
+  handleRepayment,
+  handleFailedPayment,
   varifyPayment,
   couponApply,
   getOrderDetails,
-  returnController
+  returnController,
+  invoiceDownLoad
 };

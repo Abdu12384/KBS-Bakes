@@ -223,6 +223,7 @@ const ProductDetails = () => {
             </div>
             <div className="lg:w-1/3 p-6 lg:p-8 space-y-6">
               <h1 className="text-4xl font-extrabold text-[#3d2516] leading-tight">{product.productName}</h1>
+              
               <div className="flex items-center">
                 <div className="flex mr-2">
                   {[...Array(5)].map((_, i) => (
@@ -231,10 +232,17 @@ const ProductDetails = () => {
                 </div>
                 <span className="text-[#5b3e31] font-medium">{product.rating} out of 5 stars</span>
               </div>
+              
 
               <div className="flex items-center space-x-4 mt-2">
                <p className="text-2xl font-bold text-[#8b6c5c]">₹{selectedVariant?.salePrice ? selectedVariant?.salePrice : selectedVariant?.regularPrice}</p>
                <p className="text-2xl font-bold text-[#d8d8d8] line-through">{!selectedVariant?.salePrice || selectedVariant?.salePrice!==selectedVariant?.regularPrice && `₹${selectedVariant?.regularPrice}`}</p>
+               {product?.offer?.offerPercentage&& (
+                    <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md">
+                      {product?.offer?.offerPercentage}
+                      % OFF
+                    </span>
+                  )}
               </div>
               <p className="text-lg text-[#5b3e31] leading-relaxed">{product.description}</p>
               <div>
@@ -242,16 +250,7 @@ const ProductDetails = () => {
                   <Cake className="mr-2" size={24} />
                   Ingredients
                 </h3> */}
-                <ul className="list-none text-[#5b3e31] grid grid-cols-2 gap-2">
-                {product.category && product.category.offer && (
-              <div className="flex items-center space-x-2">
-                <span className="text-lg font-bold text-green-600">
-                  {product.category.offer.offerPercentage}% Off
-                </span>
-                <span className="text-sm text-gray-500">on {product.category.name} category</span>
-              </div>
-          )}
-                </ul>
+             
               </div>
               
               <div>

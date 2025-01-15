@@ -47,9 +47,12 @@ const{
  varifyPayment,
  couponApply,
  cancelProduct,
- returnController
+ returnController,
+ invoiceDownLoad,
+ handleFailedPayment,
+ handleRepayment
 } = require('../controllers/userController/orderController')
-const { addWishlist, getWishlist, deleteWishlishProduct,  } = require('../controllers/userController/wishlistController')
+const { addWishlist, getWishlist, deleteWishlishProduct, removeFromWishlist,  } = require('../controllers/userController/wishlistController')
 const { getAllCoupons } = require('../controllers/adminController/couponController')
 const { getWalletInfo, addMoneyToWallet, placeWalletOrder } = require('../controllers/userController/walletController')
 
@@ -86,10 +89,13 @@ user_Route
           .get('/orders',varifyToken,getAllOrders)
           .post('/order/payment',varifyToken,rezorpayLoad)
           .post('/verify-payment',varifyToken,varifyPayment)
+          .post('/handle-failed-payment',varifyToken,handleFailedPayment)
           .post('/place-order',varifyToken,placeOrder)
           .get('/order-details/:orderId',varifyToken,getOrderDetails)
           .post('/cancel-order/:orderId',varifyToken,cancelOrder)
           .post('/cancel-product',varifyToken,cancelProduct)
+          .get('/order-invoice/:orderId',varifyToken,invoiceDownLoad)
+          .post('/verify-repayment',varifyToken,handleRepayment)
 
 
  // Wishlist Routes         
@@ -97,6 +103,7 @@ user_Route
           .get('/mywishlist',varifyToken,getWishlist)
           .delete('/mywishlist/:productId',varifyToken,deleteWishlishProduct)
           .post('/wishlist/add',varifyToken,addWishlist)
+          .delete('/mywishlist/:productId',varifyToken,removeFromWishlist)
   
  // Coupon Routes         
 user_Route        

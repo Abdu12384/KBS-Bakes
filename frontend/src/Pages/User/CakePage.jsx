@@ -153,15 +153,15 @@ const CakePage = () => {
             <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl z-10 p-2 w-48 transition-all duration-300 ease-in-out">
                 {categories.map((category) => (
                     <button
-                        key={category._id}
+                        key={category?._id}
                         className={`w-full text-left px-4 py-2 hover:bg-[#f3e8e3] flex items-center gap-2 transition-colors duration-200 ${
-                            selectedCategory === category._id
+                            selectedCategory === category?._id
                                 ? 'bg-[#f3e8e3] text-[#8b6c5c]'
                                 : 'text-gray-700'
                         }`}
                         onClick={() => handleCategorySelect(category)}
                     >
-                        {category.name}
+                        {category?.name}
                     </button>
                 ))}
             </div>

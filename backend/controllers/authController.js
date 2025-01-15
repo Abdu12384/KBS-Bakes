@@ -291,17 +291,29 @@ const insertUser = async(req,res)=>{
    } 
 
 
-
    const refreshControll = async (req, res) => {
     const adminToken = req.cookies.adminRefreshToken;
     const userToken = req.cookies.refreshToken;
-  
-    // Check if any token exists
+    
+    console.log('admin', adminToken);
+    console.log('user', userToken);
+    
+
     if (!adminToken && !userToken) {
-      return res.status(401).json({ message: "No refresh token found" });
+      return res.status(401).json({ 
+        success: false,
+        message: "No refresh token found" 
+      });
     }
   
-    // Handle Admin Token
+    let response = {
+      success: false,
+      adminToken: null,
+      userToken: null,
+      message: []
+    };
+  
+    // Handle Admin Token if it exists
     if (adminToken) {
       try {
         const decoded = jwt.verify(adminToken, process.env.ADMIN_REFRESH_TOKEN_SECRET);
@@ -319,18 +331,26 @@ const insertUser = async(req,res)=>{
           maxAge: 15 * 60 * 1000
         });
   
-        return res.json({ message: 'Admin token refreshed' });
-  
-      } catch (error) {
-        // If admin token is invalid and no user token exists
+        response.success = true;
+        response.adminToken = newAdminToken;
+        response.message.push('Admin token refreshed');
+        
+
         if (!userToken) {
-          return res.status(403).json({ message: "Invalid admin token" });
+          return res.json(response);
         }
-        // If admin token fails, continue to check user token
+      } catch (error) {
+
+        res.clearCookie('adminRefreshToken');
+        response.message.push('Invalid admin token');
+        
+        if (!userToken) {
+          return res.status(403).json(response);
+        }
       }
     }
   
-    // Handle User Token
+
     if (userToken) {
       try {
         const decoded = jwt.verify(userToken, process.env.USER_REFRESH_TOKEN_SECRET);
@@ -348,12 +368,24 @@ const insertUser = async(req,res)=>{
           maxAge: 15 * 60 * 1000
         });
   
-        return res.json({ message: 'User token refreshed' });
-  
+        response.success = true;
+        response.userToken = newUserToken;
+        response.message.push('User token refreshed');
       } catch (error) {
-        return res.status(403).json({ message: "Invalid user token" });
+        // Clear invalid user token
+        res.clearCookie('refreshToken');
+        response.message.push('Invalid user token');
+        
+        // If admin token wasn't successful either
+        if (!response.adminToken) {
+          response.success = false;
+          return res.status(403).json(response);
+        }
       }
     }
+  
+    // Return final response with all results
+    return res.json(response);
   };
 
 

@@ -1,176 +1,195 @@
+import React, { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart3, DollarSign, ShoppingBag, TrendingUp, Package, Archive, BookOpen } from 'lucide-react';
+import axioInstence from '../../utils/axioInstence';
 
 
-import { BarChart3, DollarSign, ShoppingBag, Users } from 'lucide-react';
 
-export function AdminDashboard() {
-  // Sample data - replace with your actual data
-  const stats = [
-    {
-      title: "Total Sales",
-      value: "₹59,467",
-      icon: DollarSign,
-      change: "+31.2%",
-      changeType: "positive"
-    },
-    {
-      title: "Total Orders",
-      value: "28,085",
-      icon: ShoppingBag,
-      change: "+3.2%",
-      changeType: "positive"
-    },
-    {
-      title: "Total Customers",
-      value: "39,645",
-      icon: Users,
-      change: "-0.21%",
-      changeType: "negative"
-    },
-    {
-      title: "Revenue",
-      value: "₹44,148",
-      icon: BarChart3,
-      change: "+1.12%",
-      changeType: "positive"
-    }
+export const AdminDashboard = () => {
+  
+  const [bestSellingProducts, setBestSellingProducts]= useState([])
+  const [topCategories, setTopCategories] = useState([])
+  const [stats, setStats] = useState([]);
+  const [timePeriod, setTimePeriod] = useState('Monthly')
+  
+  const monthlyData = [
+    { name: 'Jan', revenue: 4000, expenses: 2400 },
+    { name: 'Feb', revenue: 3000, expenses: 1398 },
+    { name: 'Mar', revenue: 2000, expenses: 1800 },
+    { name: 'Apr', revenue: 2780, expenses: 2908 },
+    { name: 'May', revenue: 1890, expenses: 4800 },
+    { name: 'Jun', revenue: 2390, expenses: 3800 },
   ];
-
-  const revenueData = [
-    { month: 'Jan', online: 4000, offline: 2400 },
-    { month: 'Feb', online: 3000, offline: 1398 },
-    { month: 'Mar', online: 2000, offline: 9800 },
-    { month: 'Apr', online: 2780, offline: 3908 },
-    { month: 'May', online: 1890, offline: 4800 },
-    { month: 'Jun', online: 2390, offline: 3800 },
+  
+  // const bestSellingProducts = [
+    //   { name: "Product A", sales: 1245, revenue: "₹62,250" },
+    //   { name: "Product B", sales: 986, revenue: "₹49,300" },
+    //   { name: "Product C", sales: 756, revenue: "₹37,800" },
+    //   { name: "Product D", sales: 654, revenue: "₹32,700" },
+    //   { name: "Product E", sales: 432, revenue: "₹21,600" },
+    // ];
+    
+    console.log('bestselling',bestSellingProducts);
+    
+    
+    // const topCategories = [
+  //   { name: "Electronics", sales: 3245 },
+  //   { name: "Clothing", sales: 2986 },
+  //   { name: "Home & Garden", sales: 2756 },
+  //   { name: "Sports", sales: 2154 },
+  //   { name: "Books", sales: 1932 },
+  // ];
+  
+  const topBrands = [
+    { name: "Brand X", sales: 5245 },
+    { name: "Brand Y", sales: 4986 },
+    { name: "Brand Z", sales: 4756 },
+    { name: "Brand A", sales: 3654 },
+    { name: "Brand B", sales: 3432 },
   ];
+  
+  
+  const fetchDashboardInfo = async (period) => {
+    
+    try {
+      const response = await axioInstence.get(`/admin/dashboard?period=${period}`)
+      console.log(response);
+      setBestSellingProducts(response.data.data.bestSellingProducts)
+      setStats(response.data.data.stats)
+      setTopCategories(response.data.data.topCategories)
+      updateStats(response.data.data.stats) 
+      
+    } catch (error) {
+      console.log(error?.response?.data?.message); 
+     }
+        
+  }
+  
+   function updateStats(data){
+    
+    const totalRevenue = data.totalRevenue
+    const totalOrders = data.totalOrders
+     
+     
+      setStats([
+       { title: "Total Revenue", value: `₹${totalRevenue}`, icon: DollarSign, },
+       { title: "Total Orders", value: `${totalOrders}`, icon: ShoppingBag},
+       { title: "Total Expenses", value: "₹284.92K", icon: TrendingUp,  },
+       { title: "Budget Spent", value: "28.35%", icon: BarChart3,}
+      ]);
+      
+ }
+  useEffect(()=>{
+    fetchDashboardInfo(timePeriod)
+  },[timePeriod])
+
+
+
+const handleTimePeriodChange = (event) => {
+  setTimePeriod(event.target.value);
+};
+
+
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.title}
-            className="relative overflow-hidden rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6"
-          >
-            <dt>
-              <div className="absolute rounded-md bg-purple-500 bg-opacity-20 p-3">
-                <stat.icon className="h-6 w-6 text-purple-600" aria-hidden="true" />
+    <div className="min-h-screen bg-gradient-to-br from-[#4A1D2C]  via-[#8B3A4A] to-[#4A1D2C] p-6 text-white">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((item, index) => (
+          <div key={index} className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 rounded-full bg-[#FF7F50]/20">
+                <item.icon size={24} className="text-[#FF7F50]" />
               </div>
-              <p className="ml-16 truncate text-sm font-medium text-gray-300">
-                {stat.title}
-              </p>
-            </dt>
-            <dd className="ml-16 flex items-baseline">
-              <p className="text-2xl font-semibold text-white">{stat.value}</p>
-              <p
-                className={`ml-2 flex items-baseline text-sm font-semibold ${
-                  stat.changeType === "positive" ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {stat.change}
-              </p>
-            </dd>
+              <span className={`text-sm ${item.changeType === 'positive' ? 'text-green-400' : 'text-red-400'}`}>
+                {item.change}
+              </span>
+            </div>
+            <h2 className="text-2xl font-semibold mb-1">{item.value}</h2>
+            <p className="text-gray-400">{item.title}</p>
           </div>
         ))}
       </div>
 
-      {/* Revenue Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Monthly Revenue */}
-        <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
-          <h3 className="text-lg font-medium text-white mb-4">Monthly Revenue</h3>
-          <div className="h-[300px] w-full">
-            {/* Replace with your preferred chart library */}
-            <div className="flex h-full items-end space-x-2">
-              {revenueData.map((data) => (
-                <div key={data.month} className="flex-1">
-                  <div className="relative h-full">
-                    <div
-                      className="absolute bottom-0 w-full bg-purple-600 rounded-t"
-                      style={{ height: `${(data.online / 10000) * 100}%` }}
-                    ></div>
-                    <div
-                      className="absolute bottom-0 w-full bg-purple-300 rounded-t opacity-50"
-                      style={{ height: `${(data.offline / 10000) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-center mt-2 text-sm text-gray-300">
-                    {data.month}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Revenue Overview</h2>
+            <select 
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="bg-[#2D1721] bg-opacity-50 rounded-md px-3 py-1 text-sm">
+              <option value="Yearly">Yearly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Weekly">Weekly</option>
+            </select>
           </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
+              <XAxis dataKey="name" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip contentStyle={{ backgroundColor: '#2D1721', border: 'none' }} />
+              <Line type="monotone" dataKey="revenue" stroke="#FF7F50" strokeWidth={2} />
+              <Line type="monotone" dataKey="expenses" stroke="#4CAF50" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Sales Distribution */}
-        <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
-          <h3 className="text-lg font-medium text-white mb-4">Sales Distribution</h3>
-          <div className="relative h-[300px]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="h-48 w-48 rounded-full border-8 border-purple-600">
-                <div className="relative h-full w-full">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-white">67%</div>
-                      <div className="text-sm text-gray-300">Online Sales</div>
-                    </div>
-                  </div>
+        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+          <h2 className="text-xl font-semibold mb-6">Best Selling Products</h2>
+          {bestSellingProducts?.map((product, index) => (
+            <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
+                <img
+                   src={product?.productImage[0]}
+                   alt={product?.productName}
+                   className="w-14 h-14 object-cover  rounded-md"
+                    />
+              <div className="flex items-center">
+                <span className="text-gray-400 mr-4">{index + 1}</span>
+                <div>
+                  <p className="font-medium">{product?.productName
+                  }</p>
+                  <p className="text-sm text-gray-400">{product?.totalSales} sales</p>
                 </div>
               </div>
+              <span className="font-medium">{product?.revenue}</span>
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-lg font-semibold text-white">12%</div>
-                <div className="text-sm text-gray-300">In-Store</div>
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-white">20%</div>
-                <div className="text-sm text-gray-300">Phone Orders</div>
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-white">67%</div>
-                <div className="text-sm text-gray-300">Online</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Customer Stats */}
-      <div className="rounded-lg bg-white bg-opacity-10 backdrop-blur-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-white">Customer Overview</h3>
-          <select className="bg-transparent text-white border border-gray-600 rounded-md px-2 py-1">
-            <option value="weekly">This Week</option>
-            <option value="monthly">This Month</option>
-            <option value="yearly">This Year</option>
-          </select>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+          <h2 className="text-xl font-semibold mb-6">Top Categories</h2>
+          {topCategories.map((category, index) => (
+            <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
+              <span>{category?.categoryName}</span>
+              <span className="font-medium">{category?.totalSales}</span>
+            </div>
+          ))}
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">92,556</div>
-            <div className="text-sm text-gray-300">Total Customers</div>
-            <div className="text-xs text-green-400">+1.35% More than last month</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">53,812</div>
-            <div className="text-sm text-gray-300">Active Customers</div>
-            <div className="text-xs text-red-400">-0.17% Less than last month</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">40,008</div>
-            <div className="text-sm text-gray-300">New Customers</div>
-            <div className="text-xs text-green-400">+0.06% More than last month</div>
-          </div>
+
+        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+          <h2 className="text-xl font-semibold mb-6">Top Brands</h2>
+          {topBrands.map((brand, index) => (
+            <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
+              <span>{brand.name}</span>
+              <span className="font-medium">{brand.sales}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
+          <h2 className="text-xl font-semibold mb-6">Ledger Book</h2>
+          <p className="mb-4">Generate a detailed report of your financial transactions.</p>
+          <button className="w-full bg-[#FF7F50] hover:bg-[#FF6347] text-white font-bold py-2 px-4 rounded transition duration-300">
+            Generate Ledger Report
+          </button>
         </div>
       </div>
     </div>
   );
-}
-
-
+};
 

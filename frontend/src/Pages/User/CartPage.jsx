@@ -113,11 +113,11 @@ const handleUpdateQuantity = async (id, change) => {
                         alt={item.productName}
                         className="w-24 h-24 object-cover  rounded-md"
                       />
-                         {item.product.offer.offerPercentage && (
+                         {item?.product?.offer?.offerPercentage && (
                           <div className="absolute top-0 left-0  bg-gradient-to-r from-red-600 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">
                             <div className="relative">
                               <span className="block text-center text-sm">
-                                {item.product.offer.offerPercentage}%
+                                {item?.product?.offer?.offerPercentage}%
                               </span>
                               <span className="block text-center text-[10px] font-normal">OFF</span>
                               <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>

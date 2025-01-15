@@ -7,19 +7,33 @@ const path = require('path');
 const fs = require('fs')
 
 const loadOrderDetails = async (req, res) => {
+
+   const page = parseInt(req.query.page) || 1
+   const limit = parseInt(req.query.limit) || 5
+   const skip = (page-1) * limit
   try {
     const orders = await Orders.find()
     .populate('products.productId')
     .populate('shippingAddressId')
+    .sort({ createdAt: -1 }) 
     .populate('userId')
+    .skip(skip)
+    .limit(limit)
+    .exec()
     
-    console.log('vfxorder',orders);
+    const totalOrders = await Orders.countDocuments()
+
 
     if (orders.length === 0) {
       return res.status(404).json({ message: 'Orders not found' });
     }
  
-    res.status(200).json(orders);
+    res.status(200).json({
+      totalOrders,
+      totalOrders: Math.ceil(totalOrders/limit),
+      currentPage:page,
+      orders
+    });
   } catch (error) {
     console.error(error); 
     res.status(500).json({ message: 'An error occurred while retrieving orders' });
@@ -27,10 +41,11 @@ const loadOrderDetails = async (req, res) => {
 };
 
 
+
 const updateOrderStatus = async(req, res) =>{
   const {id} = req.params
   const {status} = req.body
-  console.log('orr',id,status);
+
   
   try {
     const order = await Orders.findById(id)
@@ -55,7 +70,7 @@ const updateOrderStatus = async(req, res) =>{
         order.paymentStatus = 'completed';
       }
       await order.save()
-      console.log(order);
+
     res.status(200).json({message:'Status update Successfully'})
   } catch (error) {
     res.status(500).json({ message:'UpdateOrder status failed'});

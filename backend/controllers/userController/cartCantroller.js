@@ -25,7 +25,7 @@ const getCartItem = async(req, res)=>{
       select: 'weight regularPrice salePrice stock'
     });
       
-      console.log('cartitem',cartItems);
+
       
      
 
@@ -94,7 +94,7 @@ const addToCart = async(req, res)=>{
   try {
     const {productId, variantId, quantity} = req.body
     const userId = req.user?.id
-    console.log('cart page',req.body);
+
     
     
     if(!productId || !variantId || !quantity){
@@ -167,7 +167,7 @@ const updateCartQuantity = async (req, res) =>{
   try {
     const {productId, variantId, newQuantity} = req.body
     const userId = req.user?.id
-    console.log(req.body);
+
     
     
     if(!userId){
@@ -216,7 +216,7 @@ const updateCartQuantity = async (req, res) =>{
       product:productId,
       variant:variantId
     })
-  console.log(cartItem);
+
       
     if(!cartItem){
       return res.status(404).json({ message: 'Cart item not found' });
@@ -238,7 +238,7 @@ const removeItemCart = async(req, res)=>{
    const {productId, variantId} = req.body
    const userId = req.user?.id
 
-   console.log(req.body, userId);
+
    
     if(!productId || !variantId){
        return res.status(400).json({message:'Product ID and Variant Id are required'})

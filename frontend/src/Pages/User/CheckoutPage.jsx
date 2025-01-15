@@ -5,7 +5,7 @@ import { OrderAnimation } from '../../Components/cakeAnimation';
 import CouponCard from '../../Components/Coupon';
 import NavBar from '../../Components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import { fetchCartItems, deductFromWallet, initiatePayment, verifyPayment } from '../../services/authService';
+import { fetchCartItems, deductFromWallet, initiatePayment, verifyPayment, PaymentFailed } from '../../services/authService';
 import { fetchAddressDetails, fetchWalletBalance, placeOrder, applyCoupon } from '../../services/authService';
 
 
@@ -203,7 +203,7 @@ const CheckoutPage = () => {
             return;
         }
 
-        console.log('Key ID:', key_id, id);
+
         const options = {
             key: key_id,
             amount: amount,
@@ -211,6 +211,9 @@ const CheckoutPage = () => {
             name: 'KBS Bakes',
             description: 'Order Payment',
             order_id: id,
+            retry:{
+              enabled: false
+            },
             handler: async function (response) {
                 const paymentData = {
                     razorpay_payment_id: response.razorpay_payment_id,
@@ -226,6 +229,8 @@ const CheckoutPage = () => {
 
                 try {
                     const verifyResponse = await verifyPayment(paymentData); 
+                      console.log('varifyreq',verifyResponse);
+                      
                     if (verifyResponse.success) {
                         toast.success(verifyResponse.message);
                         setTimeout(() => {
@@ -253,9 +258,60 @@ const CheckoutPage = () => {
             },
         };
 
-
         const rzp = new window.Razorpay(options);
+
+        rzp.on('payment.failed',async function (response){
+          console.error('Payment Failed:',response.error)
+          try {
+            rzp.close();
+            console.log('Razorpay modal closed');
+        } catch (closeError) {
+            console.error('Error closing Razorpay modal:', closeError);
+        }
+
+
+            const failedPaymentData = {
+              orderDetails:{
+                 address: selectedAddress,
+                 paymentMethods: selectedPayment,
+                 cartItems,
+                 cartSummary
+              },
+              paymentFailure:{
+                reason: response.error.reason,
+                description:  response.error.description,
+                order_id: response.error.metadata.order_id,
+                payment_id: response.error.metadata.payment_id,
+
+              }
+            }
+            try {
+              const failureResponse = await PaymentFailed(failedPaymentData); 
+                console.log('graint',failureResponse);
+                
+              if (failureResponse.success) {
+                  toast.success(failureResponse.message);
+                  setTimeout(() => {
+                    setLoading(true);
+                    setTimeout(() => {
+                        setLoading(false);
+                        navigate('/user/order-success');
+                    }, 2000);
+                }, 1000);
+                 
+              } else {
+                  toast.error(failureResponse.message || 'Failed to create order for failed payment.');
+              }
+          } catch (error) {
+              toast.error('Error handling failed payment.');
+              console.error('Failed Payment Error:', error);
+          }
+
+        })
+
+
         rzp.open();
+        
     } catch (error) {
         toast.error(error.response?.data?.message || 'Payment Initialization Error');
         console.error('Payment Initialization Error:', error);

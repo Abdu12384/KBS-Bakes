@@ -4,7 +4,7 @@ const Coupon = require('../../model/couponModel')
 const addCoupon = async (req, res)=>{
   try {
     const {code, discount, minAmount, maxAmount, expiryDate} = req.body
-  console.log(req.body);
+
   
   const existingCoupon = await Coupon.findOne({ code });
   if (existingCoupon) {
@@ -38,7 +38,7 @@ const getAllCoupons = async (req, res)=>{
 const deleteCoupon = async (req, res) =>{
    try {
      const {couponId} = req.params
-     console.log(couponId);
+
      
      const coupon = await Coupon.findByIdAndDelete(couponId)
  

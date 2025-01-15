@@ -57,15 +57,18 @@ export function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedOrderId, setExpandedOrderId] = useState(null)
   const [showStatusChangeConfirmation, setShowStatusChangeConfirmation] = useState(false);
+  const [totalPages, setTotalPages]= useState(1)
   const [newStatus, setNewStatus] = useState('');
 
   const ordersPerPage = 5;
 
-  const fetchOrderDetails = async() =>{
+  const fetchOrderDetails = async(page = 1) =>{
      try {
 
-      const response = await axioInstence.get('/admin/orders/manage')
-      const transformedOrders = response.data.map(order => ({
+      const response = await axioInstence.get(`/admin/orders/manage?page=${page}&${ordersPerPage}`)
+      console.log(response);
+      
+      const transformedOrders = response.data.orders.map(order => ({
         ...order,
         products: order.products.map(product => ({
           ...product,
@@ -78,11 +81,18 @@ export function OrdersPage() {
         }))
       }));
       setOrders(transformedOrders);
+      setTotalPages(response.data.totalOrders)
      } catch (error) {
-       console.log(error.response.data.message)
+       console.log(error?.response?.data?.message)
      }
   }
 
+
+
+  useEffect(() => {
+    fetchOrderDetails(currentPage);
+  }, [currentPage]);
+  
 
   const openReturnRequestPopup = (order, product) => {
     setSelectedReturnRequest({ order, product });
@@ -144,11 +154,6 @@ export function OrdersPage() {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
 
   const handleCancelOrder = async (orderId) =>{
      try {
@@ -289,7 +294,7 @@ console.log('orde',orders);
                 </tr>
               </thead>
               <tbody>
-                {currentOrders.map((order) => (
+                {orders.map((order) => (
                   <>
                   <tr
                     key={order._id}

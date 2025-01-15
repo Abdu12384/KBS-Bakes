@@ -24,14 +24,14 @@ const toggleUserStatus = async (req,res)=>{
   
   const {id} = req.params
   const {isActive}= req.body
-  console.log(id);
+
    try {
      const user = await Users.findByIdAndUpdate(
       id,
       {isActive},
       {new:true}
     )
-    console.log(user);
+
     
      if(!user){
       return res.status(404).json({message:'User not found'})

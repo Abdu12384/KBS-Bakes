@@ -5,18 +5,18 @@ const Address = require('../../model/addressModel')
 const showAddress = async(req, res)=>{
    
     try {
-      console.log('address',req.body);
+
       
       const userId = req.user?.id;
 
-  console.log('addrrssss',userId);
+
   
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
       const address = await Address.find({userId})
-      console.log(address);
+
       
 
       if(!address || address.length===0){
@@ -48,10 +48,10 @@ const addAddress= async (req, res) =>{
       pincode
     }= req.body
 
-    console.log('working address add', req.body);
+
 
     const userId = req.user?.id
-     console.log(userId);
+
      
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required.' });
@@ -61,7 +61,7 @@ const addAddress= async (req, res) =>{
     try {
 
      if(_id){
-      console.log('id',_id);
+
       
 
       const existingAddress = await Address.findOne({ _id: _id, userId });
@@ -120,8 +120,8 @@ const addAddress= async (req, res) =>{
 const defaultAddress = async(req, res) =>{
    const {id} = req.params
    const userId = req.user?.id
-     console.log('defaul ID',id);
-     console.log(req.user?.id);
+
+
      
     
    try {
@@ -133,7 +133,7 @@ const defaultAddress = async(req, res) =>{
       {$set:{isDefault:true}},
       {new: true},
     )
- console.log('data',updatedAddress);
+
  
     if(!updatedAddress){
       return res.status(404).json({message:'Address not found'})
@@ -150,7 +150,7 @@ const deleteAddress = async(req, res)=>{
     
    const {id} = req.params
    const userId = req.user?.id
-  console.log(userId);
+
   
    if (!id) {
     return res.status(400).json({ message: 'Address ID is required.' });
