@@ -32,17 +32,17 @@ const OrderTrackingUI = ({ orders }) => {
 
   
   return (
-    <div className="bg-gray-900 rounded-lg p-8 mb-6">
-      <div className="flex justify-between mb-12">
-        <div className="space-y-1">
-          <p className="text-gray-400 text-sm">INVOICE</p>
-          <p className="text-white text-2xl font-semibold">#{order._id}</p>
-        </div>
-        <div className="text-right space-y-1">
-          <p className="text-white text-lg">Expected Arrival {order.expectedArrival || '01/12/19'}</p>
-          <p className="text-gray-400 text-sm">{order.trackingNumber || 'USPS 234094567242423422898'}</p>
-        </div>
+    <div className="bg-gray-900 rounded-lg p-6 md:p-8 mb-6">
+    <div className="flex flex-col md:flex-row justify-between mb-12">
+      <div className="space-y-1">
+        <p className="text-gray-400 text-sm">INVOICE</p>
+        <p className="text-white text-xl md:text-2xl font-semibold">#{order._id}</p>
       </div>
+      <div className="text-right space-y-1">
+        <p className="text-white text-lg">Expected Arrival: {order.expectedArrival || '01/12/19'}</p>
+        <p className="text-gray-400 text-sm">{order.trackingNumber || 'USPS 234094567242423422898'}</p>
+      </div>
+    </div>
 
       <div className="relative">
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-700">

@@ -308,9 +308,11 @@ export const fetchUserOrderDetails = async (orderId) => {
 };
 
 
-export const cancelOrder = async (orderId) => {
+export const cancelOrder = async (orderId,reason) => {
     try {
-        const response = await axioInstence.post(`/user/cancel-order/${orderId}`);
+        const response = await axioInstence.post(`/user/cancel-order/${orderId}`,{
+            reason
+        });
         return response.data; 
     } catch (error) {
         console.error('Error canceling order:', error);
@@ -368,6 +370,52 @@ export const addMoneyToWallet = async (amount) => {
         throw error; 
     }
 };
+
+
+
+
+export const fetchFilterProducts = async (sortOption, selectedOccasion, selectedCategory, currentPage, productsPerPage) => {
+    try {
+      const params = new URLSearchParams();
+      params.append('sort', sortOption);
+      params.append('type', selectedOccasion);
+      params.append('category', selectedCategory);
+      params.append('page', currentPage);
+      params.append('limit', productsPerPage);
+  
+      const response = await axioInstence.get(`/user/products-list?${params.toString()}`);
+      return response.data; 
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error; 
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export {
    AddProductReq,

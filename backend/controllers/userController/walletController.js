@@ -2,6 +2,7 @@ const Wallet = require('../../model/walletModel')
 const Product = require('../../model/productModal');
 const Order = require('../../model/orderModel');
 const Cart = require('../../model/cartModel');
+const Category = require('../../model/category')
 
 const getWalletInfo = async (req, res) => {
   const userId = req.user.id;
@@ -85,41 +86,65 @@ const placeWalletOrder = async (req, res) => {
      
 
 
-    const products = await Promise.all(
-      cartItems.map(async (item) => {
-        const productId = item.product?._id;
-        const variantId = item.variant;
-
-        if (!productId) {
-          throw new Error(`Invalid product details in cart item: ${JSON.stringify(item)}`);
-        }
-
-        const product = await Product.findById(productId);
-        if (!product) {
-          throw new Error(`Product with ID ${productId} not found.`);
-        }
-
-        const variant = product.variants.find((v) => v._id.toString() === variantId);
-        if (!variant) {
-          throw new Error(`Variant with ID ${variantId} not found for product ${product._id}`);
-        }
-
-        if (variant.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product: ${product.name}`);
-        }
+     const products = [];
+    for (const item of cartItems) {
+      const productId = item.product?._id;
+      const variantId = item.variant;
 
 
-        variant.stock -= item.quantity;
-        await product.save();
+      if (!productId) {
+        return res.status(400).json({
+          message: `Invalid product details in cart item: ${JSON.stringify(item)}`
+        });
+      }
 
-        return {
-          productId: product._id,
-          variantId: variantId,
-          quantity: item.quantity,
-          price: item.variantDetails.salePrice,
-        };
-      })
-    );
+
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(400).json({ message: `Product with ID ${productId} not found.` });
+      }
+
+
+      const variant = product.variants.find((v) => v._id.toString() === variantId);
+      if (!variant) {
+        return res.status(400).json({
+          message: `Variant with ID ${variantId} not found for product ${product._id}`
+        });
+      }
+
+
+      if (variant.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Insufficient stock for product: ${product.name}`
+        });
+      }
+
+
+      variant.stock -= item.quantity;
+      product.salesCount += item.quantity;
+
+
+      if (product.category) {
+        await Category.findByIdAndUpdate(
+          product.category,
+          { $inc: { salesCount: item.quantity } },
+          { new: true }
+        );
+      }
+
+      await product.save();
+
+
+      products.push({
+        productId: product._id,
+        variantId: variantId,
+        productName: product.productName, 
+        productImage: product.images[0],
+        quantity: item.quantity,
+        price: item.variantDetails.salePrice,
+      });
+    }
+
 
     console.log(products);
     
@@ -128,13 +153,13 @@ const placeWalletOrder = async (req, res) => {
     const { discount = 0, totalGST,subtotal ,total, gstRate , shippingCharge  } = cartSummary || {};
 
 
-    // Check wallet balance
+
 
     if(wallet.balance < total){
       return res.status(400).json({ message: `Insufficient wallet balance ${wallet.balance}`});
     }
 
-    // Deduct from wallet
+
     wallet.balance -= total;
     wallet.transactions.push({
       transactionId: `TRX${Date.now()}`, 
@@ -176,6 +201,10 @@ const placeWalletOrder = async (req, res) => {
     res.status(500).json({ message: 'Failed to place wallet order', error: error.message });
   }
 };
+
+
+
+
 module.exports = { 
   getWalletInfo,
   addMoneyToWallet,

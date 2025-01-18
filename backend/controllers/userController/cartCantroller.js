@@ -26,13 +26,11 @@ const getCartItem = async(req, res)=>{
     });
       
 
-      
-     
 
       const enrichedCartItems = cartItems.map(item => {
 
-        if (!item.product) {
-          console.warn(`Product not found for cart item: ${item._id}`);
+        if (!item.product || item.product.isDeleted) {
+          console.warn(`Product not available or inactive: ${item.product?.productName}`);
           return null; 
         }
   
@@ -107,6 +105,10 @@ const addToCart = async(req, res)=>{
      if(!product){
       return res.status(404).json({ message: 'Product not found' });
      }
+
+     if (product.isDeleted) {
+      return res.status(400).json({ message: 'Product is not available for purchase' });
+    }
 
      const variant = product.variants.find(v => v._id.toString() === variantId);
      if (!variant) {

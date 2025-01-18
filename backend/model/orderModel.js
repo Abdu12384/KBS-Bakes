@@ -32,6 +32,14 @@ const orderSchema = new mongoose.Schema({
       type:mongoose.Schema.Types.ObjectId,
       required:true
     },
+    productName: {
+      type: String,
+      required: true,
+    },
+    productImage: {
+      type: String,
+      required: true, 
+    },
     quantity:{
       type:Number,
       required:true,
@@ -100,6 +108,9 @@ const orderSchema = new mongoose.Schema({
     type: Number, 
     required: true,
   },
+  cancelReason:{
+    type:String,
+  }
 },
 {
   timestamps:true

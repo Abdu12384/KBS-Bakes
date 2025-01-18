@@ -4,6 +4,7 @@ import uploadImageToCloudinary from "../../services/uploadServise";
 import { AddProductReq } from "../../services/authService";
 import toast, { Toaster } from "react-hot-toast";
 import axioInstence from "../../utils/axioInstence";
+import ImageCropper from "../ImageCrop";
 <Toaster position="top-right" reverseOrder={false}/>
 
 const AddProduct = ({onCancel,onProductAdded}) => {
@@ -11,6 +12,8 @@ const AddProduct = ({onCancel,onProductAdded}) => {
   const [errors, setErrors]=useState({})
   const [loading,setLoading]= useState(false)
   const [categories, setCategories]= useState([])
+  const [showCropper, setShowCropper] = useState(false);
+  const [currentImageNum, setCurrentImageNum] = useState(null);
   const [productData, setProductData] = useState({
     productName: "",
     category: "",
@@ -124,20 +127,62 @@ const AddProduct = ({onCancel,onProductAdded}) => {
   };
 
 
-
-  const handleImageChange = (e, num) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl((prev) => ({ ...prev, [num]: url }));
-
-      setProductData((prev) => ({
-        ...prev,
-        images: [...prev.images, file],
-      }));
+  const handleCroppedImage = (croppedFile) => {
+    if (croppedFile) {
+      const url = URL.createObjectURL(croppedFile);
+  
+      setPreviewUrl((prev) => ({ ...prev, [currentImageNum]: url }));
+  
+      setProductData((prev) => {
+        const newImages = [...prev.images];
+        newImages[currentImageNum - 1] = croppedFile; 
+        return {
+          ...prev,
+          images: newImages,
+        };
+      });
+  
+      setShowCropper(false);
+      setCurrentImageNum(null);
     }
   };
+
+  const handleImageChange = (e, num) => {
+      setCurrentImageNum(num);
+      setShowCropper(true);
+  };
+
+
+  // const handleImageChange = (e, num) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     const url = URL.createObjectURL(file);
+  //     setPreviewUrl((prev) => ({ ...prev, [num]: url }));
+
+  //     setProductData((prev) => ({
+  //       ...prev,
+  //       images: [...prev.images, file],
+  //     }));
+  //   }
+  // };
+
+  const handleRemoveImage = (num) => {
+    setPreviewUrl((prev) => {
+      const newPreviewUrl = { ...prev };
+      delete newPreviewUrl[num];
+      return newPreviewUrl;
+    });
+
+    setProductData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== num - 1),
+    }));
+  };
+
+
   
+
+
   const handleTypeChange = (type) => {
     setProductData((prev) => {
       const newTypes = prev.type.includes(type)
@@ -171,6 +216,9 @@ const AddProduct = ({onCancel,onProductAdded}) => {
        console.log('result addproduct here',result);
        
       toast.success(result.data.message)
+      if (onProductAdded) {
+        onProductAdded();
+      }
     } catch (error) {
       console.error("Add Product Error:", error.response.data.message);
       toast.error(error.response.data.message)
@@ -179,6 +227,11 @@ const AddProduct = ({onCancel,onProductAdded}) => {
       setLoading(false)
     }
   };
+
+
+
+
+
 
   return (
     <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 sm:p-6">
@@ -264,23 +317,44 @@ const AddProduct = ({onCancel,onProductAdded}) => {
                 className="aspect-square bg-gray-800 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors relative overflow-hidden"
               >
                 {!previewUrl[num] && (
-                  <div className="flex flex-col items-center justify-center space-y-2">
+                  <div 
+                  onClick={(e) => handleImageChange(e, num)}
+                  className="flex flex-col items-center justify-center space-y-2">
                     <ImageIcon className="h-8 w-8 text-gray-400" />
                     <span className="text-sm text-gray-500">Browse Image</span>
                   </div>
                 )}
-                <input
+                {/* <input
                   type="file"
                   onChange={(e) => handleImageChange(e, num)}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   accept="image/*"
-                />
-                {previewUrl[num] && (
-                  <img
-                    src={previewUrl[num]}
-                    alt={`Preview ${num}`}
-                    className="w-full h-full object-cover"
-                  />
+                /> */}
+                 {previewUrl[num] && (
+                  <>
+                    <img
+                      src={previewUrl[num]}
+                      alt={`Preview ${num}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(num)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                    >
+                      <X size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentImageNum(num);
+                        setShowCropper(true);
+                      }}
+                      className="absolute bottom-2 left-2 p-1 bg-blue-500 rounded-full text-white hover:bg-blue-600"
+                    >
+                      Crop
+                    </button>
+                  </>
                 )}
               </div>
             ))}
@@ -375,6 +449,15 @@ const AddProduct = ({onCancel,onProductAdded}) => {
           </button>
         </div>
       </form>
+      {showCropper && (
+      <ImageCropper
+        onCropComplete={handleCroppedImage}
+        onCancel={() => {
+          setShowCropper(false);
+          setCurrentImageNum(null);
+        }}
+      />
+    )}
     </div>
  
   );

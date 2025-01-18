@@ -5,7 +5,7 @@ import axioInstence from '../../utils/axioInstence';
 import NavBar from '../../Components/Navbar';
 import Footer from '../../Components/Footer'
 import Pagination from '../../Components/Pagination';
-import { fetchCategories } from '../../services/authService';
+import { fetchCategories, fetchFilterProducts } from '../../services/authService';
 import OutOfStockSign from '../../Components/OutOfStockBanner';
 
 const CakePage = () => {
@@ -95,10 +95,8 @@ const CakePage = () => {
   },[])
 
   const filteredProducts = products.filter((product) =>
-    product.productName.toLowerCase().includes(searchTerm.toLowerCase())
+    product.productName.toLowerCase().startsWith(searchTerm.toLowerCase())
   );
-
-
 
 
 

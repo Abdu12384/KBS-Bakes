@@ -1,6 +1,7 @@
 const Order = require('../../model/orderModel'); 
 const User = require('../../model/userModel'); 
 const Product = require('../../model/productModal'); 
+const Category = require('../../model/category')
 const Cart = require('../../model/cartModel')
 const razorpay = require('../../config/razorpay')
 const Coupon = require('../../model/couponModel')
@@ -8,6 +9,7 @@ const Wallet = require('../../model/walletModel')
 const PDFDocument = require('pdfkit');
 const crypto = require('crypto')
 const { v4: uuidv4 } = require('uuid'); 
+
 
 
 const placeOrder = async (req, res) => {
@@ -20,57 +22,64 @@ const placeOrder = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    // let shippingCharge =0
+
+    const products = [];
+    for (const item of cartItems) {
+      const productId = item.product?._id;
+      const variantId = item.variant;
+
+      if (!productId) {
+        return res.status(400).json({ message: `Invalid product details in cart item: ${JSON.stringify(item)}` });
+      }
+
+      const product = await Product.findById(productId);
+
+      if (!product || product.isDeleted) {
+        return res.status(400).json({ message: `Product with ID '${product.productName}' is not available for purchase.` });
+      }
+
+      const variant = product.variants.find(v => v._id.toString() === variantId);
+
+      if (!variant) {
+        return res.status(400).json({ message: `Variant with ID ${variantId} not found for product ${product._id}` });
+      }
+
+      if (variant.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for product: ${product.productName}` });
+      }
 
 
-    const products = await Promise.all(
-      cartItems.map(async (item) => {
-        const productId = item.product?._id
-        const variantId = item.variant
-    
-    
-        if (!productId) {
-          throw new Error(`Invalid product details in cart item: ${JSON.stringify(item)}`);
-        }
-        
-        const product = await Product.findById(productId);
-         console.log('placeorder',product);
-         
+      variant.stock -= item.quantity;
+      product.salesCount = (product.salesCount || 0) + item.quantity;
 
-        if (!product) {
-          throw new Error(`Product with ID ${item.productId} not found.`);
-        }
+      if (product.category) {
+        await Category.findByIdAndUpdate(
+          product.category,
+          { $inc: { salesCount: item.quantity } },
+          { new: true }
+        );
+      }
 
-        const variant = product.variants.find(v => v._id.toString() === variantId);
+      await product.save();
 
-        if (!variant) {
-          throw new Error(`Variant with ID ${variantId} not found for product ${product._id}`);
-        }
-
-        if (variant.stock < item.quantity) {
-          return res.status(400).json({message:`Insufficient stock for product: ${product.productName}`})
-        }
-
-        
-         console.log('here the stock informantion',variant.stock);
-         
-         variant.stock-= item.quantity;
-        await product.save();
-
-        return {
-          productId: product._id,
-          variantId: variantId,
-          quantity: item.quantity,
-          price: variant.salePrice || variant.regularPrice, 
-          totalPrice: variant.salePrice || variant.regularPrice * item.quantity
-        };
-      })
-    );
-
+      // Push to products array
+      products.push({
+        productId: product._id,
+        variantId: variantId,
+        productName: product.productName, 
+        productImage: product.images[0], 
+        quantity: item.quantity,
+        price: variant.salePrice || variant.regularPrice,
+        totalPrice: (variant.salePrice || variant.regularPrice) * item.quantity,
+      });
+    }
     
     const { discount = 0, totalGST,subtotal ,total,gstRate , shippingCharge } = cartSummary || {};
     
 
+    if (paymentMethods === 'COD' && total > 1000) {
+      return res.status(400).json({ message: 'Orders above Rs. 1000 cannot be placed with COD.' });
+    }
 
 
     const newOrder = new Order({
@@ -127,45 +136,58 @@ const handleFailedPayment = async (req, res) => {
     }
 
 
-    const products = await Promise.all(
-      cartItems.map(async (item) => {
-        const productId = item.product?._id;
-        const variantId = item.variant;
 
-        if (!productId || !variantId) {
-          throw new Error(`Invalid cart item: ${JSON.stringify(item)}`);
-        }
+    const products = [];
+for (const item of cartItems) {
+  const productId = item.product?._id;
+  const variantId = item.variant;
 
-        const product = await Product.findById(productId);
-        if (!product) {
-          throw new Error(`Product with ID ${productId} not found.`);
-        }
+  if (!productId || !variantId) {
+    return res.status(400).json({ message: `Invalid cart item: ${JSON.stringify(item)}` });
+  }
 
-        const variant = product.variants.find(v => v._id.toString() === variantId);
-        if (!variant) {
-          throw new Error(`Variant with ID ${variantId} not found for product ${product._id}`);
-        }
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({ message: `Product with ID ${productId} not found.` });
+  }
 
-        if (variant.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product: ${product.name}`);
-        }
+  const variant = product.variants.find(v => v._id.toString() === variantId);
+  if (!variant) {
+    return res.status(404).json({ message: `Variant with ID ${variantId} not found for product ${product._id}` });
+  }
+
+  if (variant.stock <= item.quantity) {
+    return res.status(400).json({ message: `Insufficient stock for product: ${product.name}` });
+  }
 
 
-        variant.stock -= item.quantity;
-        await product.save();
+  variant.stock -= item.quantity;
+  product.salesCount = (product.salesCount || 0) + item.quantity;
 
-        return {
-          productId: product._id,
-          variantId,
-          quantity: item.quantity,
-          price: item.variantDetails.salePrice,
-          paymentStatus: 'pending', 
-        };
-      })
+  if (product.category) {
+    await Category.findByIdAndUpdate(
+      product.category,
+      { $inc: { salesCount: item.quantity } },
+      { new: true }
     );
+  }
+
+  await product.save();
+
+  products.push({
+    productId: product._id,
+    variantId,
+    productName: product.productName, 
+    productImage: product.images[0], 
+    quantity: item.quantity,
+    price: item.variantDetails.salePrice,
+    paymentStatus: 'pending',
+  });
+}
 
     const { discount = 0, totalGST, subtotal, total, gstRate, shippingCost } = cartSummary || {};
 
+    
 
     const newOrder = await Order.create({
       userId: req.user.id,
@@ -213,7 +235,12 @@ const getAllOrders = async (req, res) => {
   try {
 
     const orders = await Order.find({ userId: req.user?.id })
-      .sort({ orderDate: -1 });
+      .sort({ orderDate: -1 })
+      .populate({
+        path: 'products.productId', 
+        select: 'productName images ', 
+      });
+
       console.log(orders);
       
     
@@ -258,6 +285,7 @@ const getOrderDetails = async (req, res) => {
 
 const cancelOrder = async (req, res) =>{
    const {orderId} = req.params
+   const {reason} = req.body
 
    try {
 
@@ -273,26 +301,52 @@ const cancelOrder = async (req, res) =>{
 
     let refundAmount = 0
    
+  for(const product of order.products){
+    if(!product.isCanceled){
+      refundAmount += product.price * product.quantity
+      product.isCanceled = true
 
-    order.products.forEach((product)=>{
-      if(!product.isCanceled){
-        refundAmount += product.price * product.quantity 
-       product.isCanceled = true  
-       if (order.paymentInfo === 'razorpay' || order.paymentInfo === 'Wallet') {
-        product.paymentStatus = 'refunded'
-      }else if( order.paymentInfo === 'COD'){
-        product.paymentStatus = 'failed'
-      }
-      }
-    })
+      if (order.paymentInfo === 'razorpay' || order.paymentInfo === 'Wallet' || order.paymentStatus === 'completed') {
+        product.paymentStatus = 'refunded';
+          order.paymentStatus = 'refunded'
 
-    
+      } else if (order.paymentInfo === 'COD') {
+        product.paymentStatus = 'failed';
+        order.paymentStatus = 'failed';
+
+      }
+      const dbProduct = await Product.findById(product.productId).populate('category');
+        if (dbProduct) {
+
+          product.productName = dbProduct.productName
+          product.productImage = dbProduct.images[0]
+
+
+          const variant = dbProduct.variants.find(v => v._id.toString() === product.variantId.toString());
+           
+           variant.stock= Math.max(0, variant.stock + product.quantity); 
+
+          dbProduct.salesCount = Math.max(0, (dbProduct.salesCount || 0) - product.quantity);
+
+          if (dbProduct.category) {
+            await Category.findByIdAndUpdate(
+              dbProduct.category._id,
+              { $inc: { salesCount: -product.quantity } }, 
+              { new: true }
+            );
+          }
+
+          await dbProduct.save();
+      }
+    }
+  }
+
     
     order.status = 'cancelled'
+    order.cancelReason = reason
 
 
-
-    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay' || order.paymentStatus === 'completed') {
       const wallet = await Wallet.findOne({ user: order.userId });
 
       if (!wallet) {
@@ -347,7 +401,6 @@ const cancelOrder = async (req, res) =>{
     return res.status(500).json({ success: false, message: 'Failed to cancel order' });
    }
 
-
 }
 
 
@@ -379,20 +432,26 @@ const cancelProduct = async (req, res)=>{
 
     product.isCanceled = true
 
-    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
+    if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay' || order.paymentStatus === 'completed') {
       product.paymentStatus = 'refunded';
     }
 
 
     order.totalPrice = order.products.reduce(
-      (total, product) => total + product.price * product.quantity,0
+      (total, product) => product.isCanceled ? total  : total + product.price * product.quantity,0
     )
+
+    const allProductsCanceled = order.products.every((product) => product.isCanceled);
+
+    if (allProductsCanceled) {
+      order.status = 'cancelled'; 
+    }
 
     await order.save()
     console.log('after cancell product',order);
     
 
-    console.log('pymentmethod',order.paymentInfo);
+
     
 
     if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay') {
@@ -403,7 +462,7 @@ const cancelProduct = async (req, res)=>{
       }
 
       const wallet = await Wallet.findOne({user:order.userId})
-      console.log('wallet in the refund cancel',wallet);
+
       
 
       if (!wallet) {
@@ -498,7 +557,7 @@ const rezorpayLoad = async (req, res)=>{
       id: order.id,
       amount: order.amount,
       currency: order.currency,
-      key_id: process.env.RAZORPAY_KEY_ID // Send key_id from backend
+      key_id: process.env.RAZORPAY_KEY_ID 
     });
      } catch (error) {
     console.error("Error creating Razorpay order:", error);
@@ -538,52 +597,58 @@ const varifyPayment =  async (req, res) => {
       .digest("hex");
 
 
-
   
-        const products = await Promise.all(
-          cartItems.map(async (item) => {
-            const productId = item.product?._id
-            const variantId = item.variant
-        
-            console.log(productId,variantId);
-            
-            if (!productId) {
-              throw new Error(`Invalid product details in cart item: ${JSON.stringify(item)}`);
-            }
-            
-            const product = await Product.findById(productId);
-             console.log('placeorder',product);
-             
-    
-            if (!product) {
-              throw new Error(`Product with ID ${item.productId} not found.`);
-            }
-    
-            const variant = product.variants.find(v => v._id.toString() === variantId);
-    
-            if (!variant) {
-              throw new Error(`Variant with ID ${variantId} not found for product ${product._id}`);
-            }
-    
-            if (variant.stock < item.quantity) {
-              throw new Error(`Insufficient stock for product: ${product.name}`);
-            }
-    
-    
-             console.log('here the stock informantion',variant.stock);
-             
-             variant.stock-= item.quantity;
-            await product.save();
-    
-            return {
-              productId: product._id,
-              variantId: variantId,
-              quantity: item.quantity,
-              price: item.variantDetails.salePrice, 
-            };
-          })
+      
+    const products = [];
+    for (const item of cartItems) {
+      const productId = item.product?._id;
+      const variantId = item.variant;
+
+      if (!productId) {
+        return res.status(400).json({ message: `Invalid product details in cart item: ${JSON.stringify(item)}` });
+      }
+
+      const product = await Product.findById(productId);
+
+      if (!product || product.isDeleted) {
+        return res.status(400).json({ message: `Product with ID ${productId} is not available for purchase.` });
+      }
+
+      const variant = product.variants.find(v => v._id.toString() === variantId);
+
+      if (!variant) {
+        return res.status(400).json({ message: `Variant with ID ${variantId} not found for product ${product._id}` });
+      }
+
+      if (variant.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for product: ${product.productName}` });
+      }
+
+
+      variant.stock -= item.quantity;
+      product.salesCount = (product.salesCount || 0) + item.quantity;
+
+      if (product.category) {
+        await Category.findByIdAndUpdate(
+          product.category,
+          { $inc: { salesCount: item.quantity } },
+          { new: true }
         );
-    
+      }
+
+      await product.save();
+
+
+      products.push({
+        productId: product._id,
+        variantId: variantId,
+        productName: product.productName, 
+        productImage: product.images[0], 
+        quantity: item.quantity,
+        price: variant.salePrice || variant.regularPrice,
+        totalPrice: (variant.salePrice || variant.regularPrice) * item.quantity,
+      });
+    }
        
 
     const { discount = 0, totalGST,subtotal ,total,gstRate , shippingCharge } = cartSummary || {};
@@ -720,8 +785,8 @@ const couponApply = async(req, res)=>{
       const discount =  Math.floor((cartSummary.totalPrice * coupon.discount) / 100) ;
       const discountedTotal = Math.floor(cartSummary.totalPrice - discount);
 
-     if(discount > coupon.maxAmount){
-      return res.status(400).json({ message: `Cart subtotal must not exceed ₹${coupon.maxAmount} to use this coupon`});
+     if(cartSummary.totalPrice > coupon.maxAmount){
+      return res.status(400).json({ message: `Discount cannot exceed ₹${coupon.maxAmount}. Your discount is limited to ₹${coupon.maxAmount}`});
      }
    
 

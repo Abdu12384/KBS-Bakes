@@ -9,6 +9,7 @@ const chalk = require('chalk');
 const jwt = require('jsonwebtoken')
 const { response } = require('express')
 const { text } = require('stream/consumers')
+const { log } = require('console')
 
 
 
@@ -165,7 +166,7 @@ const insertUser = async(req,res)=>{
 
  const varifyOTP = async (req,res)=>{
    const {email, otp}= req.body
-    // console.log('this comming otp',otpCode);
+    console.log('this comming otp',req.body);
     
    try {
      const otpRecord = await OTP.findOne({email, otp})
@@ -183,10 +184,13 @@ const insertUser = async(req,res)=>{
         email: otpRecord.email,
         password: otpRecord.password,
         mobile: otpRecord.mobile,
-        isActive:user.isActive
+        isActive:true
       })
        
+      
       await user.save()
+      console.log(user);
+      
 
       const deleteResult =await OTP.deleteOne({email,otp})
        console.log(deleteResult);

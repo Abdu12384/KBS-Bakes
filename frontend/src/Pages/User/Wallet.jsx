@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import Pagination from '../../Components/Pagination';
 import NavBar from '../../Components/Navbar';
 import {fetchWalletInfo, addMoneyToWallet}  from '../../services/authService'
+import { BreadcrumbUserDhbrd } from '../../Components/BrudCrums';
 
 
 
@@ -68,12 +69,19 @@ const handleAddMoneyToWallet = async () => {
   const paginatedTransactions = transactions.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
 
+  const breadcrumbItems = [
+    { label: 'Home', url: '/' },
+    { label: 'Dashboard', url: '/user/dashboard' },
+    { label: 'wallet', url: null }, 
+  ];
+
   return (
     <>
       <NavBar/>
     <div className="min-h-screen bg-gray-50/50">
           <Toaster position="top-right" reverseOrder={false}/>
       <div className="max-w-6xl mx-auto p-6">
+      <BreadcrumbUserDhbrd items={breadcrumbItems}/>
         {/* Balance Card */}
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 mb-8 shadow-lg">
           <div className="flex justify-between items-start">

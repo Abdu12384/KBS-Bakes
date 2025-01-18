@@ -40,6 +40,10 @@ const CategorySchema = new mongoose.Schema({
     default:false
   },
   offer: OfferSchema, 
+  salesCount: {
+    type: Number,
+    default: 0 
+  }
 },
 {
   timestamps:true

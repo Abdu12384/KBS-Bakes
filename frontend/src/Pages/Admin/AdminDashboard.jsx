@@ -11,43 +11,14 @@ export const AdminDashboard = () => {
   const [topCategories, setTopCategories] = useState([])
   const [stats, setStats] = useState([]);
   const [timePeriod, setTimePeriod] = useState('Monthly')
+  const [chartData, setChartData] = useState([]); // State for chart data
+
   
-  const monthlyData = [
-    { name: 'Jan', revenue: 4000, expenses: 2400 },
-    { name: 'Feb', revenue: 3000, expenses: 1398 },
-    { name: 'Mar', revenue: 2000, expenses: 1800 },
-    { name: 'Apr', revenue: 2780, expenses: 2908 },
-    { name: 'May', revenue: 1890, expenses: 4800 },
-    { name: 'Jun', revenue: 2390, expenses: 3800 },
-  ];
-  
-  // const bestSellingProducts = [
-    //   { name: "Product A", sales: 1245, revenue: "₹62,250" },
-    //   { name: "Product B", sales: 986, revenue: "₹49,300" },
-    //   { name: "Product C", sales: 756, revenue: "₹37,800" },
-    //   { name: "Product D", sales: 654, revenue: "₹32,700" },
-    //   { name: "Product E", sales: 432, revenue: "₹21,600" },
-    // ];
+
+ 
     
-    console.log('bestselling',bestSellingProducts);
-    
-    
-    // const topCategories = [
-  //   { name: "Electronics", sales: 3245 },
-  //   { name: "Clothing", sales: 2986 },
-  //   { name: "Home & Garden", sales: 2756 },
-  //   { name: "Sports", sales: 2154 },
-  //   { name: "Books", sales: 1932 },
-  // ];
-  
-  const topBrands = [
-    { name: "Brand X", sales: 5245 },
-    { name: "Brand Y", sales: 4986 },
-    { name: "Brand Z", sales: 4756 },
-    { name: "Brand A", sales: 3654 },
-    { name: "Brand B", sales: 3432 },
-  ];
-  
+    console.log('bestselling',bestSellingProducts)
+
   
   const fetchDashboardInfo = async (period) => {
     
@@ -91,6 +62,26 @@ const handleTimePeriodChange = (event) => {
 
 
 
+
+useEffect(() => {
+  const fetchChartData = async () => {
+
+    try {
+      const response = await axioInstence.get(`/admin/dashboard/chart-data?period=${timePeriod}`);
+      setChartData(response.data); 
+      console.log('chart',response);
+      
+    } catch (err) {
+      console.error('Error fetching chart data:', err);
+      setError('Failed to fetch chart data. Please try again.');
+    } 
+  };
+
+  fetchChartData();
+}, [timePeriod]);
+
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#4A1D2C]  via-[#8B3A4A] to-[#4A1D2C] p-6 text-white">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
@@ -126,7 +117,7 @@ const handleTimePeriodChange = (event) => {
             </select>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
               <XAxis dataKey="name" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
@@ -141,17 +132,16 @@ const handleTimePeriodChange = (event) => {
           <h2 className="text-xl font-semibold mb-6">Best Selling Products</h2>
           {bestSellingProducts?.map((product, index) => (
             <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
+              <span className="text-gray-400 text-sm font-semibold mr-4">{index + 1}</span>
                 <img
-                   src={product?.productImage[0]}
+                   src={product?.images[0]}
                    alt={product?.productName}
                    className="w-14 h-14 object-cover  rounded-md"
                     />
-              <div className="flex items-center">
-                <span className="text-gray-400 mr-4">{index + 1}</span>
+              <div className="flex flex-1 items-center ml-4">
                 <div>
-                  <p className="font-medium">{product?.productName
-                  }</p>
-                  <p className="text-sm text-gray-400">{product?.totalSales} sales</p>
+                  <p className="font-medium text-white">{product?.productName}</p>
+                  <p className="text-sm text-gray-400">{product?.salesCount} sales</p>
                 </div>
               </div>
               <span className="font-medium">{product?.revenue}</span>
@@ -165,18 +155,8 @@ const handleTimePeriodChange = (event) => {
           <h2 className="text-xl font-semibold mb-6">Top Categories</h2>
           {topCategories.map((category, index) => (
             <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
-              <span>{category?.categoryName}</span>
-              <span className="font-medium">{category?.totalSales}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-[#2D1721]/40 backdrop-blur-md rounded-xl p-6 border border-white/5">
-          <h2 className="text-xl font-semibold mb-6">Top Brands</h2>
-          {topBrands.map((brand, index) => (
-            <div key={index} className="flex justify-between items-center mb-4 last:mb-0">
-              <span>{brand.name}</span>
-              <span className="font-medium">{brand.sales}</span>
+              <span>{category?.name}</span>
+              <span className="font-medium">{category?.salesCount}</span>
             </div>
           ))}
         </div>

@@ -4,7 +4,9 @@ const Wallet = require('../../model/walletModel')
 const { v4: uuidv4 } = require('uuid'); 
 const { PDFDocument, rgb,StandardFonts } = require('pdf-lib');
 const path = require('path');
+const Product = require('../../model/productModal')
 const fs = require('fs')
+const Category = require('../../model/category')
 
 const loadOrderDetails = async (req, res) => {
 
@@ -42,6 +44,13 @@ const loadOrderDetails = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
 const updateOrderStatus = async(req, res) =>{
   const {id} = req.params
   const {status} = req.body
@@ -51,6 +60,13 @@ const updateOrderStatus = async(req, res) =>{
     const order = await Orders.findById(id)
     
     if(!order) return res.status(404).json({message: 'Order not found'})
+
+      if (order.status.toLowerCase() === 'delivered') {
+        return res.status(400).json({ 
+          message: 'Order is already delivered, no further status changes are allowed' 
+        });
+      }
+  
       
       order.status = status
       
@@ -86,8 +102,85 @@ const cancelOrder = async(req, res) => {
     const order = await Orders.findById(id)
     
     if(!order) return res.status(404).json({message:'Order not found'})
-      
+
+      if(order.status === 'delivered'){
+        return res.status(400).json({message:'Delivered orders cannot be cancelled'})
+      }
+
+      let refundAmount = 0
+
+      for (const product of order.products){
+        if(!product.isCanceled){
+          refundAmount += product.price * product.quantity
+          product.isCanceled = true
+
+          if (order.paymentInfo === 'razorpay' || order.paymentInfo === 'Wallet' || order.paymentStatus === 'completed') {
+            product.paymentStatus = 'refunded';
+            order.paymentStatus = 'refunded'
+
+          } else if (order.paymentInfo === 'COD') {
+            product.paymentStatus = 'failed';
+            order.paymentStatus = 'failed';
+          }
+
+          const dbProduct = await Product.findById(product.productId).populate('category');
+          if (dbProduct) {
+            dbProduct.salesCount = Math.max(0, (dbProduct.salesCount || 0) - product.quantity);
+  
+            if (dbProduct.category) {
+              await Category.findByIdAndUpdate(
+                dbProduct.category._id,
+                { $inc: { salesCount: -product.quantity } },
+                { new: true }
+              );
+            }
+  
+            await dbProduct.save();
+          }
+        }
+      }
+
       order.status = 'cancelled'
+
+
+      if (order.paymentInfo === 'Wallet' || order.paymentInfo === 'razorpay' || order.paymentStatus === 'completed') {
+        const wallet = await Wallet.findOne({ user: order.userId });
+  
+        if (!wallet) {
+          const newWallet = new Wallet({
+            user: order.userId,
+            balance: refundAmount,
+            transactions: [{
+              transactionId: uuidv4(),
+              description: `Refund for cancelled order #${order._id.toString().slice(0, 8)}`,
+              amount: refundAmount,
+              type: 'credit',
+              status: 'completed',
+              date: new Date()
+            }]
+          });
+          await newWallet.save();
+        } else {
+          await Wallet.findOneAndUpdate(
+            { user: order.userId },
+            {
+              $inc: { balance: refundAmount },
+              $push: {
+                transactions: {
+                  transactionId: uuidv4(),
+                  description: `Refund for cancelled order #${order._id.toString().slice(0, 8)}`,
+                  amount: refundAmount,
+                  type: 'credit',
+                  status: 'completed',
+                  date: new Date()
+                }
+              }
+            }
+          );
+        }
+        console.log(`Refund of ${refundAmount} processed for user: ${order.userId}`);
+      }
+
 
       await order.save()
     
@@ -96,6 +189,12 @@ const cancelOrder = async(req, res) => {
     res.status(500).json({message: error.message})
   }
 }
+
+
+
+
+
+
 
 
 const updateReturnRequest = async (req, res) => {
@@ -217,6 +316,13 @@ const updateReturnRequest = async (req, res) => {
       });
   }
 };
+
+
+
+
+
+
+
 
 
 const exportPdf = async(req, res)=>{

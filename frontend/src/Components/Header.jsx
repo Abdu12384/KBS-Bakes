@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X,User, ShoppingCart,CakeSlice, User2, LogOut, LogIn } from 'lucide-react';
+import { Menu, X,User, ShoppingCart,CakeSlice, User2, LogOut, LogIn, Heart } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 // import { logout } from '../redux/slices/authSlice';
 import { userLogout } from '../redux/slices/authSlice';
@@ -158,6 +158,9 @@ const Header = () => {
               </div>
               <a href="/user/cart" className="text-white hover:text-[#d8cbc4]">
                 <ShoppingCart className="h-6 w-6" />
+              </a>
+              <a href="/user/wishlist" className="text-white hover:text-[#d8cbc4]">
+                <Heart className="h-6 w-6" />
               </a>
 
             

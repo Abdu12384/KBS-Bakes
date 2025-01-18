@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, MapPin, Truck, ChevronRight, CreditCard, Wallet, Building, Tag, ShieldCheck, Lock, DollarSign, Calendar,Percent,Copy,X  } from 'lucide-react';
+import { Home, MapPin, Truck, ChevronRight, CreditCard, Wallet, Building, Tag, ShieldCheck, Lock, DollarSign,X  } from 'lucide-react';
 import toast, { Toaster } from "react-hot-toast";
 import { OrderAnimation } from '../../Components/cakeAnimation';
 import CouponCard from '../../Components/Coupon';
@@ -7,6 +7,7 @@ import NavBar from '../../Components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { fetchCartItems, deductFromWallet, initiatePayment, verifyPayment, PaymentFailed } from '../../services/authService';
 import { fetchAddressDetails, fetchWalletBalance, placeOrder, applyCoupon } from '../../services/authService';
+import AddressForm from '../../Components/UserComponents/AddressForm';
 
 
 
@@ -25,6 +26,7 @@ const CheckoutPage = () => {
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0].id);
   const [loading, setLoading] = useState(false)
    const [cartItems , setCartItems] = useState([])
+   const [showAddressForm, setShowAddressForm] = useState(false); 
    const [cartSummary, setCartSummary] = useState({
     subtotal: 0,
     shippingCharge: 0,
@@ -178,6 +180,9 @@ const CheckoutPage = () => {
    },[])
 
    
+   const handleSaveAddress = () => {
+    setShowAddressForm(false); 
+  };
 
 
 
@@ -244,7 +249,7 @@ const CheckoutPage = () => {
                         toast.error(verifyResponse.message || 'Payment verification failed');
                     }
                 } catch (error) {
-                    toast.error('Payment Verification Error');
+                    toast.error(error.response.data.message);
                     console.error('Verification Error:', error);
                 }
             },
@@ -295,7 +300,7 @@ const CheckoutPage = () => {
                     setLoading(true);
                     setTimeout(() => {
                         setLoading(false);
-                        navigate('/user/order-success');
+                        navigate('/user/order-failed');
                     }, 2000);
                 }, 1000);
                  
@@ -462,7 +467,23 @@ const handleApplyCoupon = async () => {
                     </div>
                   ))}
                 </div>
+                <button
+                onClick={() => setShowAddressForm(true)}
+                className="bg-purple-600 text-white px-4 py-2 rounded mt-4"
+              >
+                Add New Address
+              </button>
               </div>
+                  {showAddressForm && (
+                  <div className="bg-gray-50 rounded-xl shadow-sm p-6 mt-4">
+                    <button
+                     onClick={()=>setShowAddressForm(false)}
+                    >
+                    <X/>
+                    </button>
+                    <AddressForm onSubmit={handleSaveAddress}/>
+                  </div>
+                )}
             </div>
 
             {/* Delivery Options */}

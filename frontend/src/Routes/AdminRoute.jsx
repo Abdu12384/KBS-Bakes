@@ -20,7 +20,7 @@ function AdminRoute() {
          </Route>
 
          <Route element={<AdminProtectRoute/>}>
-          <Route path="/" element={<AdminLayout />} >
+               <Route path="/" element={<AdminLayout />} >
                 <Route index element={<AdminDashboard />} />
                 <Route path='dashboard' element={<AdminDashboard />} /> 
                 <Route path="orders" element={<OrdersPage />} />

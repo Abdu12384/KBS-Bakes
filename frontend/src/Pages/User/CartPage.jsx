@@ -4,6 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from 'react-router-dom';
 import NavBar from '../../Components/Navbar';
 import { fetchCartItems, removeCartItem, updateCartItemQuantity } from '../../services/authService';
+import { BreadcrumbUserDhbrd } from '../../Components/BrudCrums';
 const CartPage = () => {
   const [cartsummury, setCartSummury]= useState()
   const [items, setItems] = useState([]);
@@ -71,6 +72,13 @@ const handleUpdateQuantity = async (id, change) => {
 };
 
 
+const breadcrumbItems = [
+  { label: 'Home', url: '/' },
+  { label: 'Dashboard', url: '/user/dashboard' },
+  { label: 'cart', url: null }, 
+];
+
+
   return (
     <>
       <NavBar/>
@@ -93,6 +101,7 @@ const handleUpdateQuantity = async (id, change) => {
         }
       `}</style>
       <div className="max-w-7xl mx-auto p-8">
+      <BreadcrumbUserDhbrd  items={breadcrumbItems}/>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Cart Section */}
           <div className="flex-grow">

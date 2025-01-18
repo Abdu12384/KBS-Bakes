@@ -38,6 +38,9 @@ try {
   
 }
 }
+
+
+
   return (
     <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 max-w-md mx-auto">
 

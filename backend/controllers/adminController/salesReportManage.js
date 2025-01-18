@@ -168,13 +168,14 @@ const generatePDFReport = async (req, res) => {
     doc.text('Order Details', 50, 150);
 
     const orderTable = {
-      headers: ['Order ID', 'Product', 'Quantity', 'Date', 'Customer', 'Total'],
+      headers: ['Order ID', 'Product', 'Quantity', 'Date', 'Customer','Discount', 'Total'],
       rows: orders.map(order => [
         order._id.toString().slice(-6),
         order.products[0]?.productId?.productName || '',
         order.products[0]?.quantity.toString() || '',
         new Date(order.orderDate).toLocaleDateString(),
         order.userId?.fullName || '',
+        `₹${(order.discount || 0).toLocaleString()}`,
         `₹${order.totalPrice.toLocaleString()}`
       ])
     };
@@ -340,15 +341,23 @@ const salesData =  async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
 const generateExcelReport = async (req, res) => {
   try {
     const { timeFilter, sortBy = 'orderDate', sortOrder = -1 } = req.query;
     
-
-
     const dateFilter = {};
     const now = new Date();
     let startDate = new Date();
+    let dateRangeText = 'All Time';
     
     if (timeFilter !== 'All Time') {
       switch (timeFilter) {
@@ -367,12 +376,13 @@ const generateExcelReport = async (req, res) => {
       }
       dateFilter.orderDate = { $gte: startDate };
     }
+
     const orders = await Order.find(dateFilter)
       .sort({ [sortBy]: parseInt(sortOrder) })
       .populate('userId')
       .populate('products.productId');
 
-    // Calculate summary
+
     const summary = {
       totalOrders: orders.length,
       totalRevenue: orders.reduce((sum, order) => sum + order.totalPrice, 0),
@@ -381,74 +391,72 @@ const generateExcelReport = async (req, res) => {
         orders.reduce((sum, order) => sum + order.totalPrice, 0) / orders.length : 0
     };
 
-    // Create Excel workbook
     const workbook = new exceljs.Workbook();
     workbook.creator = 'Your Company Name';
     workbook.created = new Date();
 
-    // Add Summary worksheet
-    const summarySheet = workbook.addWorksheet('Summary');
-    summarySheet.columns = [
-      { header: 'Metric', key: 'metric', width: 20 },
-      { header: 'Value', key: 'value', width: 20 }
+
+    const mainSheet = workbook.addWorksheet('Sales Report');
+    
+
+    mainSheet.columns = [
+      { width: 15 }, { width: 30 }, { width: 15 }, 
+      { width: 20 }, { width: 20 }, { width: 15 }
     ];
 
-    // Style the header
-    summarySheet.getRow(1).font = { bold: true };
-    summarySheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF2C3E50' }
+
+    mainSheet.mergeCells('A1:F1');
+    const titleRow = mainSheet.getRow(1);
+    titleRow.getCell(1).value = 'Sales Report';
+    titleRow.getCell(1).font = { 
+      name: 'Arial',
+      size: 20,
+      bold: true,
+      color: { argb: 'FF2196F3' }
     };
-    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    titleRow.height = 30;
 
-    // Add summary data
-    summarySheet.addRows([
-      { metric: 'Total Orders', value: summary.totalOrders },
-      { metric: 'Total Revenue', value: `₹${summary.totalRevenue.toFixed(2)}` },
-      { metric: 'Total Discount', value: `₹${summary.totalDiscount.toFixed(2)}` },
-      { metric: 'Average Order Value', value: `₹${summary.averageOrderValue.toFixed(2)}` }
-    ]);
 
-    // Add Orders worksheet
-    const ordersSheet = workbook.addWorksheet('Order Details');
-    ordersSheet.columns = [
-      { header: 'Order ID', key: 'orderId', width: 15 },
-      { header: 'Product', key: 'product', width: 30 },
-      { header: 'Quantity', key: 'quantity', width: 10 },
-      { header: 'Date', key: 'date', width: 15 },
-      { header: 'Customer', key: 'customer', width: 20 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Discount', key: 'discount', width: 15 },
-      { header: 'Total', key: 'total', width: 15 }
+    mainSheet.addRow([]);
+    for (let col = 1; col <= 6; col++) {
+      const cell = mainSheet.getRow(2).getCell(col);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2196F3' }
+      };
+    }
+    mainSheet.getRow(2).height = 2;
+
+
+    mainSheet.addRow([`Generated on: ${new Date().toLocaleString()}`]);
+    mainSheet.addRow([`Date Range: ${dateRangeText}`]);
+    mainSheet.addRow([]);
+
+
+    const summaryRow = mainSheet.addRow(['Summary']);
+    summaryRow.font = { bold: true, size: 12 };
+    mainSheet.addRow([]);
+
+
+    const summaryData = [
+      ['Total Orders', summary.totalOrders],
+      ['Total Revenue', `₹${summary.totalRevenue.toFixed(2)}`],
+      ['Total Discount', `₹${summary.totalDiscount.toFixed(2)}`],
+      ['Avg. Order Value', `₹${summary.averageOrderValue.toFixed(2)}`]
     ];
 
-    // Style the header
-    ordersSheet.getRow(1).font = { bold: true };
-    ordersSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF2C3E50' }
-    };
-    ordersSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-
-    // Add order data
-    orders.forEach(order => {
-      ordersSheet.addRow({
-        orderId: order._id.toString().slice(-6),
-        product: order.products[0]?.productId?.productName || '',
-        quantity: order.products[0]?.quantity || '',
-        date: new Date(order.orderDate).toLocaleDateString(),
-        customer: order.userId?.fullName || '',
-        status: order.status,
-        discount: order.discount ? `₹${order.discount.toFixed(2)}` : 'No Discount',
-        total: `₹${order.totalPrice.toFixed(2)}`
-      });
-    });
-
-    // Add some style to the data
-    ordersSheet.eachRow((row, rowNumber) => {
-      row.eachCell((cell) => {
+    // Add summary boxes with styling
+    summaryData.forEach((data, index) => {
+      const row = mainSheet.addRow([data[0], data[1]]);
+      const cells = [row.getCell(1), row.getCell(2)];
+      
+      cells.forEach(cell => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF5F5F5' }
+        };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -457,20 +465,84 @@ const generateExcelReport = async (req, res) => {
         };
       });
       
-      if (rowNumber % 2 === 0) {
-        row.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF8FAFC' }
-        };
-      }
+      cells[0].font = { bold: true, size: 10, color: { argb: 'FF666666' } };
+      cells[1].font = { size: 10 };
     });
 
-    // Set response headers
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
+    mainSheet.addRow([]);
+    mainSheet.addRow([]);
 
-    // Write to response
+    // Add Order Details section
+    const orderHeaderRow = mainSheet.addRow(['Order Details']);
+    orderHeaderRow.font = { bold: true, size: 12 };
+    mainSheet.addRow([]);
+
+    // Add order details table
+    const headers = ['Order ID', 'Product', 'Quantity', 'Date', 'Customer', 'Total','Discount'];
+    const headerRow = mainSheet.addRow(headers);
+    
+    // Style header row
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2196F3' }
+      };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+
+    orders.forEach((order, index) => {
+      const row = mainSheet.addRow([
+        order._id.toString().slice(-6),
+        order.products[0]?.productId?.productName || '',
+        order.products[0]?.quantity.toString() || '',
+        new Date(order.orderDate).toLocaleDateString(),
+        order.userId?.fullName || '',
+        `₹${order.totalPrice.toLocaleString()}`,
+        `₹${(order.discount || 0).toLocaleString()}`
+      ]);
+
+      // Add alternating row colors
+      row.eachCell((cell) => {
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF5F5F5' }
+          };
+        }
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+
+    // Add footer
+    mainSheet.addRow([]);
+    const footerRow = mainSheet.addRow(['Generated by Your Company Name']);
+    footerRow.getCell(1).font = { size: 8, color: { argb: 'FF666666' } };
+
+    // Set response headers
+    res.setHeader(
+      'Content-Type', 
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition', 
+      `attachment; filename=sales-report-${dateRangeText.replace(/\s/g, '-')}.xlsx`
+    );
+
+
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
@@ -478,6 +550,7 @@ const generateExcelReport = async (req, res) => {
     res.status(500).json({ error: 'Failed to generate Excel report' });
   }
 };
+
 
 
 

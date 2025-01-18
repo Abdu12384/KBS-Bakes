@@ -3,6 +3,7 @@ import axioInstence from '../../utils/axioInstence'
 import React,{useEffect, useState} from 'react'
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from '../../Components/Navbar';
+import { BreadcrumbUserDhbrd } from '../../Components/BrudCrums';
 
 
 
@@ -87,17 +88,18 @@ const handleVariantChange = (productId, variantId) => {
     [productId]: variantId
   }))
 }
+
+const breadcrumbItems = [
+  { label: 'Home', url: '/' },
+  { label: 'Dashboard', url: '/user/dashboard' },
+  { label: 'wishlist', url: null }, 
+];
   return (
     <>
       <NavBar/>
     <div className="max-w-6xl mx-auto px-4 py-8 bg-gray-50">
-      {/* Breadcrumb */}
+   <BreadcrumbUserDhbrd items={breadcrumbItems}/>
             <Toaster position="top-right" reverseOrder={false}/>
-      <div className="text-sm text-gray-500 mb-8 flex items-center">
-        <a href="#" className="hover:text-gray-700">HOME</a>
-        <span className="mx-2">/</span>
-        <span className="font-medium text-gray-700">WISHLIST</span>
-      </div>
 
       {/* Title */}
       <div className="text-center mb-12">

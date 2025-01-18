@@ -12,12 +12,14 @@ import UserDetailsForm from '../Components/UserComponents/AccountDetails'
 import AddressPage from '../Pages/User/AddressPage'
 import CartPage from '../Pages/User/CartPage'
 import CheckoutPage from '../Pages/User/CheckoutPage'
-import OrdersListPage from '../Pages/User/OrderDetails'
+import OrdersListPage from '../Components/UserComponents/OrderDetails'
 import ForgotPassword from '../Components/ForgotPassword'
 import ResetPassword from '../Components/ResetPassword'
 import Wishlist from '../Pages/User/Wishlist'
 import WalletPage from '../Pages/User/Wallet'
 import OrderConfirmation from '../Components/OrderSuccess'
+import OrderList from '../Pages/User/OrderInfo'
+import PaymentError from '../Components/PaymentFailed'
 function UserRoute() {
   return (
     <Routes>
@@ -38,10 +40,12 @@ function UserRoute() {
         <Route path='Address' element={<AddressPage/>}/> 
         <Route path='cart' element={<CartPage/>}/> 
         <Route path='checkout' element={<CheckoutPage/>}/> 
-        <Route path='orderdetails' element={<OrdersListPage/>}/> 
+        <Route path='orderdetails' element={<OrderList/>}/> 
         <Route path='wishlist' element={<Wishlist/>}/> 
         <Route path='wallet' element={<WalletPage/>}/> 
         <Route path='order-success' element={<OrderConfirmation/>}/> 
+        <Route path='order-failed' element={<PaymentError/>}/> 
+
         
     </Route>
           

@@ -8,6 +8,8 @@ import Breadcrumbs from './BrudCrums';
 import toast, { Toaster } from "react-hot-toast";
 import ProductList from './ProductList';
 import UserBreadcrumb from './UserBrudCrums';
+import NavBar from './Navbar';
+import Footer from './Footer';
 
 
 
@@ -136,6 +138,7 @@ const ProductDetails = () => {
 
   return (
     <div className="bg-gradient-to-br from-[#f3e7e0] to-[#d8cbc4] min-h-screen font-sans">
+      <NavBar/>
      <Toaster position="top-right" reverseOrder={false}/>
     <div className="container mx-auto px-4 py-8">
     <UserBreadcrumb productName={product?.productName || "Product"} />
@@ -350,6 +353,7 @@ const ProductDetails = () => {
         </div>
       </div>
       <ProductList/>
+      <Footer/>
     </div>
   )
 };

@@ -108,7 +108,11 @@ const prodcutSchema = new mongoose.Schema({
   type: Number, 
    required: true,
    default: 18, 
-  }
+  },
+  salesCount: {
+    type: Number,
+    default: 0, 
+  },
 },
 {
   timestamps:true

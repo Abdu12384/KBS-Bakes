@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const Order = require('../../model/orderModel')
 const Product = require('../../model/productModal')
-const category = require('../../model/category')
+const Category = require('../../model/category')
 
 
 
@@ -10,17 +10,18 @@ const getDashboardData = async (req, res) => {
 
   try {
       console.log(period);
-      
-    let matchCondition = {}
-    const currentDate = new Date()
-
-    if(period === 'Monthly'){
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(),1)
-      matchCondition = { createdAt: {$gte: startOfMonth}}
-    }else if (period === 'Yearly'){
-      const startOfYear = new Date(currentDate.getFullYear(),0,1)
-      matchCondition = {createdAt: {$gte: startOfYear}}
-    }
+      let startDate = new Date();
+      const currentDate = new Date();
+  
+      if (period === 'Monthly') {
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      } else if (period === 'Yearly') {
+        startDate = new Date(currentDate.getFullYear(), 0, 1);
+      } else {
+        startDate = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+  
+      const matchCondition = { createdAt: { $gte: startDate } };
 
     const stats = await Order.aggregate([
       {$match: matchCondition},
@@ -28,7 +29,7 @@ const getDashboardData = async (req, res) => {
         $group:{
           _id:null,
           totalRevenue:{$sum:'$totalPrice'},
-          totalOrders: {$count:{}}
+          totalOrders: {$sum:1}
         }
       },
       {
@@ -40,79 +41,49 @@ const getDashboardData = async (req, res) => {
       }
     ])
 
-
-    const bestSellingProducts = await Order.aggregate([
-      {$match: matchCondition},
-       {$unwind: '$products'},
-       {
-         $group: {
-          _id: "$products.productId",
-          totalSales: {$sum: "$products.quantity"},
-         },
-       },
-       {
-        $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "_id",
-          as: "productDetails"
-        },
-       },
-       {$unwind: "$productDetails"},
-       {
-        $project: {
-          _id:1,
-          productId:"$_id",
-          productName:"$productDetails.productName",
-          category: "$productDetails.category",
-          productImage: "$productDetails.images",
-          price: "$productDetails.variants.salePrice",
-          totalSales:1,
-        },
-       },
-       {$sort:{totalSales: -1}},
-       {$limit:5}
-    ])
-
-
-    const topCategories =  await Order.aggregate([
-      {$match: matchCondition},
-      {$unwind: '$products'},
+    const bestSellingProducts = await Product.aggregate([
       {
-        $lookup:{
-          from: 'products',
-          localField:'products.productId',
-          foreignField:'_id',
-          as:'productDetails',
+        $match:{
+          createdAt: {$gte: startDate}
         }
       },
-      {$unwind:'$productDetails'},
       {
-        $group:{
-          _id:'$productDetails.category',
-          totalSales: {$sum: '$products.quantity'},
-        },
+        $sort:{ salesCount: -1}
       },
       {
-        $lookup: {
-          from: 'categories',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'categoryDetails',
-        },
+        $limit: 5
       },
-      { $unwind: '$categoryDetails' },
       {
-        $project: {
-          _id: 0,
-          categoryId: '$_id',
-          categoryName: '$categoryDetails.name',
-          totalSales: 1,
-        },
-      },
-      { $sort: { totalSales: -1 } },
-      {$limit: 5}
+        $project:{
+          productName: 1,
+          images:1,
+          salesCount:1
+        } 
+      }
     ])
+    
+
+    const topCategories = await Category.aggregate([
+      {
+        $match:{
+          createdAt:{$gte: startDate}
+        }
+      },
+      {
+        $sort:{salesCount: -1}
+      },
+      {
+        $limit: 5
+      },
+      {
+        $project:{
+          name:1,
+          salesCount:1
+        }
+      }
+
+    ])
+
 
 
     const dashboardData = {
@@ -121,7 +92,7 @@ const getDashboardData = async (req, res) => {
       topCategories
     };
 
- console.log(dashboardData);
+ console.log(dashboardData)
  
 
     res.status(200).json({
@@ -146,6 +117,82 @@ const getDashboardData = async (req, res) => {
 
 
 
+
+const chartData = async (req, res) => {
+  const { period } = req.query;
+
+  try {
+    let startDate;
+    const currentDate = new Date();
+
+
+    if (period === 'Monthly') {
+      startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    } else if (period === 'Yearly') {
+      startDate = new Date(currentDate.getFullYear(), 0, 1);
+    } else {
+
+      const dayOfWeek = currentDate.getDay();
+      startDate = new Date(currentDate.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
+    }
+
+
+    const chartData = await Order.aggregate([
+      { $match: { createdAt: { $gte: startDate } } }, 
+      {
+        $group: {
+          _id: {
+            year: { $year: { date: '$createdAt', timezone: 'Asia/Kolkata' } },
+            ...(period === 'Yearly' ? {} : { month: { $month: { date: '$createdAt', timezone: 'Asia/Kolkata' } } }),
+            ...(period === 'Weekly' ? { week: { $week: { date: '$createdAt', timezone: 'Asia/Kolkata' } } } : {}),
+          },
+          revenue: { $sum: '$totalPrice' },
+          expenses: { $sum: '$totalExpenses' }, 
+        },
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1, '_id.week': 1 }, 
+      },
+      {
+        $project: {
+          name: {
+            $concat: [
+              period === 'Yearly'
+                ? { $toString: '$_id.year' }
+                : period === 'Monthly'
+                ? {
+                    $concat: [
+                      { $arrayElemAt: ['Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' '), { $subtract: ['$_id.month', 1] }] },
+                      ' ',
+                      { $toString: '$_id.year' },
+                    ],
+                  }
+                : {
+                    $concat: ['Week ', { $toString: '$_id.week' }, ' ', { $toString: '$_id.year' }],
+                  },
+            ],
+          },
+          revenue: 1,
+          expenses: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(chartData);
+  } catch (error) {
+    console.error('Error fetching chart data:', error);
+    res.status(500).json({ message: 'Failed to fetch chart data', error: error.message });
+  }
+};
+
+
+
+
+
+
+
+
 module.exports={
-  getDashboardData
+  getDashboardData,
+  chartData
 }

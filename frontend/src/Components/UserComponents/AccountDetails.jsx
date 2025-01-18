@@ -6,6 +6,7 @@ import {  EyeIcon, EyeOffIcon, UserCircle, Mail, Phone, Lock, Save, X, Camera  }
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from "../Navbar";
 import ConfirmationPopup from "../ConformButton";
+import { BreadcrumbUserDhbrd } from "../BrudCrums";
 
 
 
@@ -147,11 +148,19 @@ console.log(formData);
      }
   }
 
+  const breadcrumbItems = [
+    { label: 'Home', url: '/' },
+    { label: 'Dashboard', url: '/user/dashboard' },
+    { label: 'account-details', url: null }, 
+  ];
+  
+
 
   return (
     <>
       <NavBar/>
      <div className="min-h-screen bg-gradient-to-br from-[#f3e7e1] to-[#e7d5c9] py-12 px-4 sm:px-6 lg:px-8">
+       <BreadcrumbUserDhbrd items={breadcrumbItems}/>
             <Toaster position="top-right" reverseOrder={false}/>
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="bg-gradient-to-r from-amber-500 to-teal-500 p-8">

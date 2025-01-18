@@ -42,6 +42,10 @@ export default function AdminProductsPage() {
 }, [currentPage, productsPerPage, searchQuery, filterStatus]); 
 
 
+ const handleOnProductAdded = () =>{
+      setShowAddProduct(false)
+ } 
+
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value)
@@ -210,11 +214,11 @@ const handleRemoveOffer = async (productId)=>{
             </tr>
           </thead>
           <tbody>
-            {products.map((product, index) => (
+            {products?.map((product, index) => (
               <tr key={index} className="border-b border-gray-800 text-white">
                 <td className="py-4 flex items-center gap-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-700 rounded-lg">
-                    {product.images && product.images[0] && (
+                    {product?.images && product.images[0] && (
                       <img 
                         src={product.images[0]} 
                         alt={product.productName}
@@ -222,10 +226,10 @@ const handleRemoveOffer = async (productId)=>{
                       />
                     )}
                   </div>
-                  <span className="text-sm sm:text-base">{product.productName}</span>
+                  <span className="text-sm sm:text-base">{product?.productName}</span>
                 </td>
                 <td className="py-4 text-sm sm:text-base">
-                  {product.variants && product.variants.length > 0 ? (
+                  {product?.variants && product?.variants.length > 0 ? (
                     <div className="flex flex-col space-y-2">
                       {product.variants.map((variant, vIndex) => (
                         <div key={vIndex} className="flex flex-wrap items-center gap-2">
@@ -331,10 +335,7 @@ const handleRemoveOffer = async (productId)=>{
         {showAddProduct && (       
           <AddProduct
             onCancel={handleCancel}
-            onProductAdded={(newProduct) => {
-              setProducts((prevProducts) => [...prevProducts, newProduct])
-              setShowAddProduct(false)                
-            }}
+            onProductAdded={handleOnProductAdded}
           />  
         )}
 

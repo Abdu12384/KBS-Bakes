@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ShoppingCart, MoreVertical, Calendar, User,X, CreditCard, Package, RefreshCw, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import Pagination from '../Pagination';
+import toast, { Toaster } from 'react-hot-toast';
 import ConfirmationPopup from '../ConformButton';
 // Status badge component
 const StatusBadge = ({ status }) => {
@@ -136,40 +137,46 @@ export function OrdersPage() {
       </div>
     );
   };
-
+  
   useEffect(()=>{
     fetchOrderDetails()
   },[])
-
+  
   const openPopup = (order) => {
     setSelectedOrder(order);
     setIsPopupOpen(true);
   };
-
+  
   const closePopup = () => {
     setSelectedOrder(null);
     setIsPopupOpen(false);
   };
-
+  
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
+  
 
+  
   const handleCancelOrder = async (orderId) =>{
-     try {
+    try {
       const response = await axioInstence.patch(`/admin/orders/cancel/${orderId}`)
-       if(response.status===200){
+      //  toast.success(response.data.message)
+      if(response.status===200){
         setOrders((preveOrders) =>
-        preveOrders.map((order) =>
-        order._id === orderId ? {...order, status: 'cancelled'} : order
-        )
-        )
-
-       }
-     } catch (error) {
-      console.error('Error cancelling order:', error.response?.data?.message || error.message);
-     }
+          preveOrders.map((order) =>
+            order._id === orderId ? {...order, status: 'cancelled'} : order
+      )
+    )
+    
   }
+} catch (error) {
+  console.error('Error cancelling order:', error.response?.data?.message || error.message);
+  toast.error(error.response.data.message)
+  setIsPopupOpen(false)
+  
+  }
+ }
 
 
 
@@ -191,10 +198,12 @@ export function OrdersPage() {
          order._id === selectedOrder._id ? { ...order, status: newStatus} : order
         ) )
        }
-       
+       toast.success(response.data.message)
        setIsPopupOpen(false)
      } catch (error) {
       console.error('Error updating order status:', error.response?.data?.message );
+      toast.error(error.response.data.message)
+      setIsPopupOpen(false)
      }
   }
 
@@ -204,7 +213,7 @@ export function OrdersPage() {
       const response = await axioInstence.patch(`/admin/return-request/${orderId}/${productId}`, {
         status: newStatus
       });
-
+      
       if (response.status === 200) {
         setOrders(prevOrders => 
           prevOrders.map(order => {
@@ -234,17 +243,18 @@ export function OrdersPage() {
       console.error('Error updating return request:', error.response?.data?.message || error.message);
     }
   };
-
-
+  
+  
   const toggleOrderDetails = (orderId) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
-
-console.log('orde',orders);
-
-
+  
+  console.log('orde',orders);
+  
+  
   return (
     <div className="min-h-screen bg-cover bg-center relative" style={{backgroundImage: "url('/placeholder.svg?height=1080&width=1920')"}}>
+    <Toaster position="top-right" reverseOrder={false} />
       <div className="absolute inset-0  bg-opacity-50 backdrop-blur-sm"></div>
       
       <div className="relative min-h-screen flex flex-col">

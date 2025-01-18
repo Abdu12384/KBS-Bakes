@@ -43,7 +43,7 @@ const { salesData,
          generatePDFReport, 
          generateExcelReport 
         } = require('../controllers/adminController/salesReportManage')
-const { getDashboardData } = require('../controllers/adminController/dashboardController')
+const { getDashboardData, chartData } = require('../controllers/adminController/dashboardController')
 
 
 
@@ -104,6 +104,7 @@ admin_Route
 
  admin_Route
          .get('/dashboard',verifyAdminToken,getDashboardData)       
+         .get('/dashboard/chart-data',verifyAdminToken,chartData)       
 
         .post('/logout',loadLogout)
 

@@ -4,6 +4,7 @@ import AddressForm from '../../Components/UserComponents/AddressForm';
 import toast, { Toaster } from "react-hot-toast";
 import NavBar from '../../Components/Navbar';
 import { fetchAddressDetails,deleteAddress, setDefaultAddress } from '../../services/authService';
+import { BreadcrumbUserDhbrd } from '../../Components/BrudCrums';
 
 function AddressPage() {
   const [addresses, setAddresses] = useState([]);
@@ -79,6 +80,12 @@ const handleDeleteAddress = async (id) => {
 };
 
 
+const breadcrumbItems = [
+  { label: 'Home', url: '/' },
+  { label: 'Dashboard', url: '/user/dashboard' },
+  { label: 'address', url: null }, 
+];
+
 
   return (
     <>
@@ -87,10 +94,7 @@ const handleDeleteAddress = async (id) => {
     <Toaster position="top-right" reverseOrder={false}/>
       {/* Header */}
       <header className="sticky top-0 shadow-sm px-4 py-3 flex items-center bg-white">
-        <button className="mr-2">
-          <ChevronLeft className="w-6 h-6 text-gray-600" />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-800">My Addresses</h1>
+      <BreadcrumbUserDhbrd items={breadcrumbItems}/>
       </header>
 
       {/* Address List */}
