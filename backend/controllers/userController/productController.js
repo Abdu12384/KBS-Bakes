@@ -7,7 +7,6 @@ const Category = require('../../model/category')
 const homeListProduct = async (req, res)=>{ 
   
     try {
-
   const products = await Product.find({isDeleted:false}).populate('category')
 
   const activeProducts = products.filter(product => product.category && !product.category.isDeleted);

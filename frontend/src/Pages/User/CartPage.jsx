@@ -5,12 +5,16 @@ import { useNavigate } from 'react-router-dom';
 import NavBar from '../../Components/Navbar';
 import { fetchCartItems, removeCartItem, updateCartItemQuantity } from '../../services/authService';
 import { BreadcrumbUserDhbrd } from '../../Components/BrudCrums';
+import { useDispatch } from 'react-redux';
+import { userLogout } from '../../redux/slices/authSlice';
+
 const CartPage = () => {
   const [cartsummury, setCartSummury]= useState()
   const [items, setItems] = useState([]);
   const navigate = useNavigate()
 
-  
+  const dispatch = useDispatch()
+
     const loadCartItems = async () => {
         try {
             const data = await fetchCartItems(); 
@@ -19,7 +23,9 @@ const CartPage = () => {
             setCartSummury(data.summary || {}); 
         } catch (error) {
             console.error('Error loading cart items', error);
-
+            if (error.response?.data?.message === 'Please login to continue') {
+              dispatch(userLogout())
+         } 
         }
     };
 
@@ -43,6 +49,7 @@ const CartPage = () => {
           )
       ); 
       console.log(`Item with ID ${productId} removed successfully`);
+      loadCartItems()
   } catch (error) {
       toast.error(error.response?.data?.message ); 
       console.error('Error while removing item:', error.message);
@@ -193,22 +200,22 @@ const breadcrumbItems = [
                   <span>₹{cartsummury?.totalItems}</span>
                 </div>
                
-                {/* {cartsummury?.totalDiscount > 0 &&
-                (<div className="flex justify-between text-[#d8cbc4]">
-                  <span>Discount</span>
-                  <span>-₹{cartsummury?.totalDiscount}</span>
-                </div>)} */}
                 <div className="flex justify-between font-bold text-xl pt-4 border-t border-[#8b6c5c] text-white">
                   <span>Cart Total</span>
                   <span>₹{cartsummury?.totalPrice}</span>
                 </div>
               </div>
-              <button 
+              {cartsummury?.totalItems > 0 ? ( <button 
                onClick={()=>navigate('/user/checkout')}
                 className="w-full py-3 rounded-md font-medium transition-all hover:bg-[#2a1a15] bg-[#3d251e] text-white text-lg shadow-md"
               >
                 Proceed to Checkout
               </button>
+              ):(
+                <div className="text-center text-xl font-medium">
+                <p>Your cart is empty.</p>
+              </div>
+              )}
             </div>
           </div>
         </div>

@@ -8,6 +8,11 @@ import axioInstence from '../utils/axioInstence';
 import { useSelector } from 'react-redux';
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmationPopup from './ConformButton';
+import bannerImg1 from '../assets/images/banner1.jpg'
+import bannerImg2 from '../assets/images/banner2.jpg'
+import bannerImg3 from '../assets/images/banner3.jpg'
+import bannerImg4 from '../assets/images/banner4.jpg'
+
 
 const Header = () => {
   
@@ -18,11 +23,11 @@ const Header = () => {
   const navigate = useNavigate()
  const dispatch = useDispatch()
   const images = [
-    '/src/assets/images/banner1.jpg',
-    '/src/assets/images/banner2.jpg',
-    '/src/assets/images/banner3.jpg',
-    '/src/assets/images/banner4.jpg',
-    '/src/assets/images/banner5.jpg',
+    bannerImg1,
+    bannerImg2,
+    bannerImg3,
+    bannerImg4,
+    
   ]; 
 
  
@@ -88,9 +93,9 @@ const Header = () => {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <NavLink href="/">Home</NavLink>
-                <NavLink href="/about">About</NavLink>
+                <NavLink href="/user/about">About</NavLink>
                 <NavLink href="/user/cakes">Cakes</NavLink>
-                <NavLink href="/contact">Contact</NavLink>
+                <NavLink href="/user/contact">Contact</NavLink>
               </div>
             </div>
 
@@ -185,9 +190,9 @@ const Header = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-[#3d2516] bg-opacity-90">
               <NavLink href="/" mobile>Home</NavLink>
-              <NavLink href="/about" mobile>About</NavLink>
+              <NavLink href="/user/about" mobile>About</NavLink>
               <NavLink href="/user/cakes" mobile>Cakes</NavLink>
-              <NavLink href="/contact" mobile>Contact</NavLink>
+              <NavLink href="/user/contact" mobile>Contact</NavLink>
             </div>
           </div>
         )}
@@ -200,7 +205,9 @@ const Header = () => {
           <p className="text-xl md:text-2xl text-white mb-8 drop-shadow-lg animate-fade-in-up animation-delay-300">
             Handcrafted cakes for every occasion
           </p>
-          <button className="bg-[#8b6c5c] text-white py-3 px-6 rounded-full text-lg font-semibold hover:bg-[#765341] transition duration-300 shadow-lg animate-fade-in-up animation-delay-600">
+          <button 
+          onClick={()=>navigate('/user/cakes')}
+          className="bg-[#8b6c5c] text-white py-3 px-6 rounded-full text-lg font-semibold hover:bg-[#765341] transition duration-300 shadow-lg animate-fade-in-up animation-delay-600">
             Explore Our Cakes
           </button>
         </div>

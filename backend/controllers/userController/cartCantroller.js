@@ -126,6 +126,7 @@ const addToCart = async(req, res)=>{
        if(proposedTotalQuantity > 5){
         return res.status(400).json({message:  `Maximum 5 items allowed for this product. You already have ${totalExistingQuantity} in your cart.`})
        }
+       
  
      if (variant.stock < quantity) {
       return res.status(400).json({ 

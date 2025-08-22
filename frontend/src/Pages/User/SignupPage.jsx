@@ -6,7 +6,9 @@ import OTPInput from '../../Components/OTPvarify';
 import {GoogleLogin} from '@react-oauth/google'
 import toast, { Toaster } from "react-hot-toast";
 import { useDispatch } from 'react-redux';
-// import { loginSuccess } from '../../redux/slices/authSlice';
+import axioInstence from '../../utils/axioInstence';
+import { userLoginSuccess } from '../../redux/slices/authSlice';
+
 
 function SignupPage() {
 
@@ -36,10 +38,18 @@ const dispatch = useDispatch()
       
       const validateForm = () => {
         const newErrors = {};
-        if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        const numberRegex = /^[1-9][0-9]$/;
+
+        if (!formData.fullName||!nameRegex.test(formData.fullName)){
+          newErrors.fullName = 'Full name is not proper.';
+       }        
         if (!formData.email) newErrors.email = 'Email is required.';
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid.';
-        if (!formData.mobile) newErrors.mobile = 'Phone Number is required.';
+
+        if (!formData.mobile || !numberRegex.test(formData.mobile)){ 
+          newErrors.mobile = 'Mobile number must be 10 digits.';
+        }        
         else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
         if (!formData.password) {
           newErrors.password = 'Password is required.';
@@ -62,6 +72,9 @@ const dispatch = useDispatch()
         return Object.keys(newErrors).length === 0;
       };
       
+
+
+
       const handleSubmit = async (e)=>{
         e.preventDefault()
         if(!validateForm()) return
@@ -69,7 +82,7 @@ const dispatch = useDispatch()
         setLoading(true)
         console.log("Form Data Updated:", formData);
         try {
-          const response = await axios.post('http://localhost:3000/auth/signup',formData)
+          const response = await axioInstence.post('/auth/signup',formData)
           console.log("Respose:",response.data);
           setOtpModalVisible(true)
         } catch (error) {
@@ -95,14 +108,14 @@ const dispatch = useDispatch()
           
           const {credential} = response
           
-          const res = await axios.post('http://localhost:3000/auth/google/signup', { tokenId:credential });
-          console.log('Google SignUp Successful:', res.data);
+          const res = await axioInstence.post('/auth/google/signup', { tokenId:credential });
+          console.log('Google SignU', res.data);
           if(res.data){
             toast.success("Signup successful! Welcome KBSBakes.")
             const{user, role} = res.data
             if(role === 'user'){
               setTimeout(() => {
-                dispatch(loginSuccess({user, role}))
+                dispatch(userLoginSuccess({user, role}))
               },2000);
             }else{
               toast.error("SignUp failed!.")

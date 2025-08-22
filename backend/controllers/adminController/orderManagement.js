@@ -226,6 +226,13 @@ const updateReturnRequest = async (req, res) => {
           product => product._id.toString() === productId
       );
 
+      if (returnProduct.returnRequest?.status === 'approved' && status !== 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot change status once it has been approved',
+        });
+      }
+
       if (status === 'approved') {
           const refundAmount = returnProduct.price * returnProduct.quantity;
 
@@ -263,6 +270,24 @@ const updateReturnRequest = async (req, res) => {
                   }
               );
           }
+
+
+          const dbProduct = await Product.findById(returnProduct.productId); 
+          if (dbProduct) {
+            const variant = dbProduct.variants.find(v => v._id.toString() === returnProduct.variantId.toString());
+            if (variant) {
+              variant.stock += returnProduct.quantity; 
+            } else {
+              console.warn(`Variant with ID ${returnProduct.variantId} not found for product ${dbProduct._id}`);
+            }
+    
+            await dbProduct.save(); 
+          } else {
+            console.warn(`Product with ID ${returnProduct.productId} not found in database`);
+          }
+    
+
+
 
           await Orders.findOneAndUpdate(
               {

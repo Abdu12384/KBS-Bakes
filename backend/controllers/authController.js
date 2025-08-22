@@ -34,7 +34,6 @@ const USER_REFRESH_TOKEN_SECRET = process.env.USER_REFRESH_TOKEN_SECRET
  }
 
 
-
    
 
  const transporter = nodemailer.createTransport({
@@ -303,12 +302,12 @@ const insertUser = async(req,res)=>{
     console.log('user', userToken);
     
 
-    if (!adminToken && !userToken) {
-      return res.status(401).json({ 
-        success: false,
-        message: "No refresh token found" 
-      });
-    }
+    // if (!adminToken && !userToken) {
+    //   return res.status(401).json({ 
+    //     success: false,
+    //     message: "No refresh token found" 
+    //   });
+    // }
   
     let response = {
       success: false,

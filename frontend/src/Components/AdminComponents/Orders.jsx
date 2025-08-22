@@ -239,8 +239,12 @@ export function OrdersPage() {
         );
         setIsReturnPopupOpen(false);
       }
+      toast.success(response.data.message)
+
     } catch (error) {
       console.error('Error updating return request:', error.response?.data?.message || error.message);
+      toast.error(error.response.data.message)
+
     }
   };
   
@@ -306,10 +310,14 @@ export function OrdersPage() {
               <tbody>
                 {orders.map((order) => (
                   <>
-                  <tr
+                    <tr
                     key={order._id}
-                    className="border-b border-white border-opacity-10 hover:bg-white hover:bg-opacity-5 transition-colors duration-200"
-                    onClick={() => toggleOrderDetails(order._id)}
+                    className={`border-b border-white border-opacity-10 
+                      hover:bg-white hover:bg-opacity-5 transition-colors duration-200
+                      ${order?.products?.some(
+                        product => product?.returnRequest?.status && product.returnRequest.status !== 'approved'
+                      ) ? 'bg-yellow-400' : ''}`}                     
+                      onClick={() => toggleOrderDetails(order._id)}
                   >
                  
                        <td className="py-4 px-4">
@@ -360,6 +368,13 @@ export function OrdersPage() {
 
                             {/* Shipping Address */}
                             <p><strong>Shipping Address:</strong> {order.shippingAddress}</p>
+
+                            {order.status === "cancelled" && order.cancelReason && ( // <-! Check if order is cancelled and reason exists
+                                <p className="text-red-500 font-medium">
+                                  <strong>Cancellation Reason:</strong> <p className='text-red-100'>{order.cancelReason}</p>
+                                </p>
+                              )}
+
 
                             {/* Product Information Table */}
                             <div className="overflow-x-auto">

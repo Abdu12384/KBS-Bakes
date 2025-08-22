@@ -58,7 +58,7 @@ export const toggleProductStatus = async (productId, currentStatus) => {
 
 export const fetchCategories = async () => {
     try {
-        const response = await axioInstence.get('/admin/categories');
+        const response = await axioInstence.get('/user/categories');
         return response.data; 
     } catch (error) {
         console.error('Error fetching categories', error);
@@ -336,11 +336,12 @@ export const cancelProduct = async (orderId, productId) => {
 };
 
 
-export const requestReturn = async (orderId, productId, reason) => {
+export const requestReturn = async (orderId, productId, variantId, reason) => {
     try {
         const response = await axioInstence.post('/user/return-request', {
             orderId,
             productId,
+            variantId,
             reason,
         });
         return response.data; 
@@ -390,19 +391,6 @@ export const fetchFilterProducts = async (sortOption, selectedOccasion, selected
       throw error; 
     }
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

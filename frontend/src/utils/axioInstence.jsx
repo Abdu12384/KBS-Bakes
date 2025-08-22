@@ -1,10 +1,10 @@
 import axios from 'axios';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
-
+console.log('backend url',BACKEND_URL);
 
 
 const axioInstence = axios.create({
-  baseURL:BACKEND_URL,
+  baseURL:"http://localhost:3000",
   withCredentials: true, 
 })
 

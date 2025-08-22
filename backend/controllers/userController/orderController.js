@@ -258,7 +258,7 @@ const getAllOrders = async (req, res) => {
 
 
 const getOrderDetails = async (req, res) => {
-  try {
+  try { 
     const order = await Order.findOne({ 
       _id: req.params.orderId, 
       user: req.user._id 
@@ -341,6 +341,8 @@ const cancelOrder = async (req, res) =>{
     }
   }
 
+  refundAmount -= (order.discount || 0);
+  refundAmount = Math.max(0, refundAmount);
     
     order.status = 'cancelled'
     order.cancelReason = reason
@@ -811,7 +813,7 @@ const couponApply = async(req, res)=>{
 const returnController = async(req, res)=>{
 
   try {
-    const { orderId, productId, reason } = req.body;
+    const { orderId, productId, variantId, reason } = req.body;
     const userId = req.user.id;
 
  console.log('return',req.body);
@@ -830,7 +832,9 @@ const returnController = async(req, res)=>{
     }
 
     const productIndex = order.products.findIndex(
-      product => product.productId.toString() === productId
+      product => 
+        product.productId.toString() === productId && 
+        product.variantId.toString() === variantId   
     );
 
     console.log('Product index:', productIndex);

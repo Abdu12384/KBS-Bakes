@@ -4,12 +4,13 @@ import { Star, ShoppingCart, Heart, ChevronLeft, ChevronRight, Cake, AlertTriang
 import 'react-medium-image-zoom/dist/styles.css';
 import { useParams } from 'react-router-dom';
 import axiosInstence from '../utils/axioInstence';
-import Breadcrumbs from './BrudCrums';
 import toast, { Toaster } from "react-hot-toast";
 import ProductList from './ProductList';
 import UserBreadcrumb from './UserBrudCrums';
 import NavBar from './Navbar';
 import Footer from './Footer';
+import { userLogout } from '../redux/slices/authSlice';
+import { useDispatch } from 'react-redux';
 
 
 
@@ -23,6 +24,8 @@ const ProductDetails = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedVariant, setSelectedVariant] = useState(product?.variants[0]||null); 
   const [selectedWeight, setSelectedWeight] = useState(null);
+
+  const dispatch = useDispatch()
 
 
 
@@ -107,10 +110,27 @@ const ProductDetails = () => {
         quantity
       })
         toast.success(response.data.message)
+        setProduct((prevProduct) => ({
+          ...prevProduct,
+          variants: prevProduct.variants.map((variant) =>
+            variant._id === selectedVariant._id
+              ? { ...variant, stock: variant.stock - quantity }
+              : variant
+          ),
+        }));
+        
+        setSelectedVariant(prev => ({
+          ...prev,
+          stock: prev.stock - quantity
+        }));
+
       
     } catch (error) {
       console.error(error.response.data);
       toast.error(error.response.data.message);
+      if (error.response?.data?.message === 'Please login to continue') {
+        dispatch(userLogout())
+      } 
     }
      
   }
@@ -248,27 +268,7 @@ const ProductDetails = () => {
                   )}
               </div>
               <p className="text-lg text-[#5b3e31] leading-relaxed">{product.description}</p>
-              <div>
-                {/* <h3 className="text-xl font-semibold text-[#3d2516] mb-3 flex items-center">
-                  <Cake className="mr-2" size={24} />
-                  Ingredients
-                </h3> */}
-             
-              </div>
               
-              <div>
-                {/* <h3 className="text-xl font-semibold text-[#3d2516] mb-3 flex items-center">
-                  <AlertTriangle className="mr-2" size={24} />
-                  Allergens
-                </h3> */}
-                <div className="flex flex-wrap gap-2">
-                  {/* {product.allergens.map((allergen, index) => (
-                    <span key={index} className="px-3 py-1 bg-[#bca89f] text-[#3d2516] rounded-full text-sm font-bold uppercase tracking-wide">
-                      {allergen}
-                    </span>
-                  ))} */}
-                </div>
-              </div>
               
               <div>
                 <h3 className="text-xl font-semibold text-[#3d2516] mb-3 flex items-center">
@@ -324,17 +324,6 @@ const ProductDetails = () => {
                   </div>
 
                      <div className="flex-shrink-0 flex gap-3">
-                          <button 
-                          className={`sm:w-auto px-1 py-3 rounded-md transition duration-300 flex items-center justify-center text-lg font-bold uppercase tracking-wide transform shadow-md ${
-                            product?.stock <= 0
-                              ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                              : 'bg-[#8b6c5c] text-white hover:bg-[#765341]'
-                          }`}
-                          disabled={selectedVariant?.stock <=0}
-                       >
-                       
-                      Buy Now
-                    </button>    
                      <button 
                      onClick={handleCart}
                     className={`sm:w-auto px-1 py-3 rounded-md transition duration-300 flex items-center justify-center text-lg font-bold uppercase tracking-wide transform shadow-md ${

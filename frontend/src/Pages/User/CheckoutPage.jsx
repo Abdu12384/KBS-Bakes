@@ -4,6 +4,8 @@ import toast, { Toaster } from "react-hot-toast";
 import { OrderAnimation } from '../../Components/cakeAnimation';
 import CouponCard from '../../Components/Coupon';
 import NavBar from '../../Components/Navbar';
+import { useDispatch } from 'react-redux';
+import { userLogout } from '../../redux/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { fetchCartItems, deductFromWallet, initiatePayment, verifyPayment, PaymentFailed } from '../../services/authService';
 import { fetchAddressDetails, fetchWalletBalance, placeOrder, applyCoupon } from '../../services/authService';
@@ -42,6 +44,7 @@ const CheckoutPage = () => {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
+  const dispatch = useDispatch()
   const navigate = useNavigate()
 
   console.log('summ',cartSummary);
@@ -78,13 +81,15 @@ const CheckoutPage = () => {
             });
         }
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to fetch cart items');
         console.error('Cart fetch error:', error);
+        if (error.response?.data?.message === 'Please login to continue') {
+          dispatch(userLogout())
+      } 
     }
 };
    
 
-   console.log('car',cartItems);
+
 
 
    const fetchAddresses = async () => {
@@ -97,13 +102,12 @@ const CheckoutPage = () => {
             setSelectedAddress(data.find(addr => addr.isDefault) || data[0]);
         }
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to fetch addresses');
         console.error('Error fetching addresses:', error);
     }
 };
 
 
-   console.log('wallet balance here',walletBalance);
+
    
    
 
@@ -117,7 +121,6 @@ const CheckoutPage = () => {
             setWalletBalance(data); 
         }
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to fetch wallet balance');
         console.error('Error loading wallet balance:', error);
     }
 };
@@ -182,6 +185,7 @@ const CheckoutPage = () => {
    
    const handleSaveAddress = () => {
     setShowAddressForm(false); 
+    fetchAddresses()
   };
 
 

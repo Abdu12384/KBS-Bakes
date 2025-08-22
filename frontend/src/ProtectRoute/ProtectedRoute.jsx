@@ -2,7 +2,7 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import toast, { Toaster } from "react-hot-toast";
+
 
 
 
@@ -27,7 +27,7 @@ const ProtectedRoute = () => {
   console.log('userhere',user);
   
   if (!isAuthenticated || !user.isActive) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/user/login" replace />;
   }
 
   

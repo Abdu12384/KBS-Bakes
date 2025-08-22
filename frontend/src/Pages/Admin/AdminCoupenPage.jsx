@@ -15,8 +15,9 @@ export default function CouponManagement() {
   const validateCoupon = () => {
     const newErrors = {};
     
-    if (!newCoupon.code.trim()) {
-      newErrors.code = "Coupon code is required";
+    const couponRegex=/^[a-zA-Z0-9\s]+$/
+    if (!couponRegex.test(newCoupon.code)) {
+      newErrors.code = "Coupon code is not valid";
     }
 
     const discount = parseFloat(newCoupon.discount);
@@ -154,7 +155,7 @@ const handleDelete = async (couponId) => {
             {coupons.map((coupon, index) => (
               <tr key={index}>
                 <td className="px-6 py-4 whitespace-nowrap">{coupon.code}</td>
-                <td className="px-6 py-4 whitespace-nowrap">₹{coupon.discount}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{coupon.discount}%</td>
                 <td className="px-6 py-4 whitespace-nowrap">{coupon.minAmount}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{coupon.maxAmount}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{dayjs(coupon.start).format('DD/MM/YYYY')}</td>
@@ -185,7 +186,7 @@ const handleDelete = async (couponId) => {
             <button className="p-2 rounded-full hover:bg-gray-100">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            {[1, 2, 3, 4, 5].map((page) => (
+            {[1].map((page) => (
               <button
                 key={page}
                 className={`w-8 h-8 flex items-center justify-center rounded-full ${

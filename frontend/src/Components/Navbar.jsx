@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { User, ShoppingCart, LogOut, LogIn, Menu, X, Cake } from 'lucide-react'
+import { User, ShoppingCart, LogOut, LogIn, Menu, X, Cake,Heart } from 'lucide-react'
 
 const NavLink = ({ href, children }) => (
   <a
@@ -31,25 +31,19 @@ export default function NavBar() {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 <NavLink href="/">Home</NavLink>
-                <NavLink href="/about">About</NavLink>
+                <NavLink href="/user/about">About</NavLink>
                 <NavLink href="/user/cakes">Cakes</NavLink>
-                <NavLink href="/contact">Contact</NavLink>
+                <NavLink href="/user/contact">Contact</NavLink>
               </div>
             </div>
 
             <div className="flex items-center space-x-6">
-              <div className="relative">
-                <button
-                  onClick={toggleUserMenu}
-                  className="relative text-white hover:text-[#d8cbc4] focus:outline-none transition-colors duration-200"
-                >
-                  <User className="h-6 w-6" />
-                </button>
-
-               
-              </div>
+            
               <a href="/user/cart" className="text-white hover:text-[#d8cbc4]">
                 <ShoppingCart className="h-6 w-6" />
+              </a>
+              <a href="/user/wishlist" className="text-white hover:text-[#d8cbc4]">
+                <Heart className="h-6 w-6" />
               </a>
             
               <div className="md:hidden">

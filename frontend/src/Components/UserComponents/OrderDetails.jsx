@@ -14,13 +14,14 @@ const OrdersListPage = ({orderId, onBack }) => {
   const [showReturnOptions, setShowReturnOptions] = useState(false);
   const [returnReason, setReturnReason] = useState({});
   const [selectedProduct, setSelectedProduct] = useState('')
+  const [selectedVariants, setSelectedVariants] = useState('')
   const [showCancelOrderConfirmation, setShowCancelOrderConfirmation] = useState(false);
   const [showCancelProductConfirmation, setShowCancelProductConfirmation] = useState(false);
   const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [productToCancel, setProductToCancel] = useState(null);
   const [productToReturn, setProductToReturn] = useState(null);
-  const [cancelReason, setCancelReason] = useState(''); 
+
   
 
 
@@ -61,10 +62,8 @@ const OrdersListPage = ({orderId, onBack }) => {
   };
 
 
- console.log('canel reason ', cancelReason);
+
  
-
-
 
 
  const handleCancelOrderClick = (event, orderId) => {
@@ -75,7 +74,7 @@ const OrdersListPage = ({orderId, onBack }) => {
 
 
 
-  const handleCancelOrder = async () => {
+  const handleCancelOrder = async (cancelReason) => {
     try {
 
       if (!cancelReason) {
@@ -134,7 +133,7 @@ const handleCancelProduct = async () => {
 
 
 
-  const handleReturnClick = (productId) => {
+  const handleReturnClick = (productId,) => {
     setProductToReturn(productId);
     setShowReturnConfirmation(true);
   };
@@ -142,9 +141,8 @@ const handleCancelProduct = async () => {
   const handleConformReturn = async (productId) => {
     const reason = returnReason[productId];
    
-
     try {
-        const response = await requestReturn(selectedOrder._id, productToReturn, reason); 
+        const response = await requestReturn(selectedOrder._id, productToReturn,selectedVariants, reason); 
         console.log('Return request response:', response);
 
         if (response) {
@@ -418,6 +416,7 @@ return (
                                 onClick={() => {
                                   setShowReturnOptions(true);
                                   setSelectedProduct(product.productId._id);
+                                  setSelectedVariants(product.variantId)
                                 }}
                               >
                                 Return
@@ -538,7 +537,7 @@ return (
                       ></textarea>
                       <button
                         className="mt-2 mr-2 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-300"
-                        onClick={() => handleReturnClick(selectedProduct)}
+                        onClick={() => handleReturnClick(selectedProduct,selectedVariants)}
                       >
                         Confirm Return
                       </button>
@@ -611,8 +610,7 @@ return (
           message="Are you sure you want to cancel this order?"
           cancelOrder={showCancelOrderConfirmation}
           onConfirm={(updatedReason) => {
-            setCancelReason(updatedReason)
-            handleCancelOrder();
+            handleCancelOrder(updatedReason);
             setShowCancelOrderConfirmation(false);
           }}
           onCancel={() => {
