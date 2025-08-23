@@ -1,5 +1,4 @@
 import axioInstence from "../utils/axioInstence";
-import toast from "react-hot-toast";
 
 
 
@@ -58,7 +57,7 @@ export const toggleProductStatus = async (productId, currentStatus) => {
 
 export const fetchCategories = async () => {
     try {
-        const response = await axioInstence.get('/user/categories');
+        const response = await axioInstence.get('/admin/categories');
         return response.data; 
     } catch (error) {
         console.error('Error fetching categories', error);
@@ -117,7 +116,13 @@ export const fetchOrderDetails = async (timeFilter,  currentPage) => {
 
 
 
+
+
+
+
+
 // USER 
+// ====================================================================================
 
 export const fetchAddressDetails = async () => {
     try {
@@ -362,6 +367,18 @@ export const fetchWalletInfo = async () => {
 };
 
 
+
+export const fetchAvailableCategories = async () => {
+    try {
+        const response = await axioInstence.get('/user/categories');
+        return response.data; 
+    } catch (error) {
+        console.error('Error fetching categories', error);
+        throw error; 
+    }
+};
+
+
 export const addMoneyToWallet = async (amount) => {
     try {
         const response = await axioInstence.post('/user/wallet/add-money', { amount });
@@ -391,15 +408,6 @@ export const fetchFilterProducts = async (sortOption, selectedOccasion, selected
       throw error; 
     }
   };
-
-
-
-
-
-
-
-
-
 
 
 

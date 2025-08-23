@@ -47,10 +47,10 @@ const dispatch = useDispatch()
         if (!formData.email) newErrors.email = 'Email is required.';
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid.';
 
-        if (!formData.mobile || !numberRegex.test(formData.mobile)){ 
+        if (!formData.mobile){ 
           newErrors.mobile = 'Mobile number must be 10 digits.';
         }        
-        else if (formData.mobile.length < 10) newErrors.mobile = 'Phone Number is invalid.';
+        else if (formData.mobile.length < 10 || formData.mobile.length > 10) newErrors.mobile = 'Phone Number is invalid.';
         if (!formData.password) {
           newErrors.password = 'Password is required.';
         } else if (formData.password.length < 8) {

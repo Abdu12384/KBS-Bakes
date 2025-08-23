@@ -4,7 +4,7 @@ console.log('backend url',BACKEND_URL);
 
 
 const axioInstence = axios.create({
-  baseURL:"http://localhost:3000",
+  baseURL:BACKEND_URL,
   withCredentials: true, 
 })
 

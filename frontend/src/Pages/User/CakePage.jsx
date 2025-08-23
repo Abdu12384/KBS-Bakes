@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight, SortAsc, SortDesc, Star,  Clock, Zap, TrendingUp, ChevronDown, Filter, IndianRupee, Octagon } from 'lucide-react';
+import { Search, SortAsc, SortDesc, Star,  Clock, Zap, TrendingUp, Filter, IndianRupee } from 'lucide-react';
 import axioInstence from '../../utils/axioInstence';
 import NavBar from '../../Components/Navbar';
 import Footer from '../../Components/Footer'
 import Pagination from '../../Components/Pagination';
-import { fetchCategories, fetchFilterProducts } from '../../services/authService';
+import { fetchAvailableCategories } from '../../services/authService';
 import OutOfStockSign from '../../Components/OutOfStockBanner';
 
 const CakePage = () => {
@@ -76,12 +76,12 @@ const CakePage = () => {
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category._id);
-    setShowDropdown(false); // Close dropdown after selection
+    setShowDropdown(false); 
 };
  
   const fetchAllCategories = async ()=>{
      try {
-       const response = await fetchCategories()
+       const response = await fetchAvailableCategories()
        console.log('category',response);
        
        setCategories(response)
@@ -129,7 +129,7 @@ const CakePage = () => {
                 }`}
                 onClick={() => {
                   setSelectedOccasion(occasion);
-                  setCurrentPage(1); // Reset to first page when changing occasion
+                  setCurrentPage(1); 
                 }}
               >
                 {occasion}
@@ -142,7 +142,7 @@ const CakePage = () => {
         <div className="relative mb-8">
         <button
             className="px-4 py-2 bg-[#8b6c5c] text-white rounded-full"
-            onClick={() => setShowDropdown(!showDropdown)} // Toggle dropdown
+            onClick={() => setShowDropdown(!showDropdown)} 
         >
             { selectedCategory.name || 'Select Category'}
         </button>

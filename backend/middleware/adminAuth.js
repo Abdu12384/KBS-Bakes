@@ -4,7 +4,6 @@ const verifyAdminToken = (req, res, next) => {
   const token = req.cookies.adminAccessToken; 
   console.log('access token here',token);
   
-
   if (!token) {
     return res.status(403).json({ message: 'Unauthorized: No token provided' });
   }

@@ -32,15 +32,15 @@ const addCategory = async (req, res) => {
 
 
 const  fetchCategory = async(req, res)=>{
-  
+   console.log("fetchCategory");
+   
    try {
-
      const  Categories = await Category.find({})
+     console.log("Categories",Categories)
 
      if(!Categories||Categories.length === 0){
       res.status(404).json({message:"Categories Not Fount "})
      }
-
      res.status(200).json(Categories)
     
    } catch (error) {
